@@ -31,9 +31,10 @@
         <ul class="nav__list">
           <li><a href="#about" class="nav__link" data-kz="Жоба туралы">О проекте</a></li>
           <li><a href="#how" class="nav__link" data-kz="Қалай жұмыс істейді">Как это работает</a></li>
-          <li><a href="#activities" class="nav__link" data-kz="Идеялар">Идеи</a></li>
+          <li><a href="#clubs" class="nav__link" data-kz="Идеялар">Идеи</a></li>
           <li><a href="#support" class="nav__link" data-kz="Қолдау">Поддержка</a></li>
           <li><a href="#faq" class="nav__link" data-kz="Сұрақтар">Вопросы</a></li>
+          <li><a href="#" class="nav__link" id="bizNavLink" data-kz="Бизнеске">Для бизнеса</a></li>
           <li><a href="#idea" class="nav__link nav__link--cta" data-kz="Идея ұсыну">Предложить идею</a></li>
           <li class="nav__lang-switcher">
             <button class="lang-btn" data-lang-btn="kz">ҚАЗ</button>
@@ -628,5 +629,28 @@
   <script src="js/config.js"></script>
   <script src="js/main.js"></script>
   <script src="js/lang.js"></script>
+  <!-- ═══════════════════════════════════════════════
+       МОДАЛ «ДЛЯ БИЗНЕСА»
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="bizModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bizModalTitle">
+      <button class="modal__close" id="bizModalClose" aria-label="Закрыть">&times;</button>
+      <div class="modal__icon"><i class="fas fa-store"></i></div>
+      <h2 class="modal__title" id="bizModalTitle" data-kz="Көрші бизнеске">Бизнесу по соседству</h2>
+      <p class="modal__lead" data-kz="Егер бизнесіңіз BI Group ТК-де немесе жақын маңда болса әрі сізге көршілік құндылығы жақын болса.">Если ваш бизнес — в ЖК BI Group или рядом, и вам близка ценность добрососедства.</p>
+      <p class="modal__subtitle" data-kz="Көршілік қауымдастықтарды қалай қолдай аласыз:">Чем можно поддержать соседские сообщества:</p>
+      <ul class="modal__list">
+        <li><i class="fas fa-house"></i> <span><b data-kz="Үй-жаймен">Помещением</b> — <span data-kz="көршілер жиналатын орын">место, где соседям собираться</span></span></li>
+        <li><i class="fas fa-toolbox"></i> <span><b data-kz="Жабдықпен">Оборудованием</b> — <span data-kz="белсенділік өтуі үшін қажет нәрсе">то, без чего активность не состоится</span></span></li>
+        <li><i class="fas fa-chalkboard-user"></i> <span><b data-kz="Жаттықтырушылармен">Тренерами</b> — <span data-kz="жүргізетін әрі шабыттандыратын сарапшылар">эксперты, которые ведут и вдохновляют</span></span></li>
+        <li><i class="fas fa-star"></i> <span><b data-kz="Басқа ресурстармен">Другими ресурсами</b> — <span data-kz="адамдарды біріктіруге көмектесетін бәрімен">всем, что поможет людям объединяться</span></span></li>
+      </ul>
+      <p class="modal__cta-text" data-kz="Бізбен байланысыңыз — кездесу өткізіп, күш біріктіруді бірге ойластырамыз.">Свяжитесь с нами — проведём встречу и вместе придумаем, как объединить усилия.</p>
+      <a href="#" class="btn btn--whatsapp btn--lg btn--full" id="bizWaBtn">
+        <i class="fab fa-whatsapp"></i> <span data-kz="WhatsApp-та жазу">Написать в WhatsApp</span>
+      </a>
+    </div>
+  </div>
+
 </body>
 </html>

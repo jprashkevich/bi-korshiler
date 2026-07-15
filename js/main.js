@@ -11,7 +11,36 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeroSlider();
   initAboutSlider();
   initGallerySlider();
+  initBizModal();
 });
+
+/* =====================================================
+   МОДАЛ «ДЛЯ БИЗНЕСА» — открытие/закрытие + WhatsApp
+   ===================================================== */
+function initBizModal() {
+  const link     = document.getElementById('bizNavLink');
+  const modal    = document.getElementById('bizModal');
+  const closeBtn = document.getElementById('bizModalClose');
+  const waBtn    = document.getElementById('bizWaBtn');
+  if (!modal) return;
+
+  const open  = (e) => { if (e) e.preventDefault(); modal.hidden = false; document.body.style.overflow = 'hidden'; };
+  const close = () => { modal.hidden = true; document.body.style.overflow = ''; };
+
+  link && link.addEventListener('click', open);
+  closeBtn && closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+  waBtn && waBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const lang = document.documentElement.getAttribute('data-lang') || 'ru';
+    const msg = lang === 'kz'
+      ? 'Сәлеметсіз бе! 👋 Менің бизнесім BI Group маңында, көршілік белсенділіктерді ресурстармен қолдауға дайынмын. Серіктестікті талқыласам деймін.\n— BI Group Көршілік Амбассадорлары сайтынан'
+      : 'Здравствуйте! 👋 Мой бизнес рядом с BI Group, и я готов поддержать соседские активности ресурсами. Хочу обсудить партнёрство.\n— с сайта «Амбассадоры Добрососедства BI Group»';
+    window.open(`https://wa.me/${CONFIG.WHATSAPP_COORDINATOR}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+  });
+}
 
 /* =====================================================
    NAVIGATION
