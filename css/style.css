@@ -3329,7 +3329,7 @@ html, body {
 .btn--outline-white:hover { background: rgba(255,255,255,0.14); border-color: #fff; color: #fff; }
 
 /* Философия +1 */
-.plus-one { background: linear-gradient(120deg, #101A45 0%, #1B2A6E 100%); color: #fff; padding: 46px 0; }
+.plus-one { background: #14213D; color: #fff; padding: 52px 0 40px; }
 .plus-one__lead { text-align: center; font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; margin-bottom: 26px; }
 .plus-one__row { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 34px; }
 .plus-one__item { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.85); font-size: 0.98rem; }
