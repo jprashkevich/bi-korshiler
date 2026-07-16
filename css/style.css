@@ -3383,20 +3383,21 @@ html, body {
 
 /* ── Карусель кругов по интересам ──────────────── */
 .clubs-marquee {
-  overflow: hidden; padding: 6px 0;
+  overflow: hidden; padding: 4px 0; display: flex; flex-direction: column; gap: 12px;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
 }
-.clubs-track { display: flex; gap: 14px; width: max-content; animation: clubs-marquee 55s linear infinite; }
+.clubs-track { display: flex; gap: 12px; width: max-content; animation: clubs-marquee 48s linear infinite; }
+.clubs-track--rev { animation: clubs-marquee 48s linear infinite reverse; }
 .clubs-marquee:hover .clubs-track { animation-play-state: paused; }
 @keyframes clubs-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .club-chip {
   display: inline-flex; align-items: center; gap: 10px;
-  padding: 14px 22px; border-radius: 50px;
+  padding: 9px 16px; border-radius: 50px;
   background: var(--white); border: 1px solid #E2E6EE;
-  font-weight: 600; color: var(--text-dark); white-space: nowrap; font-size: 1rem;
+  font-weight: 600; color: var(--text-dark); white-space: nowrap; font-size: 0.9rem;
 }
-.club-chip i { color: #009FE3; font-size: 1.1rem; }
+.club-chip i { color: #009FE3; font-size: 1rem; }
 
 
 /* ── 3 вида поддержки ──────────────────────────── */
