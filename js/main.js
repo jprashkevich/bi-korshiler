@@ -108,6 +108,7 @@ function initNav() {
     anchor.addEventListener('click', (e) => {
       const href = anchor.getAttribute('href');
       if (href === '#') return;
+      if (href === '#top') { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
       const target = document.querySelector(href);
       if (!target) return;
       e.preventDefault();

@@ -171,7 +171,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; font-weigh
 }
 
 .header__logo-img--yourt {
-  height: 22px;
+  height: 19px;
 }
 
 .header__logo-sep {
@@ -203,7 +203,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; font-weigh
 .nav__list {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
 }
 
 .nav__link {
@@ -3236,7 +3236,7 @@ html, body {
 .idea-label { font-size: 1.1rem; }
 .idea-textarea { border-radius: 16px; }
 /* Чипы направлений — крупнее (touch ≥44px) */
-.idea-chip { padding: 13px 20px; font-size: 0.95rem; }
+.idea-chip { padding: 8px 14px; font-size: 0.85rem; }
 
 /* 7 направлений — плоские минималистичные плитки */
 .activity-card {
@@ -3328,11 +3328,11 @@ html, body {
 .btn--outline-white:hover { background: rgba(255,255,255,0.14); border-color: #fff; color: #fff; }
 
 /* Философия +1 */
-.plus-one { background: #14213D; color: #fff; padding: 52px 0 40px; }
+.plus-one { background: #F4F6FA; color: var(--text-dark); padding: 60px 0; }
 .plus-one__lead { text-align: center; font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; margin-bottom: 26px; }
 .plus-one__row { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 34px; }
-.plus-one__item { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.85); font-size: 0.98rem; }
-.plus-one__sign { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; color: #6FCBF1; }
+.plus-one__item { display: flex; align-items: center; gap: 10px; color: var(--text-mid); font-size: 0.98rem; }
+.plus-one__sign { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; color: #009FE3; }
 
 @media (max-width: 560px) {
   .plus-one__row { flex-direction: column; align-items: flex-start; max-width: 320px; margin: 0 auto; }
@@ -3486,3 +3486,6 @@ html, body {
   .footer__inner { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 30px; }
   .footer__col { align-items: center; }
 }
+
+/* ── Фиксы по ревью ── */
+.idea-chip__dot { display: none; }
