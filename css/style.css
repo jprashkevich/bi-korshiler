@@ -3553,3 +3553,14 @@ html, body {
 .footer__cal { text-align: center; padding: 8px 0 28px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; }
 .footer__cal-btn { display: inline-flex; align-items: center; gap: 8px; }
 .footer__cal-btn i { font-size: 0.95em; }
+
+/* ── Рамка телефона со скрином календаря ────────── */
+.phone-frame {
+  width: 248px; max-width: 100%; margin: 0 auto;
+  background: #0d0d12; border-radius: 34px; padding: 9px;
+  box-shadow: 0 30px 70px rgba(16,26,69,0.45); border: 1px solid rgba(255,255,255,0.14);
+}
+.phone-frame__notch { width: 78px; height: 5px; background: #34353d; border-radius: 3px; margin: 5px auto 9px; }
+.phone-frame__screen { border-radius: 26px; overflow: hidden; background: #000; }
+.phone-frame__screen img { width: 100%; display: block; }
+.biglife-card__preview { display: flex; justify-content: center; }
