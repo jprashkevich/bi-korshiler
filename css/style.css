@@ -3513,3 +3513,7 @@ html, body {
   .biglife-card { grid-template-columns: 1fr; padding: 36px 28px; gap: 28px; }
   .biglife-card__visual { min-height: 130px; }
 }
+
+/* ── Логотип BIG Life в шапке + баннере ─────────── */
+.header__logo-img--biglife { height: 38px; max-width: none; }
+.biglife-card__logo-img { max-width: 230px; width: 100%; height: auto; }
