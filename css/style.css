@@ -3564,3 +3564,14 @@ html, body {
 .phone-frame__screen { border-radius: 26px; overflow: hidden; background: #000; }
 .phone-frame__screen img { width: 100%; display: block; }
 .biglife-card__preview { display: flex; justify-content: center; }
+
+/* ── Переключатель языка вынесен из меню в шапку ── */
+.nav { margin-left: auto; }
+/* Переключатель языка — плавающая кнопка на странице */
+.header__lang {
+  position: fixed; bottom: 22px; right: 22px; z-index: 1100;
+  display: flex; align-items: center; gap: 5px;
+  background: #fff; border-radius: 50px; padding: 8px 15px;
+  box-shadow: 0 10px 28px rgba(16,26,69,0.22); border: 1px solid #E2E6EE;
+}
+.header__lang .lang-btn { font-size: 0.82rem; }

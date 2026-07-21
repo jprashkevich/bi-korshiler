@@ -36,11 +36,6 @@
           <li><a href="#" class="nav__link" id="bizNavLink" data-kz="Бизнеске">Для бизнеса</a></li>
           <li><a href="https://community.bi.group/" target="_blank" rel="noopener" class="nav__link nav__link--cal" data-kz="Белсенділік күнтізбесі">Календарь активностей</a></li>
           <li><a href="#idea" class="nav__link nav__link--cta" data-kz="Идея ұсыну">Предложить идею</a></li>
-          <li class="nav__lang-switcher">
-            <button class="lang-btn" data-lang-btn="kz">ҚАЗ</button>
-            <span class="lang-sep">|</span>
-            <button class="lang-btn lang-btn--active" data-lang-btn="ru">РУ</button>
-          </li>
         </ul>
       </nav>
 
@@ -49,6 +44,13 @@
       </button>
     </div>
   </header>
+
+  <!-- Плавающий переключатель языка (вне header — иначе backdrop-filter ломает fixed) -->
+  <div class="header__lang">
+    <button class="lang-btn" data-lang-btn="kz">ҚАЗ</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn lang-btn--active" data-lang-btn="ru">РУ</button>
+  </div>
 
   <!-- ═══════════════════════════════════════════════
        HERO — радикальный (bi.group-стиль, фото-фон)
