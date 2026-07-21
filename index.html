@@ -23,6 +23,8 @@
     <div class="container header__inner">
       <a href="#top" class="header__logo">
         <img src="images/big-life-logo.png" alt="BIG Life" class="header__logo-img header__logo-img--biglife" />
+        <span class="header__logo-sep">×</span>
+        <img src="images/yourt-logo.png" alt="Yourt" class="header__logo-img header__logo-img--yourt" />
       </a>
 
       <nav class="nav" id="mainNav">
@@ -32,6 +34,7 @@
           <li><a href="#stories" class="nav__link" data-kz="Тарихтар">Истории</a></li>
           <li><a href="#faq" class="nav__link" data-kz="Сұрақтар">Вопросы</a></li>
           <li><a href="#" class="nav__link" id="bizNavLink" data-kz="Бизнеске">Для бизнеса</a></li>
+          <li><a href="https://community.bi.group/" target="_blank" rel="noopener" class="nav__link nav__link--cal" data-kz="Белсенділік күнтізбесі">Календарь активностей</a></li>
           <li><a href="#idea" class="nav__link nav__link--cta" data-kz="Идея ұсыну">Предложить идею</a></li>
           <li class="nav__lang-switcher">
             <button class="lang-btn" data-lang-btn="kz">ҚАЗ</button>
@@ -527,16 +530,24 @@
     <div class="container">
       <div class="biglife-card fade-in">
         <div class="biglife-card__text">
-          <p class="biglife-card__eyebrow" data-kz="Цифрлық қауымдастық">Цифровое сообщество</p>
-          <h2 class="biglife-card__title" data-kz="BIG Life — BI Group қауымдастығы онлайн">BIG Life — сообщество BI Group онлайн</h2>
-          <p class="biglife-card__desc" data-kz="Аула белсенділіктері қосымшада жалғасады: қызығушылық бойынша топтар, іс-шара анонстары және барлық BI Group ТК көршілері — бір жерде.">Дворовые активности продолжаются в приложении: группы по интересам, анонсы событий и соседи со всех ЖК BI Group — в одном месте.</p>
+          <p class="biglife-card__eyebrow" data-kz="Белсенділік күнтізбесі">Календарь активностей</p>
+          <h2 class="biglife-card__title" data-kz="BI Group-тың барлық белсенділіктері — бір күнтізбеде">Все активности BI Group — в одном календаре</h2>
+          <p class="biglife-card__desc" data-kz="ТК-де және маңайда не өтіп жатқанын көріңіз — спорт, клубтар, кездесулер — және бірнеше басумен қосылыңыз.">Смотрите, что проходит в вашем ЖК и рядом — спорт, клубы, встречи, — и присоединяйтесь в пару кликов.</p>
           <a href="https://community.bi.group/" target="_blank" rel="noopener" class="btn btn--sky btn--lg biglife-card__btn">
-            <span data-kz="BIG Life-қа өту">Перейти в BIG Life</span> <i class="fas fa-arrow-right"></i>
+            <span data-kz="Күнтізбені ашу">Открыть Календарь активностей</span> <i class="fas fa-arrow-right"></i>
           </a>
         </div>
-        <div class="biglife-card__visual">
-          <img src="images/big-life-logo-white.png" alt="BIG Life" class="biglife-card__logo-img" />
-          <span class="biglife-card__logo-note" data-kz="community.bi.group">community.bi.group</span>
+        <div class="biglife-card__preview">
+          <div class="browser-frame">
+            <div class="browser-bar">
+              <span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span>
+              <span class="browser-url">community.bi.group</span>
+            </div>
+            <div class="browser-screen">
+              <i class="far fa-calendar-days"></i>
+              <span class="browser-screen__note" data-kz="Күнтізбе бетінің превьюі — скриншотты қосамыз">Превью страницы календаря<br>(добавим скриншот)</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -619,6 +630,11 @@
         </a>
       </div>
     </div>
+      <div class="footer__cal">
+        <a href="https://community.bi.group/" target="_blank" rel="noopener" class="btn btn--sky footer__cal-btn">
+          <i class="far fa-calendar-days"></i> <span data-kz="Белсенділік күнтізбесі">Календарь активностей</span>
+        </a>
+      </div>
     <div class="footer__bottom">
       <div class="container footer__bottom-inner">
         <p>© 2026 BI Group · BI Service</p>
