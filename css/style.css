@@ -3585,3 +3585,16 @@ html, body {
   display: flex; align-items: center; justify-content: center; font-size: 1.7rem; margin-bottom: 20px;
 }
 .support3-body { padding: 0; }
+
+/* ── Значок приложения BIG App в блоке календаря ── */
+.biglife-card__app { display: flex; align-items: center; gap: 13px; margin-bottom: 22px; }
+.biglife-card__app-icon {
+  width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+}
+.biglife-card__app-meta { display: flex; flex-direction: column; line-height: 1.25; }
+.biglife-card__app-meta strong { font-size: 1.12rem; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+.biglife-card__app-meta span {
+  font-size: 0.78rem; color: rgba(255,255,255,0.72);
+  text-transform: uppercase; letter-spacing: 0.09em; font-weight: 600; margin-top: 2px;
+}
