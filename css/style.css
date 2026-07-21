@@ -3626,3 +3626,27 @@ html, body {
   .bento { gap: 10px; grid-auto-rows: 128px; }
   .bento__cap { font-size: 0.8rem; padding: 20px 12px 10px; }
 }
+
+/* ── «Что говорит наука» — доказательная база ── */
+#science { background: var(--bg-warm); }
+.science-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 26px; }
+.science-card {
+  background: var(--white); border: 1px solid #E6EAF1; border-radius: var(--radius-lg);
+  padding: 34px 32px; box-shadow: var(--shadow);
+}
+.science-card__num {
+  font-family: var(--font-display); font-size: 3.4rem; font-weight: 800;
+  color: var(--orange); line-height: 1; margin-bottom: 18px; letter-spacing: -0.02em;
+}
+.science-card__num span { font-size: 1.05rem; color: var(--gold); font-weight: 700; letter-spacing: 0; }
+.science-card__text { color: var(--text-mid); line-height: 1.62; margin-bottom: 16px; font-size: 1.02rem; }
+.science-card__text b { color: var(--text-dark); font-weight: 800; }
+.science-card__src { font-size: 0.76rem; color: var(--text-light); border-top: 1px solid #EDF0F5; padding-top: 13px; margin: 0; }
+.science-punch {
+  text-align: center; background: linear-gradient(135deg, #1B2A6E, #009FE3); color: #fff;
+  border-radius: var(--radius-lg); padding: 34px 30px;
+  font-size: clamp(1.1rem, 2vw, 1.35rem); font-weight: 600; line-height: 1.5;
+}
+.science-punch p { margin: 0; max-width: 780px; margin-inline: auto; }
+.science-punch b { font-weight: 800; }
+@media (max-width: 760px) { .science-grid { grid-template-columns: 1fr; } }
