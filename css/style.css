@@ -3112,23 +3112,23 @@ html, body {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 14px; border: 1px dashed rgba(255,255,255,0.32); border-radius: 50px;
 }
-.rhero__inner { position: relative; z-index: 3; max-width: 900px; }
+.rhero__inner { position: relative; z-index: 3; max-width: 840px; }
 .rhero__eyebrow {
   letter-spacing: 0.18em; font-size: 0.85rem; font-weight: 700;
-  color: #6FCBF1; margin-bottom: 26px; text-transform: uppercase;
+  color: #6FCBF1; margin-bottom: 16px; text-transform: uppercase;
 }
 .rhero__title {
   font-family: var(--font-display);
-  font-size: clamp(2.6rem, 6.2vw, 5.2rem);
-  line-height: 1.02; font-weight: 800; letter-spacing: -0.02em;
-  margin-bottom: 26px; color: #fff;
+  font-size: clamp(2.3rem, 5.4vw, 4.4rem);
+  line-height: 1.04; font-weight: 800; letter-spacing: -0.02em;
+  margin-bottom: 16px; color: #fff;
 }
 .rhero__lead {
   font-size: clamp(1.05rem, 1.6vw, 1.3rem);
-  max-width: 560px; color: rgba(255,255,255,0.82);
-  margin-bottom: 40px; line-height: 1.5;
+  max-width: 540px; color: rgba(255,255,255,0.82);
+  margin-bottom: 30px; line-height: 1.5;
 }
-.rhero__actions { margin-bottom: 64px; }
+.rhero__actions { margin-bottom: 40px; }
 .rhero__stats { display: flex; gap: 56px; flex-wrap: wrap; }
 .rhero__stat { display: flex; flex-direction: column; gap: 6px; }
 .rhero__stat-num {
@@ -3368,9 +3368,9 @@ html, body {
 /* ── Hero subhead + интро-блок ──────────────────── */
 .rhero__subhead {
   font-family: var(--font-display);
-  font-size: clamp(1.2rem, 2.2vw, 1.7rem);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
   font-weight: 700; color: #6FCBF1;
-  margin: -8px 0 22px; line-height: 1.25;
+  margin: -4px 0 16px; line-height: 1.25;
 }
 .intro-block { background: var(--white); padding: 76px 0; text-align: center; }
 .intro-block__text {
@@ -3490,3 +3490,26 @@ html, body {
 
 /* ── Фиксы по ревью ── */
 .idea-chip__dot { display: none; }
+
+
+/* ── BIG Life — превью-карточка ─────────────────── */
+.biglife-card {
+  display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: 40px;
+  background: linear-gradient(130deg, #101A45 0%, #1B2A6E 60%, #009FE3 160%);
+  border-radius: 28px; padding: 48px 52px; color: #fff; overflow: hidden;
+}
+.biglife-card__eyebrow { letter-spacing: 0.16em; text-transform: uppercase; font-size: 0.82rem; font-weight: 700; color: #6FCBF1; margin-bottom: 14px; }
+.biglife-card__title { font-size: clamp(1.6rem, 3vw, 2.3rem); line-height: 1.1; color: #fff; margin-bottom: 16px; }
+.biglife-card__desc { color: rgba(255,255,255,0.82); line-height: 1.6; margin-bottom: 28px; max-width: 520px; }
+.biglife-card__btn i { margin-left: 6px; font-size: 0.9em; }
+.biglife-card__visual {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 40px 24px; min-height: 180px;
+}
+.biglife-card__logo { font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; color: #fff; letter-spacing: -0.01em; }
+.biglife-card__logo-note { font-size: 0.85rem; color: rgba(255,255,255,0.55); }
+@media (max-width: 820px) {
+  .biglife-card { grid-template-columns: 1fr; padding: 36px 28px; gap: 28px; }
+  .biglife-card__visual { min-height: 130px; }
+}
