@@ -108,8 +108,8 @@
         <div class="nsplit__media fade-in">
           <div class="about-slides" id="aboutSlides">
             <div class="about-slide about-slide--active" style="background-image:url('images/about-person.jpg')"></div>
-            <div class="about-slide about-slide--empty"><span class="about-slide__note"><i class="far fa-image"></i> <span data-kz="Фото 2">Фото 2</span></span></div>
-            <div class="about-slide about-slide--empty"><span class="about-slide__note"><i class="far fa-image"></i> <span data-kz="Фото 3">Фото 3</span></span></div>
+            <div class="about-slide" style="background-image:url('images/about-2.jpg')"></div>
+            <div class="about-slide" style="background-image:url('images/about-3.jpg')"></div>
           </div>
           <div class="about-dots" id="aboutDots">
             <button class="about-dot about-dot--active" aria-label="Фото 1"></button>
@@ -192,28 +192,28 @@
       </div>
       <div class="perks-grid">
         <div class="support3-card fade-in">
-          <div class="support3-photo"><span class="photo-note"><i class="far fa-image"></i> <span data-kz="Фото: Yourt кеңістігі">Фото: пространство Yourt</span></span></div>
+          <div class="support3-icon"><i class="fas fa-ticket"></i></div>
           <div class="support3-body">
             <h3 data-kz="Yourt абонементі">Абонемент в Yourt</h3>
             <p data-kz="Қауымдастықтар туып, өмір сүретін кеңістік — сіз үшін жеке қолжетімділікпен.">Пространство, где сообщества рождаются и живут, — с личным доступом для вас.</p>
           </div>
         </div>
         <div class="support3-card fade-in">
-          <div class="support3-photo"><span class="photo-note"><i class="far fa-image"></i> <span data-kz="Фото: BI Group × Yourt мерчі">Фото: мерч BI Group × Yourt</span></span></div>
+          <div class="support3-icon"><i class="fas fa-shirt"></i></div>
           <div class="support3-body">
             <h3 data-kz="BI Group × Yourt мерчі">Мерч BI Group × Yourt</h3>
             <p data-kz="Киюге жағымды фирмалық заттар — және сіз командада екеніңіз бірден көрінеді.">Фирменные вещи, которые приятно носить, — и сразу видно, что вы в команде.</p>
           </div>
         </div>
         <div class="support3-card fade-in">
-          <div class="support3-photo"><span class="photo-note"><i class="far fa-image"></i> <span data-kz="Фото: жабық іс-шара">Фото: закрытое событие</span></span></div>
+          <div class="support3-icon"><i class="fas fa-champagne-glasses"></i></div>
           <div class="support3-body">
             <h3 data-kz="BI Group жабық іс-шаралары">Закрытые события BI Group</h3>
             <p data-kz="Компания кездесулеріне шақыру — жаңа таныстар, идеялар және мүмкіндіктер.">Приглашения на встречи компании — новые знакомства, идеи и возможности.</p>
           </div>
         </div>
         <div class="support3-card fade-in">
-          <div class="support3-photo"><span class="photo-note"><i class="far fa-image"></i> <span data-kz="Фото: Амбассадорды марапаттау">Фото: награждение Амбассадора</span></span></div>
+          <div class="support3-icon"><i class="fas fa-award"></i></div>
           <div class="support3-body">
             <h3 data-kz="Мәртебе мен мойындау">Статус и признание</h3>
             <p data-kz="Ауладада да, компанияда да білетін Көршілік Амбассадоры атағы.">Имя Амбассадора Добрососедства, которое знают и во дворе, и в компании.</p>
@@ -385,24 +385,39 @@
         <h2 class="section__title" data-kz="Аулаларымыздың өмірі">Жизнь наших дворов</h2>
         <p class="section__subtitle" data-kz="Спорт, мәдениет, білім, балалар — барлық буын үшін">Спорт, культура, образование, дети — для всех поколений</p>
       </div>
-      <div class="gallery-slider fade-in" id="gallerySlides">
-        <figure class="gslide gslide--active">
-          <img src="images/gallery-1.jpg" alt="Клуб чтения во дворе" loading="lazy" />
-          <figcaption class="gslide__cap" data-kz="Оқу клубы">Клуб чтения</figcaption>
+      <div class="bento fade-in">
+        <figure class="bento__item bento__item--big">
+          <img src="images/gal-1.jpg" alt="Пенная вечеринка во дворе" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Аулада көбік кеші">Пенная вечеринка</figcaption>
         </figure>
-        <figure class="gslide">
-          <img src="images/gallery-2.jpg" alt="Шахматный турнир" loading="lazy" />
-          <figcaption class="gslide__cap" data-kz="Шахмат турнирі">Шахматный турнир</figcaption>
+        <figure class="bento__item">
+          <img src="images/gal-2.jpg" alt="Йога во дворе" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Аулада йога">Йога во дворе</figcaption>
         </figure>
-        <figure class="gslide">
-          <img src="images/gallery-3.jpg" alt="Коворкинг и учёба" loading="lazy" />
-          <figcaption class="gslide__cap" data-kz="Коворкинг пен оқу">Коворкинг и учёба</figcaption>
+        <figure class="bento__item">
+          <img src="images/gal-3.jpg" alt="Танцы для детей" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Билер">Танцы</figcaption>
         </figure>
-      </div>
-      <div class="gallery-dots" id="galleryDots">
-        <button class="g-dot g-dot--active" aria-label="Фото 1"></button>
-        <button class="g-dot" aria-label="Фото 2"></button>
-        <button class="g-dot" aria-label="Фото 3"></button>
+        <figure class="bento__item">
+          <img src="images/gal-4.jpg" alt="Шахматы" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Шахмат">Шахматы</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-5.jpg" alt="Творческое занятие" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Шығармашылық">Творчество</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-6.jpg" alt="Праздник во дворе" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Аулада мереке">Праздник во дворе</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-7.jpg" alt="Чаепитие соседей" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Көрші шайы">Чаепитие</figcaption>
+        </figure>
+        <figure class="bento__item bento__item--wide">
+          <img src="images/gal-8.jpg" alt="Спорт и зарядка" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Спорт және жаттығу">Спорт и зарядка</figcaption>
+        </figure>
       </div>
     </div>
   </section>
