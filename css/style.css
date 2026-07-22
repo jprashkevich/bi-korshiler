@@ -3669,3 +3669,48 @@ html, body {
 .science-punch { background: none; color: var(--text-dark); padding: 6px 0 0; border-radius: 0; }
 .science-punch p { font-size: clamp(1.15rem, 2.1vw, 1.42rem); font-weight: 600; }
 .science-punch b { color: var(--orange); font-weight: 800; }
+
+/* ── v2: Вызовы времени (тёмная секция) ── */
+.section--dark { background: #14213D; }
+.section__title--light { color: #fff; }
+.section__subtitle--light { color: rgba(255,255,255,0.7); }
+.challenge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.challenge-card {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px; padding: 30px 26px;
+}
+.challenge-card__num {
+  font-family: var(--font-display); font-size: 3rem; font-weight: 800;
+  color: #F97316; line-height: 1; margin-bottom: 14px;
+}
+.challenge-card__label { color: #fff; font-weight: 700; font-size: 1.02rem; line-height: 1.4; margin-bottom: 12px; }
+.challenge-card__desc { color: rgba(255,255,255,0.62); font-size: 0.9rem; line-height: 1.5; margin: 0; }
+.challenge-who {
+  text-align: center; margin: 32px auto 0; max-width: 620px;
+  color: #fff; font-size: 1.18rem; font-weight: 600; line-height: 1.45;
+  padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.14);
+}
+@media (max-width: 900px) { .challenge-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .challenge-grid { grid-template-columns: 1fr; } }
+
+/* ── v2: Почему BI (миссия) ── */
+.why-block { max-width: 820px; margin: 0 auto; text-align: center; }
+.why-lead { font-size: clamp(1.12rem, 2vw, 1.38rem); line-height: 1.6; color: var(--text-mid); margin-bottom: 32px; }
+.why-lead b { color: var(--text-dark); font-weight: 800; }
+.why-quote {
+  font-family: var(--font-display); font-size: clamp(1.35rem, 2.8vw, 1.9rem); font-weight: 800;
+  line-height: 1.35; color: var(--orange); border: 0; margin: 0; padding: 30px 0 0;
+  border-top: 2px solid #E6EAF1; letter-spacing: -0.01em;
+}
+/* ── v2: Что мы развиваем (6 направлений) ── */
+.directions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.dir-card { background: var(--white); border: 1px solid #E6EAF1; border-radius: 18px; padding: 30px 26px; box-shadow: var(--shadow); }
+.dir-card__ic {
+  width: 58px; height: 58px; border-radius: 15px; margin-bottom: 18px;
+  background: linear-gradient(135deg, #EAF2FC, #DCEBFB); color: var(--gold);
+  display: flex; align-items: center; justify-content: center; font-size: 1.55rem;
+}
+.dir-card h3 { font-size: 1.14rem; margin: 0 0 8px; color: var(--text-dark); }
+.dir-card p { font-size: 0.95rem; color: var(--text-mid); line-height: 1.5; margin: 0; }
+@media (max-width: 900px) { .directions-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .directions-grid { grid-template-columns: 1fr; } }

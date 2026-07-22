@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ru" data-lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Зачем BI Group развивает соседство — Community</title>
+  <meta name="description" content="Станьте Амбассадором добрососедства BI Group. Предложите идею соседской активности — поможем провести: оборудование, помещения Yourt, продвижение, обучение и поддержка личного бренда." />
+
+  <!-- Fonts: Gotham + TT Firs Neue подключены локально в css/style.css (@font-face) -->
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       HEADER / NAVIGATION
+  ═══════════════════════════════════════════════ -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="#top" class="header__logo">
+        <img src="images/big-life-logo.png" alt="BIG Life" class="header__logo-img header__logo-img--biglife" />
+        <span class="header__logo-sep">×</span>
+        <img src="images/yourt-logo.png" alt="Yourt" class="header__logo-img header__logo-img--yourt" />
+      </a>
+
+      <nav class="nav" id="mainNav">
+        <ul class="nav__list">
+          <li><a href="#about" class="nav__link" data-kz="Қауымдастық">Сообщество</a></li>
+          <li><a href="#support" class="nav__link" data-kz="Қолдау">Поддержка</a></li>
+          <li><a href="#stories" class="nav__link" data-kz="Тарихтар">Истории</a></li>
+          <li><a href="#faq" class="nav__link" data-kz="Сұрақтар">Вопросы</a></li>
+          <li><a href="#" class="nav__link" id="bizNavLink" data-kz="Бизнеске">Для бизнеса</a></li>
+          <li><a href="https://community.bi.group/" target="_blank" rel="noopener" class="nav__link nav__link--cal" data-kz="Белсенділік күнтізбесі">Календарь активностей</a></li>
+          <li><a href="#idea" class="nav__link nav__link--cta" data-kz="Идея ұсыну">Предложить идею</a></li>
+        </ul>
+      </nav>
+
+      <button class="burger" id="burger" aria-label="Меню">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Плавающий переключатель языка (вне header — иначе backdrop-filter ломает fixed) -->
+  <div class="header__lang">
+    <button class="lang-btn" data-lang-btn="kz">ҚАЗ</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn lang-btn--active" data-lang-btn="ru">РУ</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       HERO — радикальный (bi.group-стиль, фото-фон)
+  ═══════════════════════════════════════════════ -->
+  <section class="rhero" id="hero">
+    <div class="rhero__slides" id="rheroSlides">
+      <div class="rhero__slide rhero__slide--active" style="background-image:url('images/hero-1.jpg')"></div>
+      <div class="rhero__slide" style="background-image:url('images/hero-2.jpg')"></div>
+      <div class="rhero__slide" style="background-image:url('images/hero-3.jpg')"></div>
+      <div class="rhero__slide" style="background-image:url('images/hero-4.jpg')"></div>
+    </div>
+    <div class="container rhero__inner">
+      <p class="rhero__eyebrow" data-kz="BI Group · Community">BI Group · Community</p>
+      <h1 class="rhero__title" data-kz="Бұрынғыдан көп сөйлесеміз.<br>Бірақ ешқашан болмағандай жалғызбыз">Общаемся больше, чем когда-либо.<br>И одиноки как никогда</h1>
+      <p class="rhero__subhead" data-kz="ДДҰ жалғыздықты денсаулыққа қауіп деп таныды">ВОЗ признала одиночество угрозой здоровью</p>
+      <p class="rhero__lead" data-kz="BI Group бұған өзінше жауап береді — көршілер танысып, достасып, бір-бірін қолдайтын орта жасайды.">BI Group отвечает на это по-своему — создаёт среду, где соседи знакомятся, дружат и поддерживают друг друга.</p>
+      <div class="rhero__actions">
+        <a href="#challenges" class="btn btn--lg btn--sky">
+          <span data-kz="Біз мұны қалай өзгертеміз">Как мы это меняем</span> <i class="fas fa-arrow-down"></i>
+        </a>
+      </div>
+    </div>
+    <div class="rhero__dots" id="rheroDots">
+      <button class="rhero__dot rhero__dot--active" aria-label="Слайд 1"></button>
+      <button class="rhero__dot" aria-label="Слайд 2"></button>
+      <button class="rhero__dot" aria-label="Слайд 3"></button>
+      <button class="rhero__dot" aria-label="Слайд 4"></button>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ВЫЗОВЫ ВРЕМЕНИ (данные из презентации ФЖ2026)
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--dark" id="challenges">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title section__title--light">Вызовы, с которыми мы живём</h2>
+        <p class="section__subtitle section__subtitle--light">Технологий стало больше, а тепла между людьми — меньше</p>
+      </div>
+      <div class="challenge-grid">
+        <div class="challenge-card fade-in">
+          <div class="challenge-card__num">56%</div>
+          <p class="challenge-card__label">детей в Казахстане проводят в интернете больше 4 часов в день</p>
+          <p class="challenge-card__desc">Разрыв социализации: соцсети растят тревожность и депрессию у молодёжи</p>
+        </div>
+        <div class="challenge-card fade-in">
+          <div class="challenge-card__num">20%</div>
+          <p class="challenge-card__label">пенсионеров Казахстана одиноки</p>
+          <p class="challenge-card__desc">Одиночество повышает риск ранней смерти на&nbsp;30%, деменции — на&nbsp;50%</p>
+        </div>
+        <div class="challenge-card fade-in">
+          <div class="challenge-card__num">75%</div>
+          <p class="challenge-card__label">школьников в стране страдают гиподинамией</p>
+          <p class="challenge-card__desc">Сидячий образ жизни — причина сердечно-сосудистых и других болезней</p>
+        </div>
+        <div class="challenge-card fade-in">
+          <div class="challenge-card__num">22%</div>
+          <p class="challenge-card__label">казахстанцев склонны доверять друг другу</p>
+          <p class="challenge-card__desc">Эрозия доверия: страна среди тех, где доверие между людьми низкое</p>
+        </div>
+      </div>
+      <p class="challenge-who">ВОЗ признала одиночество серьёзной угрозой общественному здоровью</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ПОЧЕМУ ЗА ЭТО ВЗЯЛСЯ BI GROUP
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--white" id="why">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title">Почему за это взялся BI&nbsp;Group</h2>
+      </div>
+      <div class="why-block fade-in">
+        <p class="why-lead">BI&nbsp;Group строит не просто дома — мы отвечаем за то, каково в них жить. Поэтому идём <b>от сервиса к экосистеме добрососедства</b>: не только качество дома, но и тепло между людьми в нём.</p>
+        <blockquote class="why-quote">Безопасность и комфорт начинаются не с запертой двери, а со знакомства и взаимопонимания с соседями</blockquote>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЧТО ГОВОРИТ НАУКА — доказательная база (моаи + Гарвард)
+  ═══════════════════════════════════════════════ -->
+  <section class="section" id="science">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Жаныңыздағы өз ортаңыз не үшін керек">Зачем вам свой круг рядом</h2>
+        <p class="section__subtitle" data-kz="Үйде жылдар бойы тұрып, көршілерді танымауыңыз мүмкін. Ал денсаулық пен көңіл тыныштығы көбіне жаныңыздағы адамдарға байланысты.">Можно прожить в доме годами — и не знать соседей. А ведь от людей рядом напрямую зависит, насколько мы здоровы и спокойны.</p>
+      </div>
+      <div class="science-grid">
+        <div class="science-card fade-in">
+          <div class="science-card__photo"><img src="images/science-book.jpg" alt="Книга «Хорошая жизнь» — Роберт Вальдингер и Марк Шульц" loading="lazy" /></div>
+          <div class="science-card__num">85 <span data-kz="жыл">лет</span></div>
+          <p class="science-card__text" data-kz="Гарвард 85 жыл бойы мыңдаған адамды бақылады: өмірді жақсы ететін не? Ақша да, мансап та емес — жылы қарым-қатынас екен. Ондайы барлар сау әрі ұзақ өмір сүреді.">Гарвард 85 лет наблюдал за тысячами людей: что же делает жизнь хорошей? Оказалось — не деньги и не карьера, а тёплые отношения. У кого они есть — те здоровее и живут дольше.</p>
+          <p class="science-card__src" data-kz="Гарвардтың ересектер дамуы зерттеуі · «Жақсы өмір» кітабы">Гарвардское исследование развития взрослых · книга «Хорошая жизнь»</p>
+        </div>
+        <div class="science-card fade-in">
+          <div class="science-card__photo"><img src="images/science-moai.jpg" alt="Круг единомышленников — пример моаи" loading="lazy" /></div>
+          <div class="science-card__num">5–6 <span data-kz="адам">человек</span></div>
+          <p class="science-card__text" data-kz="Окинавада ұзақ жасайтындар кез келген жерден көп. Әрқайсысында моаи бар — 5–6 адамнан тұратын өз ортасы. Бұл — өмірдің әртүрлі кезеңінде қасыңызда болып, қолдау көрсететін пікірлестер.">На Окинаве долгожителей больше, чем где-либо. И у каждого есть <b>моаи</b> — свой круг на 5–6 человек. Это единомышленники, которые рядом с вами и поддерживают вас в разные периоды жизни.</p>
+          <p class="science-card__src" data-kz="«Көгілдір аймақтар», Дэн Бюттнер · National Geographic">«Голубые зоны», Дэн Бюттнер · National Geographic</p>
+        </div>
+      </div>
+      <div class="science-punch fade-in">
+        <p data-kz="Жүздеген дос керек емес — жаныңыздан өз бесеуіңізді тапсаңыз болды. Қауымдастық солардан басталады.">Сотни друзей не нужны — достаточно найти рядом <b>своих пятерых</b>. С них и начинается сообщество.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЧТО МЫ РАЗВИВАЕМ — 6 направлений (из презентации)
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--light" id="directions">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title">Что мы развиваем</h2>
+        <p class="section__subtitle">Шесть направлений тёплой и здоровой жизни рядом с домом</p>
+      </div>
+      <div class="directions-grid">
+        <div class="dir-card fade-in"><div class="dir-card__ic"><i class="fas fa-people-group"></i></div><h3>Добрососедство</h3><p>Соседи, которые знают и поддерживают друг друга</p></div>
+        <div class="dir-card fade-in"><div class="dir-card__ic"><i class="fas fa-heart-pulse"></i></div><h3>Долголетие</h3><p>Активное и здоровое долголетие вместо одиночества</p></div>
+        <div class="dir-card fade-in"><div class="dir-card__ic"><i class="fas fa-people-roof"></i></div><h3>Семья на первом месте</h3><p>Место, где семьям хорошо вместе</p></div>
+        <div class="dir-card fade-in"><div class="dir-card__ic"><i class="fas fa-lightbulb"></i></div><h3>Самореализация</h3><p>Пространство раскрыть себя и свои таланты</p></div>
+        <div class="dir-card fade-in"><div class="dir-card__ic"><i class="fas fa-person-running"></i></div><h3>Активный образ жизни</h3><p>Движение и спорт рядом с домом</p></div>
+        <div class="dir-card fade-in"><div class="dir-card__ic"><i class="fas fa-leaf"></i></div><h3>Эко-активности</h3><p>Забота о дворе, городе и природе вместе</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- КАРУСЕЛЬ ТИПОВ СООБЩЕСТВ -->
+  <section class="section section--light" id="clubs">
+    <div class="clubs-marquee">
+      <div class="clubs-track"><div class="club-chip"><i class="fas fa-venus"></i> <span data-kz="Әйелдер клубы">Женские клубы</span></div><div class="club-chip"><i class="fas fa-language"></i> <span data-kz="Спикинг-клубтар">Спикинг-клубы</span></div><div class="club-chip"><i class="fas fa-book-open"></i> <span data-kz="Кітап клубтары">Книжные клубы</span></div><div class="club-chip"><i class="fas fa-palette"></i> <span data-kz="Шығармашылық сабақтар">Творческие занятия</span></div><div class="club-chip"><i class="fas fa-dumbbell"></i> <span data-kz="Спорт сабақтары">Спортивные занятия</span></div><div class="club-chip"><i class="fas fa-person-walking"></i> <span data-kz="Серуендер">Прогулки</span></div><div class="club-chip"><i class="fas fa-puzzle-piece"></i> <span data-kz="Хобби-клубтар">Хобби-клубы</span></div><div class="club-chip"><i class="fas fa-dice"></i> <span data-kz="Үстел ойындары">Настольные игры</span></div><div class="club-chip"><i class="fas fa-lightbulb"></i> <span data-kz="Мастермайндтар">Мастермайнды</span></div><div class="club-chip"><i class="fas fa-fish"></i> <span data-kz="Балық аулау">Рыбалка</span></div><div class="club-chip"><i class="fas fa-venus"></i> <span data-kz="Әйелдер клубы">Женские клубы</span></div><div class="club-chip"><i class="fas fa-language"></i> <span data-kz="Спикинг-клубтар">Спикинг-клубы</span></div><div class="club-chip"><i class="fas fa-book-open"></i> <span data-kz="Кітап клубтары">Книжные клубы</span></div><div class="club-chip"><i class="fas fa-palette"></i> <span data-kz="Шығармашылық сабақтар">Творческие занятия</span></div><div class="club-chip"><i class="fas fa-dumbbell"></i> <span data-kz="Спорт сабақтары">Спортивные занятия</span></div><div class="club-chip"><i class="fas fa-person-walking"></i> <span data-kz="Серуендер">Прогулки</span></div><div class="club-chip"><i class="fas fa-puzzle-piece"></i> <span data-kz="Хобби-клубтар">Хобби-клубы</span></div><div class="club-chip"><i class="fas fa-dice"></i> <span data-kz="Үстел ойындары">Настольные игры</span></div><div class="club-chip"><i class="fas fa-lightbulb"></i> <span data-kz="Мастермайндтар">Мастермайнды</span></div><div class="club-chip"><i class="fas fa-fish"></i> <span data-kz="Балық аулау">Рыбалка</span></div></div>
+      <div class="clubs-track clubs-track--rev"><div class="club-chip"><i class="fas fa-futbol"></i> <span data-kz="Жанкүйерлер клубтары">Клубы болельщиков</span></div><div class="club-chip"><i class="fas fa-utensils"></i> <span data-kz="Аспаздық кештер">Кулинарные вечера</span></div><div class="club-chip"><i class="fas fa-person-hiking"></i> <span data-kz="Скандинавиялық жүру">Скандинавская ходьба</span></div><div class="club-chip"><i class="fas fa-spa"></i> <span data-kz="Йога және цигун">Йога и цигун</span></div><div class="club-chip"><i class="fas fa-music"></i> <span data-kz="Билер">Танцы</span></div><div class="club-chip"><i class="fas fa-chess-knight"></i> <span data-kz="Шахмат клубы">Шахматный клуб</span></div><div class="club-chip"><i class="fas fa-children"></i> <span data-kz="Ата-аналар клубы">Клуб родителей</span></div><div class="club-chip"><i class="fas fa-leaf"></i> <span data-kz="Эко-аула және сенбіліктер">Эко-двор и субботники</span></div><div class="club-chip"><i class="fas fa-film"></i> <span data-kz="Аулада кино">Кино во дворе</span></div><div class="club-chip"><i class="fas fa-person-running"></i> <span data-kz="Жүгіру клубы">Беговой клуб</span></div><div class="club-chip"><i class="fas fa-futbol"></i> <span data-kz="Жанкүйерлер клубтары">Клубы болельщиков</span></div><div class="club-chip"><i class="fas fa-utensils"></i> <span data-kz="Аспаздық кештер">Кулинарные вечера</span></div><div class="club-chip"><i class="fas fa-person-hiking"></i> <span data-kz="Скандинавиялық жүру">Скандинавская ходьба</span></div><div class="club-chip"><i class="fas fa-spa"></i> <span data-kz="Йога және цигун">Йога и цигун</span></div><div class="club-chip"><i class="fas fa-music"></i> <span data-kz="Билер">Танцы</span></div><div class="club-chip"><i class="fas fa-chess-knight"></i> <span data-kz="Шахмат клубы">Шахматный клуб</span></div><div class="club-chip"><i class="fas fa-children"></i> <span data-kz="Ата-аналар клубы">Клуб родителей</span></div><div class="club-chip"><i class="fas fa-leaf"></i> <span data-kz="Эко-аула және сенбіліктер">Эко-двор и субботники</span></div><div class="club-chip"><i class="fas fa-film"></i> <span data-kz="Аулада кино">Кино во дворе</span></div><div class="club-chip"><i class="fas fa-person-running"></i> <span data-kz="Жүгіру клубы">Беговой клуб</span></div></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ABOUT — повествовательный split-блок
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--white" id="about">
+    <div class="container">
+      <div class="nsplit">
+        <div class="nsplit__media fade-in">
+          <div class="about-slides" id="aboutSlides">
+            <div class="about-slide about-slide--active" style="background-image:url('images/about-person.jpg')"></div>
+            <div class="about-slide" style="background-image:url('images/about-2.jpg')"></div>
+            <div class="about-slide" style="background-image:url('images/about-3.jpg')"></div>
+          </div>
+          <div class="about-dots" id="aboutDots">
+            <button class="about-dot about-dot--active" aria-label="Фото 1"></button>
+            <button class="about-dot" aria-label="Фото 2"></button>
+            <button class="about-dot" aria-label="Фото 3"></button>
+          </div>
+        </div>
+        <div class="nsplit__body fade-in">
+          <p class="rhero__eyebrow" style="color:#009FE3" data-kz="Сіздің қауымдастығыңыз">Своё сообщество</p>
+          <h2 class="nsplit__title" data-kz="Қауымдастық — бұл сіздің адамдарыңыз">Сообщество — это ваши люди</h2>
+          <p class="nsplit__text" data-kz="Өз ауданымызда жылдар бойы тұрып, көршілердің көбін білмеуіміз мүмкін. Ал елестетіңіз: сіздің де, балаларыңыздың да ауласында достар пайда болады, ал сізде — жұмыста немесе туыстар арасында ғана емес, ниеттес адамдар. Өз ортаңыз, өз компанияңыз, бірге қызық адамдар. Осы идея жақын болса — BI Group Көршілік Амбассадоры болыңыз.">Мы можем жить в своём районе годами — и не знать большую часть соседей. А представьте: у вас и у ваших детей появляются друзья во дворе, а у вас — единомышленники не только на работе или среди родных. Свой круг, своя компания, люди, с которыми интересно. Если эта идея откликается — становитесь Амбассадором Добрососедства BI Group.</p>
+          <div class="nbenefits">
+            <div class="nbenefit">
+              <div class="nbenefit__icon"><i class="fas fa-users"></i></div>
+              <div>
+                <p class="nbenefit__title" data-kz="Өз ортаңыз — үй жанында">Свой круг рядом с домом</p>
+                <p class="nbenefit__text" data-kz="Қызығушылық бойынша ниеттес адамдар — тек әріптестер мен туыстар ғана емес.">Единомышленники по интересу — не только коллеги и родня.</p>
+              </div>
+            </div>
+            <div class="nbenefit">
+              <div class="nbenefit__icon"><i class="fas fa-child-reaching"></i></div>
+              <div>
+                <p class="nbenefit__title" data-kz="Балаларға да, сізге де достар">Друзья — и вам, и детям</p>
+                <p class="nbenefit__text" data-kz="Ауладағы балаларда ойнайтын дос, ал сізде — өз адамдарыңыз болады.">Двор, где у детей есть с кем играть, а у вас — свои люди.</p>
+              </div>
+            </div>
+            <div class="nbenefit">
+              <div class="nbenefit__icon"><i class="fas fa-hands-helping"></i></div>
+              <div>
+                <p class="nbenefit__title" data-kz="Толық қолдау">Вы не в одиночку</p>
+                <p class="nbenefit__text" data-kz="BI Service қасыңызда: ұйымдастыру, ақпарат және әдістеме жағынан.">BI Service рядом: организационно, информационно и методически.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 ВИДА ПОДДЕРЖКИ -->
+  <section class="section section--white" id="support">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Қауымдастықтарды қалай қолдаймыз">Как мы поддерживаем Сообщества</h2>
+      </div>
+      <div class="support3-grid">
+        <div class="support3-card fade-in">
+          <div class="support3-icon"><i class="fas fa-toolbox"></i></div>
+          <div class="support3-body">
+            <h3 data-kz="Ұйымдастыру жағынан">Организационно</h3>
+            <p data-kz="Yourt-та және аулаларда жабдық пен кеңістік: проектор, колонкалар, спорт мүкәммалы.">Оборудование и пространство в Yourt и во дворах: проектор, колонки, спортивный инвентарь.</p>
+          </div>
+        </div>
+        <div class="support3-card fade-in">
+          <div class="support3-icon"><i class="fas fa-bullhorn"></i></div>
+          <div class="support3-body">
+            <h3 data-kz="Ақпараттық қолдау">Информационно</h3>
+            <p data-kz="SMM, BIG App пен үй чаттарындағы анонстар — қауымдастығыңыз туралы білсін.">SMM, анонсы в BIG App и домовых чатах — чтобы о вашем сообществе узнали.</p>
+          </div>
+        </div>
+        <div class="support3-card fade-in">
+          <div class="support3-icon"><i class="fas fa-graduation-cap"></i></div>
+          <div class="support3-body">
+            <h3 data-kz="Әдістемелік қолдау">Методически</h3>
+            <p data-kz="Амбассадорларды оқыту және жеке кеңестер — өз қауымдастығыңыз бен жеке брендіңізді бастау және дамыту бойынша.">Обучение Амбассадоров и личные консультации — по запуску и развитию своего сообщества и личного бренда.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЧТО ВЫ ПОЛУЧАЕТЕ КАК АМБАССАДОР — личные бонусы
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--light" id="perks">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Амбассадор ретінде не аласыз">Что вы получаете как Амбассадор</h2>
+        <p class="section__subtitle" data-kz="Амбассадорларымызды осылай алғыстаймыз:">Чем мы благодарим наших Амбассадоров:</p>
+      </div>
+      <div class="perks-grid">
+        <div class="support3-card fade-in">
+          <div class="support3-icon"><i class="fas fa-ticket"></i></div>
+          <div class="support3-body">
+            <h3 data-kz="Yourt абонементі">Абонемент в Yourt</h3>
+            <p data-kz="Қауымдастықтар туып, өмір сүретін кеңістік — сіз үшін жеке қолжетімділікпен.">Пространство, где сообщества рождаются и живут, — с личным доступом для вас.</p>
+          </div>
+        </div>
+        <div class="support3-card fade-in">
+          <div class="support3-icon"><i class="fas fa-shirt"></i></div>
+          <div class="support3-body">
+            <h3 data-kz="BI Group × Yourt мерчі">Мерч BI Group × Yourt</h3>
+            <p data-kz="Киюге жағымды фирмалық заттар — және сіз командада екеніңіз бірден көрінеді.">Фирменные вещи, которые приятно носить, — и сразу видно, что вы в команде.</p>
+          </div>
+        </div>
+        <div class="support3-card fade-in">
+          <div class="support3-icon"><i class="fas fa-chalkboard-user"></i></div>
+          <div class="support3-body">
+            <h3 data-kz="BI Group жабық іс-шаралары">Закрытые события BI Group</h3>
+            <p data-kz="Компания кездесулеріне шақыру — жаңа таныстар, идеялар және мүмкіндіктер.">Приглашения на встречи компании — новые знакомства, идеи и возможности.</p>
+          </div>
+        </div>
+        <div class="support3-card fade-in">
+          <div class="support3-icon"><i class="fas fa-award"></i></div>
+          <div class="support3-body">
+            <h3 data-kz="Мәртебе мен мойындау">Статус и признание</h3>
+            <p data-kz="Ауладада да, компанияда да білетін Көршілік Амбассадоры атағы.">Имя Амбассадора Добрососедства, которое знают и во дворе, и в компании.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       IDEA BUILDER — КОНСТРУКТОР ЗАЯВКИ
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--white" id="idea">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Өз қауымдастығыңызды бастаңыз">Запустите своё сообщество</h2>
+        <p class="section__subtitle" data-kz="Идеядан қауымдастыққа дейін — үш қарапайым қадам">От идеи до сообщества — три простых шага</p>
+      </div>
+
+      <div class="nsteps">
+        <div class="nstep fade-in">
+          <div class="nstep__num">01</div>
+          <h3 class="nstep__title" data-kz="Идеяңызды ұсыныңыз">Предложите свою идею</h3>
+          <p class="nstep__text" data-kz="Идеяңызды екі ауыз сөзбен сипаттаңыз.">Опишите свою идею в двух словах.</p>
+        </div>
+        <div class="nstep fade-in">
+          <div class="nstep__num">02</div>
+          <h3 class="nstep__title" data-kz="WhatsApp-қа жіберіңіз">Отправьте в WhatsApp</h3>
+          <p class="nstep__text" data-kz="Координатор 2 жұмыс күні ішінде WhatsApp арқылы өзі хабарласып, толық мәліметтерді нақтылайды.">Координатор сам свяжется с вами в течение 2 рабочих дней по WhatsApp и уточнит детали.</p>
+        </div>
+        <div class="nstep fade-in">
+          <div class="nstep__num">03</div>
+          <h3 class="nstep__title" data-kz="Бірге өткіземіз">Проводим вместе</h3>
+          <p class="nstep__text" data-kz="Координатор жабдықпен, кеңістікпен, анонспен — және орнындағы бүкіл ұйымдастырумен көмектеседі.">Координатор поможет с оборудованием, помещением, анонсами — и всей организацией на месте.</p>
+        </div>
+      </div>
+
+      <div class="idea-builder fade-in">
+        <!-- Шаг 1: направление -->
+        <div class="idea-field">
+          <label class="idea-label">
+            <span class="idea-label__num">1</span>
+            <span data-kz="Бағытты таңдаңыз">Выберите направление</span>
+          </label>
+          <div class="idea-chips" id="ideaChips">
+            <button type="button" class="idea-chip" data-dir-ru="Эко и благоустройство" data-dir-kz="Эко және абаттандыру">
+              <span class="idea-chip__dot" style="background:#27AE60"></span><span data-kz="Эко">Эко</span>
+            </button>
+            <button type="button" class="idea-chip" data-dir-ru="Спорт" data-dir-kz="Спорт">
+              <span class="idea-chip__dot" style="background:#5DADE2"></span><span data-kz="Спорт">Спорт</span>
+            </button>
+            <button type="button" class="idea-chip" data-dir-ru="Детские активности" data-dir-kz="Балалар белсенділіктері">
+              <span class="idea-chip__dot" style="background:#E67E22"></span><span data-kz="Балалар">Дети</span>
+            </button>
+            <button type="button" class="idea-chip" data-dir-ru="Творчество" data-dir-kz="Шығармашылық">
+              <span class="idea-chip__dot" style="background:#F1C40F"></span><span data-kz="Шығармашылық">Творчество</span>
+            </button>
+            <button type="button" class="idea-chip" data-dir-ru="Культура" data-dir-kz="Мәдениет">
+              <span class="idea-chip__dot" style="background:#8E44AD"></span><span data-kz="Мәдениет">Культура</span>
+            </button>
+            <button type="button" class="idea-chip" data-dir-ru="Образование" data-dir-kz="Білім">
+              <span class="idea-chip__dot" style="background:#2980B9"></span><span data-kz="Білім">Образование</span>
+            </button>
+            <button type="button" class="idea-chip" data-dir-ru="Взаимовыручка" data-dir-kz="Өзара көмек">
+              <span class="idea-chip__dot" style="background:#E74C3C"></span><span data-kz="Өзара көмек">Взаимовыручка</span>
+            </button>
+            <button type="button" class="idea-chip" data-dir-ru="Другое" data-dir-kz="Басқа">
+              <span class="idea-chip__dot" style="background:#009FE3"></span><span data-kz="Басқа">Другое</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Шаг 2: описание идеи -->
+        <div class="idea-field">
+          <label class="idea-label" for="ideaText">
+            <span class="idea-label__num">2</span>
+            <span data-kz="Идеяңызды сипаттаңыз">Опишите вашу идею</span>
+          </label>
+          <textarea id="ideaText" class="idea-textarea" rows="4"
+            placeholder="Например: утренняя йога во дворе по выходным или книжный клуб по четвергам"
+            data-kz-ph="Мысалы: демалыс күндері аулада таңертеңгі йога немесе бейсенбі сайын кітап клубы"></textarea>
+        </div>
+
+        <button type="button" class="btn btn--whatsapp btn--lg btn--full" id="ideaSend">
+          <i class="fab fa-whatsapp"></i> <span data-kz="WhatsApp-қа жіберу">Отправить в WhatsApp</span>
+        </button>
+        <p class="idea-hint" id="ideaHint" data-kz="Дайын хабарламамен WhatsApp ашылады — «Жіберу» түймесін басу ғана қалады. Координатор 2 жұмыс күні ішінде жауап береді. Жеке деректерді жинамаймыз.">Откроется WhatsApp с готовым сообщением — останется нажать «Отправить». Координатор ответит в течение 2 рабочих дней. Личные данные мы не собираем.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ИСТОРИИ УСПЕХА  ⚠ ЗАГЛУШКИ — заменить реальными
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--white" id="stories">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Амбассадорларымыздың тарихы">Истории наших Амбассадоров</h2>
+        <p class="section__subtitle" data-kz="Өз қауымдастығын жинаған Амбассадорлар">Амбассадоры, которые собрали своё сообщество</p>
+      </div>
+      <div class="stories-grid">
+        <div class="story-card fade-in">
+          <div class="story-photo"><img src="images/story-act-1.jpg" alt="Скандинавская ходьба" loading="lazy" /></div>
+          <div class="story-card__body">
+            <p class="story-quote" data-kz="Скандинавиялық жүруге келді — енді Yourt Flora-да қазақ тілі спикинг-клубын жүргізеді.">Пришла на скандинавскую ходьбу — теперь ведёт спикинг-клуб казахского языка в Yourt Flora.</p>
+            <div class="story-card__top">
+              <div class="story-avatar"><img src="images/story-1.jpg" alt="Шолпан Сейилхановна" loading="lazy" /></div>
+              <div>
+                <p class="story-name">Шолпан Сейилхановна</p>
+                <p class="story-meta" data-kz="Yourt Flora · Қазақ тілі">Yourt Flora · Казахский язык</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="story-card fade-in">
+          <div class="story-photo"><img src="images/story-act-2.jpg" alt="Настольный теннис для соседей" loading="lazy" /></div>
+          <div class="story-card__body">
+            <p class="story-quote" data-kz="Шахмат турнирлеріне барды — енді өзі көршілерге теннис өткізіп, басқаларын да ертіп келді.">Ходил на шахматные турниры — теперь сам проводит теннис для соседей и привёл других.</p>
+            <div class="story-card__top">
+              <div class="story-avatar"><img src="images/story-2.jpg" alt="Алмас" loading="lazy" /></div>
+              <div>
+                <p class="story-name">Алмас</p>
+                <p class="story-meta" data-kz="Ұзақ өмір · Теннис">Долгожители · Теннис</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="story-card fade-in">
+          <div class="story-photo"><img src="images/story-act-3.jpg" alt="Хор соседей на сцене" loading="lazy" /></div>
+          <div class="story-card__body">
+            <p class="story-quote" data-kz="Ұзақ өмір кездесулерінен бастады — Yourt Arena-да көршілер хорын жинады.">Начала с встреч Долгожителей — и собрала хор соседей в Yourt Arena.</p>
+            <div class="story-card__top">
+              <div class="story-avatar"><img src="images/story-3.jpg" alt="Кенжетай апа" loading="lazy" /></div>
+              <div>
+                <p class="story-name">Кенжетай апа</p>
+                <p class="story-meta" data-kz="Yourt Arena · Хор">Yourt Arena · Хор</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="story-card fade-in">
+          <div class="story-photo"><img src="images/story-act-4.jpg" alt="Мастер-класс по лепке" loading="lazy" /></div>
+          <div class="story-card__body">
+            <p class="story-quote" data-kz="Yourt Arena Garden-нен қолөнерші — екі ауланың балаларына сурет пен мүсін сабақтарын жүргізеді.">Ремесленница из Yourt Arena Garden — ведёт классы рисования и лепки для детей двух дворов.</p>
+            <div class="story-card__top">
+              <div class="story-avatar"><img src="images/story-4.jpg" alt="Гульмира" loading="lazy" /></div>
+              <div>
+                <p class="story-name">Гульмира</p>
+                <p class="story-meta" data-kz="Yourt Arena Garden · Шығармашылық">Yourt Arena Garden · Творчество</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stories-cta fade-in">
+        <a href="#idea" class="btn btn--primary btn--lg">
+          <i class="fas fa-user-plus"></i> <span data-kz="Қосылу">Присоединиться</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       BIG LIFE — цифровое сообщество (превью-карточка)
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--white" id="biglife">
+    <div class="container">
+      <div class="biglife-card fade-in">
+        <div class="biglife-card__text">
+          <div class="biglife-card__app">
+            <img src="images/bigapp-icon.png" alt="BIG App" class="biglife-card__app-icon" />
+            <div class="biglife-card__app-meta">
+              <strong>BIG App</strong>
+              <span data-kz="Белсенділік күнтізбесі">Календарь активностей</span>
+            </div>
+          </div>
+          <h2 class="biglife-card__title" data-kz="BIG App-тың барлық көршілік белсенділіктері — бір күнтізбеде">Все соседские активности BIG App — в одном календаре</h2>
+          <p class="biglife-card__desc" data-kz="Бигвиллде және маңайда не өтіп жатқанын біліңіз — спорт, клубтар, кездесулер — және бірнеше басумен қосылыңыз.">Узнайте, что проходит в вашем бигвилле и рядом — спорт, клубы, встречи, — и присоединяйтесь в пару кликов.</p>
+          <a href="https://community.bi.group/" target="_blank" rel="noopener" class="btn btn--sky btn--lg biglife-card__btn">
+            <span data-kz="Күнтізбені ашу">Открыть Календарь активностей</span> <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+        <div class="biglife-card__preview">
+          <div class="phone-frame">
+            <div class="phone-frame__notch"></div>
+            <div class="phone-frame__screen">
+              <img src="images/calendar-screen.jpg" alt="Календарь активностей BIG App" loading="lazy" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ГАЛЕРЕЯ «ЖИЗНЬ НАШИХ ДВОРОВ»
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--light" id="gallery">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Қауымдастықтар өмірі">Жизнь Сообществ</h2>
+        <p class="section__subtitle" data-kz="Спорт, мәдениет, білім, балалар — барлық буын үшін">Спорт, культура, образование, дети — для всех поколений</p>
+      </div>
+      <div class="bento fade-in">
+        <figure class="bento__item bento__item--big">
+          <img src="images/gal-1.jpg" alt="Пенная вечеринка во дворе" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Аулада көбік кеші">Пенная вечеринка</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-2.jpg" alt="Йога во дворе" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Аулада йога">Йога во дворе</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-3.jpg" alt="Танцы для детей" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Билер">Танцы</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-4.jpg" alt="Шахматы" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Шахмат">Шахматы</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-5.jpg" alt="Творческое занятие" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Шығармашылық">Творчество</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-6.jpg" alt="Праздник во дворе" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Аулада мереке">Праздник во дворе</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-7.jpg" alt="Чаепитие соседей" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Көрші шайы">Чаепитие</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-9.jpg" alt="Клубная встреча" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Клуб кездесуі">Клубная встреча</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-10.jpg" alt="Настольный теннис" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Үстел теннисі">Настольный теннис</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-11.jpg" alt="Клуб долгожителей" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Ұзақ өмір клубы">Клуб долгожителей</figcaption>
+        </figure>
+        <figure class="bento__item">
+          <img src="images/gal-12.jpg" alt="Лепка для детей" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Балаларға мүсін">Лепка для детей</figcaption>
+        </figure>
+        <figure class="bento__item bento__item--wide">
+          <img src="images/gal-8.jpg" alt="Спорт и зарядка" loading="lazy" />
+          <figcaption class="bento__cap" data-kz="Спорт және жаттығу">Спорт и зарядка</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       FAQ
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--light" id="faq">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Жиі сұрақтар">Частые вопросы</h2>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="Бұл ақылы ма?">Нужно ли платить?</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Жоқ. Қолдаудың бәрі — жабдық, кеңістік, анонс — тегін. Сізге ақша жұмсаудың қажеті жоқ.">Нет. Вся поддержка — оборудование, помещение, анонсы — бесплатна. Вам не нужно ничего оплачивать.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="Ұйымдастыру тәжірибесі қажет пе?">Нужен ли опыт организатора?</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Жоқ. Координатор әр қадамда көмектеседі — идеядан өткізуге дейін.">Нет. Координатор поможет на каждом шаге — от идеи до проведения.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="Қанша көрші қажет?">Сколько нужно соседей?</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Маңыздысы — сан емес. Тіпті бір-екі көршіден бастауға болады, қалғаны кейін қосылады.">Важно не количество. Можно начать даже с одного-двух соседей — остальные подтянутся.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="Қандай белсенділіктер келеді?">Какие активности подходят?</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Кез келген қызығушылық бойынша кездесулер — мыналардан басқа: түнгі іс-шаралар; алкоголь және темекі өнімі бар белсенділіктер; діни іс-шаралар; эзотерикалық тақырыптағы кездесулер; МЛМ-қауымдастықтардың кездесулері; лицензияланатын қызмет; қаржы құралдарына инвестиция тарту; қаржы пирамидасы деп танылған ұйымдардың кездесулері.">Любые встречи по интересам — за исключением: ночных мероприятий; активностей с алкоголем и табаком; религиозных мероприятий; встреч на эзотерические темы; встреч МЛМ-сообществ; лицензируемой деятельности; привлечения инвестиций в финансовые инструменты; встреч организаций, признанных финансовыми пирамидами.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="Менен не талап етіледі?">Что требуется от меня?</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Идея мен ниет. Қалғанын — жабдық, кеңістік, анонс — біз береміз.">Идея и желание. Остальное — оборудование, помещение, анонсы — даём мы.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="Мен BI Group бигвиллінде тұрмасам ше?">Что, если я не живу в бигвилле BI Group?</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Егер сіз BI Group-та тұрмасаңыз, бірақ көршілік идеясын дамытқыңыз келсе — бізге жазыңыз, ортақ тіл табысамыз!">Если вы не живёте в BI Group, но хотите развивать идею добрососедства — пишите нам — придумаем, как быть полезными друг другу!</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="«Ешкім келмесе ше?»">«А вдруг никто не придёт?»</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Келеді. Алғашында екеу болса да — бұл жалғыздық емес. Ал шақыруға біз көмектесеміз.">Придут. Даже если сначала двое — это уже не одиночество. А позвать поможем мы.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="«Мен көшбасшы емеспін, істей алмаймын»">«Я не лидер, я не умею»</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Қажет емес. Бей-жай болмау жеткілікті. Ал адамдарды қалай жинап, кездесу өткізуді — біз айтып беріп, қатар жүреміз.">И не надо. Достаточно быть тем, кому не всё равно. А как собрать людей и провести встречу — подскажем и пройдём это вместе.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="«Мұны жалғыз алып шыға алмаймын»">«Не потяну это в одиночку»</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Сіз жалғыз емессіз. Ұйымдастыруды өзімізге аламыз, ал қасыңызда әрдайым координатор — ақыл-кеңес беріп, қолдап жібереді.">Вы и не в одиночку. Организацию берём на себя, а рядом всегда координатор — подскажет и подстрахует.</p>
+          </div>
+        </div>
+        <div class="faq-item fade-in">
+          <button class="faq-q">
+            <span data-kz="«Бәлкім, бұл менің жасым емес шығар»">«Наверное, уже не мой возраст»</span>
+            <i class="fas fa-chevron-down faq-chevron"></i>
+          </button>
+          <div class="faq-a">
+            <p data-kz="Ең тірі аулалар — уақыты, тәжірибесі мен жаны бар адамдарға сүйенеді. Сізге.">Самые живые дворы держатся на тех, у кого есть время, опыт и душа. На вас.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ФИНАЛЬНЫЙ ПРИЗЫВ
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--white">
+    <div class="container">
+      <div class="final-cta fade-in">
+        <h2 data-kz="Қауымдастығыңыз өз Амбассадорын күтіп тұр. Бәлкім, ол — сіз!">Ваше сообщество ждёт своего Амбассадора.<br>Похоже, это вы!</h2>
+        <p data-kz="Бір қадамыңыз — қасыңызда осыны күткендер пайда болады. Ал біз әр қадамда бірге боламыз.">Один ваш шаг — и рядом появятся те, кто давно этого ждал. А мы будем рядом на каждом.</p>
+        <a href="#idea" class="btn btn--primary btn--lg">
+          <span data-kz="Алғашқы қадам жасау">Сделать первый шаг</span> <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       КООРДИНАТОРЫ  ⚠ фото и контакты Акнур/Айжан — заменить
+  ═══════════════════════════════════════════════ -->
+  <section class="section section--light" id="coordinators">
+    <div class="container">
+      <div class="section__header">
+        <h2 class="section__title" data-kz="Жоба координаторлары">Координаторы проекта</h2>
+        <p class="section__subtitle" data-kz="Қалаңыздың координаторына жазыңыз">Напишите координатору вашего города</p>
+      </div>
+      <div class="coord-grid">
+        <div class="coord-card fade-in">
+          <div class="coord-avatar">АЕ</div>
+          <p class="coord-name">Аида Елтузерова</p>
+          <p class="coord-role" data-kz="Координатор — Астана, Атырау">Координатор — Астана и Атырау</p>
+          <a href="https://wa.me/77753235105" class="btn btn--whatsapp btn--sm wa-direct" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> <span data-kz="Жазу">Написать</span>
+          </a>
+        </div>
+        <div class="coord-card fade-in">
+          <div class="coord-avatar">АТ</div>
+          <p class="coord-name">Акнур Талап</p>
+          <p class="coord-role" data-kz="Координатор — Алматы, Шымкент, Ташкент">Координатор — Алматы, Шымкент, Ташкент</p>
+          <a href="https://wa.me/77057512974" class="btn btn--whatsapp btn--sm wa-direct" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> <span data-kz="Жазу">Написать</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ФИЛОСОФИЯ +1
+  ═══════════════════════════════════════════════ -->
+  <section class="plus-one">
+    <div class="container">
+      <p class="plus-one__lead" data-kz="Қауымдастық +1-ден басталады">Сообщество начинается с +1</p>
+      <div class="plus-one__row">
+        <div class="plus-one__item"><span class="plus-one__sign">+1</span><span data-kz="көрші — көршіңді шақыр">сосед — позови соседа</span></div>
+        <div class="plus-one__item"><span class="plus-one__sign">+1</span><span data-kz="кездесу — тағы бірін өткіз">встреча — проведи ещё одну</span></div>
+        <div class="plus-one__item"><span class="plus-one__sign">+1</span><span data-kz="идея — чатта бөліс">идея — поделись в чате</span></div>
+        <div class="plus-one__item"><span class="plus-one__sign">+1</span><span data-kz="ұшқын — басқасын Амбассадор болуға шабыттандыр">искра — вдохнови другого стать Амбассадором</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__col footer__col--brand">
+        <div class="footer__logos">
+          <img src="images/bi-service-logo.png" alt="BI Service" />
+        </div>
+        <p class="footer__name" data-kz="BI Group Көршілік Амбассадорлары">Амбассадоры Добрососедства BI Group</p>
+        <p class="footer__slogan">Ауласы бірдің ауасы бір</p>
+      </div>
+      <div class="footer__col footer__col--social">
+        <p class="footer__col-label" data-kz="Әлеуметтік желіде">Мы в соцсетях</p>
+        <a href="https://www.instagram.com/bi.service" class="social-link social-link--instagram" aria-label="Instagram" target="_blank" rel="noopener">
+          <i class="fab fa-instagram"></i>
+        </a>
+      </div>
+    </div>
+      <div class="footer__cal">
+        <a href="https://community.bi.group/" target="_blank" rel="noopener" class="btn btn--sky footer__cal-btn">
+          <i class="far fa-calendar-days"></i> <span data-kz="Белсенділік күнтізбесі">Календарь активностей</span>
+        </a>
+      </div>
+    <div class="footer__bottom">
+      <div class="container footer__bottom-inner">
+        <p>© 2026 BI Group · BI Service</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/lang.js"></script>
+  <!-- ═══════════════════════════════════════════════
+       МОДАЛ «ДЛЯ БИЗНЕСА»
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="bizModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bizModalTitle">
+      <button class="modal__close" id="bizModalClose" aria-label="Закрыть">&times;</button>
+      <div class="modal__icon"><i class="fas fa-store"></i></div>
+      <h2 class="modal__title" id="bizModalTitle" data-kz="Көрші бизнеске">Бизнесу по соседству</h2>
+      <p class="modal__lead" data-kz="Егер бизнесіңіз BI Group бигвиллінде немесе жақын маңда болса әрі сізге көршілік құндылығы жақын болса.">Если ваш бизнес — в бигвилле BI Group или рядом, и вам близка ценность добрососедства.</p>
+      <p class="modal__subtitle" data-kz="Көршілік қауымдастықтарды қалай қолдай аласыз:">Чем можно поддержать соседские сообщества:</p>
+      <ul class="modal__list">
+        <li><i class="fas fa-house"></i> <span><b data-kz="Үй-жаймен">Помещением</b> — <span data-kz="көршілер жиналатын орын">место, где соседям собираться</span></span></li>
+        <li><i class="fas fa-toolbox"></i> <span><b data-kz="Жабдықпен">Оборудованием</b> — <span data-kz="белсенділік өтуі үшін қажет нәрсе">то, без чего активность не состоится</span></span></li>
+        <li><i class="fas fa-chalkboard-user"></i> <span><b data-kz="Жаттықтырушылармен">Тренерами</b> — <span data-kz="жүргізетін әрі шабыттандыратын сарапшылар">эксперты, которые ведут и вдохновляют</span></span></li>
+        <li><i class="fas fa-star"></i> <span><b data-kz="Басқа ресурстармен">Другими ресурсами</b> — <span data-kz="адамдарды біріктіруге көмектесетін бәрімен">всем, что поможет людям объединяться</span></span></li>
+      </ul>
+      <p class="modal__cta-text" data-kz="Бізбен байланысыңыз — кездесу өткізіп, күш біріктіруді бірге ойластырамыз.">Свяжитесь с нами — проведём встречу и придумаем, чем можем быть полезны друг другу.</p>
+      <a href="#" class="btn btn--whatsapp btn--lg btn--full" id="bizWaBtn">
+        <i class="fab fa-whatsapp"></i> <span data-kz="WhatsApp-та жазу">Написать в WhatsApp</span>
+      </a>
+    </div>
+  </div>
+
+</body>
+</html>
