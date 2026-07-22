@@ -3750,3 +3750,13 @@ html, body {
   font-family: var(--font-display); font-size: clamp(1.3rem, 2.6vw, 1.85rem);
   font-weight: 800; line-height: 1.4; letter-spacing: -0.01em;
 }
+
+/* ── v2 HERO fix: карточка только на активном слайде (убрать наложение при fade) ── */
+.rhero--dark .rhero__slide:not(.rhero__slide--active) .rhero__statcard { opacity: 0; visibility: hidden; }
+.rhero__statcard { transition: opacity .3s ease; }
+/* средние экраны: карточка уже, текст не перекрывается */
+@media (max-width: 1240px) and (min-width: 981px) {
+  .rhero__statcard { width: 280px; right: 4%; padding: 24px 24px 26px; }
+  .rhero__statnum { font-size: 3.2rem; }
+  .rhero--dark .rhero__inner { max-width: 54%; }
+}
