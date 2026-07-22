@@ -3837,3 +3837,14 @@ html, body {
   .rhero__statitem b { font-size: 1.9rem; }
   .rhero__statitem span { font-size: 0.72rem; }
 }
+
+/* ═══ v2 HERO доработка: лента как часть HERO, мельче шрифт, мягче затемнение ═══ */
+.rhero--dark { min-height: auto; }
+.rhero--dark .rhero__inner { padding-top: 116px; padding-bottom: 46px; max-width: 620px; }
+.rhero__title { font-size: clamp(1.75rem, 3.4vw, 2.8rem); line-height: 1.12; }
+.rhero--dark .rhero__lead { font-size: 1.05rem; }
+.rhero__statsbar { position: relative; }        /* в потоке — не выпадает под HERO */
+.rhero--dark .rhero__slide::after {
+  background: linear-gradient(95deg, rgba(14,23,48,0.86) 0%, rgba(14,23,48,0.58) 34%, rgba(14,23,48,0.30) 60%, rgba(14,23,48,0.10) 100%);
+}
+.rhero__statitem b { font-size: 2.1rem; }
