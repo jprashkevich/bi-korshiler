@@ -3794,3 +3794,46 @@ html, body {
 
 /* fix: карточка статистики видна на активном слайде */
 .rhero--dark .rhero__slide--active .rhero__statcard { opacity: 1 !important; visibility: visible !important; }
+
+/* ═══ v2 HERO переосмыслен: лента фактов вместо карточки ═══ */
+.rhero--dark { min-height: 100vh; }
+.rhero--dark .rhero__inner { padding-bottom: 160px; max-width: 640px; }
+.rhero--dark .rhero__dots { display: none; }        /* навигация — через ленту */
+.rhero__voz { margin: 22px 0 0; }
+
+.rhero__statsbar {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 4;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: rgba(10,16,40,0.68); backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.rhero__statitem {
+  padding: 22px 28px; text-align: left; background: none; font-family: inherit;
+  border: 0; border-left: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+  transition: background .25s;
+}
+.rhero__statitem:first-child { border-left: 0; }
+.rhero__statitem b {
+  display: block; font-family: var(--font-display); font-size: 2.4rem; font-weight: 800;
+  line-height: 1; color: rgba(255,255,255,0.4); transition: color .25s; letter-spacing: -0.02em;
+}
+.rhero__statitem span {
+  display: block; font-size: 0.82rem; color: rgba(255,255,255,0.5);
+  margin-top: 9px; line-height: 1.35; transition: color .25s;
+}
+.rhero__statitem:hover { background: rgba(255,255,255,0.04); }
+.rhero__statitem--active { background: rgba(255,255,255,0.07); }
+.rhero__statitem--active b { color: #F97316; }
+.rhero__statitem--active span { color: rgba(255,255,255,0.9); }
+
+@media (max-width: 900px) {
+  .rhero__statsbar { grid-template-columns: repeat(2, 1fr); }
+  .rhero__statitem:nth-child(2) { border-left: 0; }
+  .rhero__statitem:nth-child(3), .rhero__statitem:nth-child(4) { border-top: 1px solid rgba(255,255,255,0.1); }
+  .rhero--dark .rhero__inner { padding-bottom: 210px; }
+}
+@media (max-width: 460px) {
+  .rhero__statitem { padding: 15px 18px; }
+  .rhero__statitem b { font-size: 1.9rem; }
+  .rhero__statitem span { font-size: 0.72rem; }
+}

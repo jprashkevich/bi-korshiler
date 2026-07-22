@@ -56,32 +56,12 @@
   <section class="rhero rhero--dark" id="hero">
     <div class="rhero__slides" id="rheroSlides">
       <div class="rhero__slide rhero__slide--active rhero__slide--s1" data-bg="images/lone-1.jpg">
-        <div class="rhero__statcard">
-          <span class="rhero__statcat">Разрыв социализации</span>
-          <div class="rhero__statnum">56%</div>
-          <p>детей в Казахстане проводят в интернете больше 4 часов в день</p>
-        </div>
       </div>
       <div class="rhero__slide rhero__slide--s2" data-bg="images/lone-2.jpg">
-        <div class="rhero__statcard">
-          <span class="rhero__statcat">Эпидемия одиночества</span>
-          <div class="rhero__statnum">20%</div>
-          <p>пенсионеров Казахстана одиноки; одиночество повышает риск ранней смерти на&nbsp;30%</p>
-        </div>
       </div>
       <div class="rhero__slide rhero__slide--s3" data-bg="images/lone-3.jpg">
-        <div class="rhero__statcard">
-          <span class="rhero__statcat">Сидение — новое курение</span>
-          <div class="rhero__statnum">75%</div>
-          <p>школьников в стране страдают гиподинамией</p>
-        </div>
       </div>
       <div class="rhero__slide rhero__slide--s4" data-bg="images/lone-4.jpg">
-        <div class="rhero__statcard">
-          <span class="rhero__statcat">Эрозия доверия</span>
-          <div class="rhero__statnum">22%</div>
-          <p>казахстанцев склонны доверять друг другу</p>
-        </div>
       </div>
     </div>
     <div class="container rhero__inner">
@@ -95,6 +75,12 @@
       </div>
       <p class="rhero__voz">ВОЗ признала одиночество серьёзной угрозой общественному здоровью</p>
     </div>
+      <div class="rhero__statsbar" id="rheroStats">
+        <button class="rhero__statitem rhero__statitem--active" data-idx="0"><b>56%</b><span>детей в сети 4+ часа в день</span></button>
+        <button class="rhero__statitem" data-idx="1"><b>20%</b><span>пенсионеров одиноки</span></button>
+        <button class="rhero__statitem" data-idx="2"><b>75%</b><span>гиподинамия у школьников</span></button>
+        <button class="rhero__statitem" data-idx="3"><b>22%</b><span>доверяют друг другу</span></button>
+      </div>
     <div class="rhero__dots" id="rheroDots">
       <button class="rhero__dot rhero__dot--active" aria-label="Слайд 1"></button>
       <button class="rhero__dot" aria-label="Слайд 2"></button>
@@ -789,6 +775,23 @@
     img.onload = function(){ sl.style.backgroundImage = "url('" + url + "')"; };
     img.src = url;
   });
+  </script>
+  <script>
+  // Лента статистики HERO: активный факт синхронно с фото-слайдом
+  (function(){
+    var items=[].slice.call(document.querySelectorAll('.rhero__statitem'));
+    var slidesBox=document.getElementById('rheroSlides');
+    var dots=document.querySelectorAll('.rhero__dot');
+    if(!items.length||!slidesBox) return;
+    function sync(){
+      var slides=slidesBox.querySelectorAll('.rhero__slide');
+      var a=[].indexOf.call(slides,slidesBox.querySelector('.rhero__slide--active'));
+      items.forEach(function(it,i){ it.classList.toggle('rhero__statitem--active', i===a); });
+    }
+    new MutationObserver(sync).observe(slidesBox,{subtree:true,attributes:true,attributeFilter:['class']});
+    items.forEach(function(it,i){ it.addEventListener('click',function(){ if(dots[i]) dots[i].click(); }); });
+    sync();
+  })();
   </script>
 </body>
 </html>
