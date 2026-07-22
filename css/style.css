@@ -3765,3 +3765,32 @@ html, body {
 .final-cta__actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
 .btn--ghost { background: transparent; border: 2px solid rgba(255,255,255,0.5); color: #fff; box-shadow: none; }
 .btn--ghost:hover { background: rgba(255,255,255,0.1); border-color: #fff; color: #fff; transform: translateY(-2px); }
+
+/* ── v2 HERO переверстка: текст слева в тёмной зоне, фото-сюжет справа ── */
+.rhero--dark .rhero__slide { background-position: right center; }
+.rhero--dark .rhero__slide::after {
+  background: linear-gradient(95deg, #0E1730 0%, #0E1730 33%, rgba(14,23,48,0.62) 58%, rgba(14,23,48,0.22) 100%);
+}
+.rhero--dark .rhero__inner { max-width: 560px; margin-right: auto; }
+.rhero__title { font-size: clamp(2.2rem, 4.6vw, 3.6rem); }
+/* статистику — компактно в нижний угол, не на лицо */
+.rhero__statcard {
+  top: auto; bottom: 42px; transform: none; right: 5%;
+  width: 288px; max-width: 40vw; padding: 22px 24px 24px;
+}
+.rhero__statnum { font-size: 3.1rem; margin: 6px 0 10px; }
+.rhero__statcard p { font-size: 0.92rem; }
+/* подпись ВОЗ под текстом */
+.rhero__voz {
+  position: relative; z-index: 4; margin: 22px 0 0; max-width: 540px;
+  font-size: 0.82rem; color: rgba(255,255,255,0.62); line-height: 1.45;
+  padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.16);
+}
+@media (max-width: 980px) {
+  .rhero--dark .rhero__slide::after { background: linear-gradient(180deg, rgba(14,23,48,0.55), rgba(14,23,48,0.85)); }
+  .rhero__statcard { position: static; bottom: auto; right: auto; width: 100%; max-width: 100%; margin-top: 22px; }
+  .rhero__voz { max-width: 100%; }
+}
+
+/* fix: карточка статистики видна на активном слайде */
+.rhero--dark .rhero__slide--active .rhero__statcard { opacity: 1 !important; visibility: visible !important; }
