@@ -55,12 +55,36 @@
   <!-- ═══════════════════════════════════════════════
        HERO — радикальный (bi.group-стиль, фото-фон)
   ═══════════════════════════════════════════════ -->
-  <section class="rhero" id="hero">
+  <section class="rhero rhero--dark" id="hero">
     <div class="rhero__slides" id="rheroSlides">
-      <div class="rhero__slide rhero__slide--active" style="background-image:url('images/hero-1.jpg')"></div>
-      <div class="rhero__slide" style="background-image:url('images/hero-2.jpg')"></div>
-      <div class="rhero__slide" style="background-image:url('images/hero-3.jpg')"></div>
-      <div class="rhero__slide" style="background-image:url('images/hero-4.jpg')"></div>
+      <div class="rhero__slide rhero__slide--active rhero__slide--s1" data-bg="images/lone-1.jpg">
+        <div class="rhero__statcard">
+          <span class="rhero__statcat">Разрыв социализации</span>
+          <div class="rhero__statnum">56%</div>
+          <p>детей в Казахстане проводят в интернете больше 4 часов в день</p>
+        </div>
+      </div>
+      <div class="rhero__slide rhero__slide--s2" data-bg="images/lone-2.jpg">
+        <div class="rhero__statcard">
+          <span class="rhero__statcat">Эпидемия одиночества</span>
+          <div class="rhero__statnum">20%</div>
+          <p>пенсионеров Казахстана одиноки; одиночество повышает риск ранней смерти на&nbsp;30%</p>
+        </div>
+      </div>
+      <div class="rhero__slide rhero__slide--s3" data-bg="images/lone-3.jpg">
+        <div class="rhero__statcard">
+          <span class="rhero__statcat">Сидение — новое курение</span>
+          <div class="rhero__statnum">75%</div>
+          <p>школьников в стране страдают гиподинамией</p>
+        </div>
+      </div>
+      <div class="rhero__slide rhero__slide--s4" data-bg="images/lone-4.jpg">
+        <div class="rhero__statcard">
+          <span class="rhero__statcat">Эрозия доверия</span>
+          <div class="rhero__statnum">22%</div>
+          <p>казахстанцев склонны доверять друг другу</p>
+        </div>
+      </div>
     </div>
     <div class="container rhero__inner">
       <p class="rhero__eyebrow" data-kz="BI Group · Community">BI Group · Community</p>
@@ -780,5 +804,13 @@
     </div>
   </div>
 
+  <script>
+  // Фоны HERO-слайдов: подставляем фото про одиночество, если они загружены (images/lone-1..4.jpg)
+  document.querySelectorAll('.rhero--dark .rhero__slide[data-bg]').forEach(function(sl){
+    var url = sl.getAttribute('data-bg'); var img = new Image();
+    img.onload = function(){ sl.style.backgroundImage = "url('" + url + "')"; };
+    img.src = url;
+  });
+  </script>
 </body>
 </html>
