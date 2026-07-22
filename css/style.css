@@ -3657,3 +3657,15 @@ html, body {
 
 /* ── Координаторы: 2 карточки по центру (Жанна удалена) ── */
 .coord-grid { grid-template-columns: repeat(2, minmax(0, 300px)); justify-content: center; }
+
+/* ── Наука: фото в карточках + спокойный вывод ── */
+.science-card__photo { margin: -34px -32px 22px; aspect-ratio: 16/10; overflow: hidden; }
+.science-card__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.science-card__photo--book {
+  background: linear-gradient(135deg, #EAF2FC, #DCEBFB);
+  display: flex; align-items: center; justify-content: center;
+}
+.science-card__photo--book .photo-note { color: #6E7C93; font-size: 0.9rem; }
+.science-punch { background: none; color: var(--text-dark); padding: 6px 0 0; border-radius: 0; }
+.science-punch p { font-size: clamp(1.15rem, 2.1vw, 1.42rem); font-weight: 600; }
+.science-punch b { color: var(--orange); font-weight: 800; }
