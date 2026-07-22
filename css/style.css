@@ -3848,3 +3848,12 @@ html, body {
   background: linear-gradient(95deg, rgba(14,23,48,0.86) 0%, rgba(14,23,48,0.58) 34%, rgba(14,23,48,0.30) 60%, rgba(14,23,48,0.10) 100%);
 }
 .rhero__statitem b { font-size: 2.1rem; }
+
+/* fix: HERO v2 — колонка (заголовок сверху, лента полосой под ним) */
+.rhero--dark { flex-direction: column; justify-content: flex-start; }
+.rhero--dark .rhero__statsbar { width: 100%; }
+
+/* fix: HERO v2 — контент слева, лента полосой внизу */
+.rhero--dark { align-items: flex-start; }
+.rhero--dark .rhero__inner { margin: 0; align-self: flex-start; max-width: 700px; }
+.rhero--dark .rhero__statsbar { align-self: stretch; }
