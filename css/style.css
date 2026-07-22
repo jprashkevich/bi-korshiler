@@ -3760,3 +3760,8 @@ html, body {
   .rhero__statnum { font-size: 3.2rem; }
   .rhero--dark .rhero__inner { max-width: 54%; }
 }
+
+/* ── v2: мягкий финал (2 кнопки) ── */
+.final-cta__actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.btn--ghost { background: transparent; border: 2px solid rgba(255,255,255,0.5); color: #fff; box-shadow: none; }
+.btn--ghost:hover { background: rgba(255,255,255,0.1); border-color: #fff; color: #fff; transform: translateY(-2px); }
