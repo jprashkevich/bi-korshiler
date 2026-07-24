@@ -3857,3 +3857,20 @@ html, body {
 .rhero--dark { align-items: flex-start; }
 .rhero--dark .rhero__inner { margin: 0; align-self: flex-start; max-width: 700px; }
 .rhero--dark .rhero__statsbar { align-self: stretch; }
+
+/* HERO v2: текст от края + лента цифр выше (ближе к посылу) */
+.rhero--dark .rhero__inner { padding-left: 7%; padding-right: 7%; padding-top: 92px; padding-bottom: 26px; }
+.rhero--dark .rhero__lead { margin-bottom: 22px; }
+.rhero__voz { margin: 18px 0 0; }
+@media (max-width: 900px){ .rhero--dark .rhero__inner { padding-left: 6%; padding-right: 6%; } }
+
+/* HERO v2: компактнее — лента цифр поднимается ближе к заголовку */
+.rhero--dark .rhero__inner { padding-top: 74px; padding-bottom: 16px; }
+.rhero--dark .rhero__title { margin-bottom: 12px; }
+.rhero--dark .rhero__lead { margin-bottom: 16px; font-size: 1rem; }
+.rhero__voz { margin-top: 14px; font-size: 0.78rem; padding-top: 12px; }
+.rhero__statitem { padding: 16px 28px; }
+.rhero__statitem b { font-size: 1.9rem; }
+
+/* HERO v2: разумная высота (фото видно + лента в фолде) */
+.rhero--dark { min-height: 84vh; }
