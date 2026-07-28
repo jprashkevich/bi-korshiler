@@ -3,8 +3,8 @@
    ЗАМЕНИТЬ плейсхолдеры на реальные ID (см. GA_ID и YM_ID ниже)
    ═══════════════════════════════════════════════════════════ */
 
-var GA_ID = 'G-XXXXXXXXXX';   // ← Measurement ID из Google Analytics 4
-var YM_ID = 00000000;         // ← номер счётчика Яндекс Метрики
+var GA_ID = 'G-ZFHQ8PJS0L';   // Measurement ID Google Analytics 4
+var YM_ID = 111088315;        // счётчик Яндекс Метрики
 
 /* ── Google Analytics 4 ── */
 (function () {
@@ -27,9 +27,9 @@ var YM_ID = 00000000;         // ← номер счётчика Яндекс М
   for (var j = 0; j < document.scripts.length; j++) { if (document.scripts[j].src === r) return; }
   k = e.createElement(t); a = e.getElementsByTagName(t)[0];
   k.async = 1; k.src = r; a.parentNode.insertBefore(k, a);
-})(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+})(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=' + YM_ID, 'ym');
 if (YM_ID && YM_ID !== 00000000) {
-  ym(YM_ID, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+  ym(YM_ID, 'init', { ssr: true, webvisor: true, clickmap: true, ecommerce: 'dataLayer', referrer: document.referrer, url: location.href, accurateTrackBounce: true, trackLinks: true });
 }
 
 /* ── Единая отправка конверсии в оба сервиса ── */
