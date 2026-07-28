@@ -1,0 +1,7 @@
+# bi-korshiler.kz — чистые URL
+RewriteEngine On
+# /about → about.html
+RewriteRule ^about/?$ about.html [L]
+# убрать .html из адресной строки (опционально)
+RewriteCond %{THE_REQUEST} \s/+([^.\s?]+)\.html[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L,NE]
