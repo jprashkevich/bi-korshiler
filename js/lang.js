@@ -28,7 +28,8 @@
     document.querySelectorAll('[data-kz]').forEach(el => {
       const ru = el.getAttribute('data-ru') || el.innerHTML;
       const kz = el.getAttribute('data-kz') || ru;
-      el.innerHTML = lang === 'kz' ? kz : ru;
+      const uz = el.getAttribute('data-uz') || ru;
+      el.innerHTML = lang === 'kz' ? kz : lang === 'uz' ? uz : ru;
     });
 
     // Switch placeholders (textarea / input) by language
@@ -36,9 +37,10 @@
       if (!el.hasAttribute('data-ru-ph')) {
         el.setAttribute('data-ru-ph', el.getAttribute('placeholder') || '');
       }
-      el.setAttribute('placeholder', lang === 'kz'
-        ? el.getAttribute('data-kz-ph')
-        : el.getAttribute('data-ru-ph'));
+      const ph = lang === 'kz' ? el.getAttribute('data-kz-ph')
+        : lang === 'uz' ? el.getAttribute('data-uz-ph')
+        : el.getAttribute('data-ru-ph');
+      if (ph != null) el.setAttribute('placeholder', ph);
     });
 
     // Switch playbook/manual links by language
@@ -49,7 +51,7 @@
     });
 
     // Update <html lang> attribute
-    document.documentElement.lang = lang === 'kz' ? 'kk' : 'ru';
+    document.documentElement.lang = lang === 'kz' ? 'kk' : lang === 'uz' ? 'uz' : 'ru';
     document.documentElement.setAttribute('data-lang', lang);
 
     // Highlight active button
