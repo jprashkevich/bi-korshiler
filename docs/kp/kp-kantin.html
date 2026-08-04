@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Коммерческое предложение — The Guests × Kantin</title>
+<style>
+/* =========================================================================
+   ДИЗАЙН-СИСТЕМА THE GUESTS — ТОЧКА ПОДКЛЮЧЕНИЯ
+   -------------------------------------------------------------------------
+   Значения ниже — временные. Заменяются целиком на содержимое
+   colors_and_type.css из проекта Claude Design (5be614bf-…), после чего
+   вёрстку править не нужно: весь документ ходит только через эти токены.
+   Ассеты кладутся рядом с этим файлом:
+     fonts/TildaSans-*.ttf          — подключены ниже, подхватятся сами
+     assets/photos/expert-zhanna-p.png — фото эксперта
+     assets/logo/tgs-logo-white.png    — логотип на тёмной плашке обложки
+   ========================================================================= */
+
+@font-face{ font-family:'Tilda Sans'; src:url('fonts/TildaSans-Light.ttf')      format('truetype'); font-weight:300; font-style:normal; font-display:swap; }
+@font-face{ font-family:'Tilda Sans'; src:url('fonts/TildaSans-Regular.ttf')    format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
+@font-face{ font-family:'Tilda Sans'; src:url('fonts/TildaSans-Medium.ttf')     format('truetype'); font-weight:500; font-style:normal; font-display:swap; }
+@font-face{ font-family:'Tilda Sans'; src:url('fonts/TildaSans-Semibold.ttf')   format('truetype'); font-weight:600; font-style:normal; font-display:swap; }
+@font-face{ font-family:'Tilda Sans'; src:url('fonts/TildaSans-Bold.ttf')       format('truetype'); font-weight:700; font-style:normal; font-display:swap; }
+@font-face{ font-family:'Tilda Sans'; src:url('fonts/TildaSans-ExtraBold.ttf')  format('truetype'); font-weight:800; font-style:normal; font-display:swap; }
+@font-face{ font-family:'Tilda Sans'; src:url('fonts/TildaSans-Black.ttf')      format('truetype'); font-weight:900; font-style:normal; font-display:swap; }
+
+:root{
+  /* — цвет — */
+  --ink:      #1C1A17;   /* основной текст */
+  --ink-soft: #46403A;   /* вторичный текст */
+  --muted:    #8A837B;   /* подписи, лейблы */
+  --accent:   #A85A2A;   /* акцент */
+  --accent-d: #7E3F1B;   /* акцент, тёмный */
+  --wash:     #F7F1E9;   /* заливка блоков */
+  --wash-2:   #FBF7F2;   /* заливка карточек */
+  --line:     #E6DED3;   /* тонкие линии */
+  --line-2:   #D8CCBD;   /* линии, контраст */
+  --dark:     #1C1A17;   /* тёмная плашка */
+
+  /* — типографика — */
+  --font: 'Tilda Sans', 'Manrope', 'DejaVu Sans', sans-serif;
+}
+
+  @page { size: A4; margin: 0; }
+  *{ box-sizing: border-box; }
+  html{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body{
+    margin:0; font-family:var(--font); color:var(--ink);
+    font-size:9.6pt; line-height:1.55; background:#fff;
+  }
+
+  .page{
+    width:210mm; min-height:297mm; padding:18mm 17mm 15mm;
+    position:relative; page-break-after:always; background:#fff;
+  }
+  .page:last-child{ page-break-after:auto; }
+
+  /* ---------- типографика ---------- */
+  h1,h2,h3,h4{ margin:0; font-weight:700; }
+  p{ margin:0 0 7px; }
+  strong{ font-weight:700; }
+
+  .eyebrow{
+    font-size:7.4pt; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent); font-weight:700;
+  }
+
+  .sec-head{
+    display:flex; align-items:baseline; gap:10px;
+    border-bottom:1.2px solid var(--ink); padding-bottom:6px; margin:0 0 12px;
+  }
+  .sec-num{ font-size:8pt; font-weight:800; color:var(--accent); letter-spacing:.06em; padding-top:2px; }
+  .sec-title{ font-size:14.5pt; font-weight:800; letter-spacing:-.015em; }
+
+  .lead{ font-size:10.6pt; line-height:1.5; color:var(--ink-soft); }
+  .muted{ color:var(--muted); }
+  .small{ font-size:8.2pt; line-height:1.45; }
+
+  /* ---------- обложка ---------- */
+  .cover{ display:flex; flex-direction:column; justify-content:space-between; padding:0; }
+
+  .cover-bar{
+    background:var(--dark); color:#fff; padding:11mm 17mm;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  /* логотип: при наличии assets/logo/tgs-logo-white.png подменит текстовый знак */
+  .cover-bar .logo{
+    height:9mm; width:46mm;
+    background:url('assets/logo/tgs-logo-white.png') left center / contain no-repeat;
+  }
+  .cover-bar .wordmark{
+    font-size:11pt; font-weight:800; letter-spacing:.22em; text-transform:uppercase;
+  }
+  .cover-bar .date{ font-size:8pt; letter-spacing:.14em; text-transform:uppercase; opacity:.7; }
+
+  .cover-body{ padding:0 17mm; }
+  .cover-rule{ height:3px; background:var(--accent); width:64px; margin:0 0 26px; }
+
+  .cover h1{ font-size:31pt; line-height:1.12; letter-spacing:-.025em; font-weight:800; margin:0 0 14px; }
+  .cover .sub{ font-size:12.4pt; color:var(--ink-soft); line-height:1.45; max-width:150mm; }
+
+  .cover-meta{ display:grid; grid-template-columns:1fr 1fr; border-top:1.2px solid var(--ink); margin-top:18mm; }
+  .cover-meta div{ padding:11px 0 0; }
+  .cover-meta div + div{ padding-left:14px; }
+  .cover-meta .k{
+    font-size:7.2pt; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+    font-weight:700; margin-bottom:3px;
+  }
+  .cover-meta .v{ font-size:10.5pt; font-weight:700; }
+  .cover-meta .v small{ display:block; font-weight:500; font-size:9pt; color:var(--ink-soft); margin-top:1px; }
+
+  .cover-card{ background:var(--wash); border-left:3px solid var(--accent); padding:14px 16px; margin-top:12mm; }
+  .cover-card .price{ font-size:19pt; font-weight:800; letter-spacing:-.02em; }
+  .cover-card .price span{ font-size:10pt; font-weight:600; color:var(--ink-soft); letter-spacing:0; }
+
+  .cover-foot{ padding:0 17mm 14mm; }
+
+  /* ---------- блоки ---------- */
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:9px 14px; }
+
+  .card{ border:1px solid var(--line); padding:10px 12px; background:var(--wash-2); }
+  .card h4{ font-size:9.6pt; margin-bottom:3px; }
+  .card p{ margin:0; font-size:8.6pt; color:var(--ink-soft); line-height:1.45; }
+
+  ol.deliv{ margin:0; padding:0; list-style:none; counter-reset:d; }
+  ol.deliv li{
+    counter-increment:d; position:relative; padding:7px 0 7px 26px;
+    border-bottom:1px solid var(--line); font-size:9.2pt; line-height:1.45;
+  }
+  ol.deliv li:last-child{ border-bottom:none; }
+  ol.deliv li::before{
+    content:counter(d,decimal-leading-zero); position:absolute; left:0; top:8px;
+    font-size:7.6pt; font-weight:800; color:var(--accent); letter-spacing:.04em;
+  }
+
+  /* ---------- таблицы ---------- */
+  table{ width:100%; border-collapse:collapse; }
+  th{
+    font-size:7.4pt; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+    font-weight:700; text-align:left; padding:0 8px 6px; border-bottom:1.2px solid var(--ink);
+  }
+  td{ padding:10px 8px; border-bottom:1px solid var(--line); font-size:8.8pt; line-height:1.45; vertical-align:top; }
+
+  .gantt th.wk, .gantt td.wk{ text-align:center; width:19mm; }
+  .gantt td.task{ padding-left:0; }
+  .gantt td.task b{ display:block; font-size:9.4pt; margin-bottom:3px; }
+  .gantt td.task span{ color:var(--ink-soft); font-size:8.4pt; }
+  .bar{ height:9px; background:var(--line); border-radius:2px; }
+  .bar.on{ background:var(--accent); }
+
+  /* ---------- метрики кейса ---------- */
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); border-top:1.2px solid var(--ink); }
+  .stats div{ padding:10px 10px 10px 0; }
+  .stats .n{ font-size:16pt; font-weight:800; letter-spacing:-.03em; line-height:1.1; }
+  .stats .n em{ font-style:normal; font-size:9.5pt; font-weight:700; color:var(--muted); }
+  .stats .l{ font-size:7.6pt; color:var(--muted); line-height:1.35; margin-top:2px; }
+
+  .find{ display:grid; grid-template-columns:auto 1fr; gap:0 12px; border-bottom:1px solid var(--line); padding:9px 0; }
+  .find:last-of-type{ border-bottom:none; }
+  .find .mark{
+    font-size:7.4pt; font-weight:800; color:#fff; background:var(--accent);
+    width:19px; height:19px; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; margin-top:1px;
+  }
+  .find b{ font-size:9.2pt; }
+  .find p{ margin:2px 0 0; font-size:8.5pt; color:var(--ink-soft); line-height:1.45; }
+  .find .eff{ color:var(--accent-d); font-weight:700; }
+
+  /* ---------- эксперт ---------- */
+  .expert{
+    display:grid; grid-template-columns:34mm 1fr; gap:0 14px;
+    background:var(--wash); border-left:3px solid var(--accent); padding:14px 16px;
+  }
+  /* фото: assets/photos/expert-zhanna-p.png; пока файла нет — видна плашка-заглушка */
+  .expert .photo{
+    width:34mm; height:44mm; background:var(--line) url('assets/photos/expert-zhanna-p.png') center / cover no-repeat;
+  }
+  .expert .who{ align-self:center; }
+  .expert .nm{ font-size:14pt; font-weight:800; letter-spacing:-.02em; line-height:1.15; }
+  .expert .role{ font-size:8pt; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; margin:4px 0 8px; }
+  .expert .bio{ font-size:8.8pt; line-height:1.5; color:var(--ink-soft); margin:0; }
+  .expert .bio + .bio{ margin-top:5px; }
+
+  /* ---------- прайс ---------- */
+  .price-box{ border:1.4px solid var(--ink); margin:0 0 12px; }
+  .price-top{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    padding:14px 16px; background:var(--wash); border-bottom:1px solid var(--line-2);
+  }
+  .price-top .big{ font-size:23pt; font-weight:800; letter-spacing:-.03em; line-height:1; }
+  .price-top .per{ font-size:9pt; color:var(--ink-soft); font-weight:600; margin-top:4px; }
+  .price-top .rt{ text-align:right; font-size:8.4pt; color:var(--ink-soft); line-height:1.5; }
+  .price-body{ padding:11px 16px; }
+  .price-body ul{ margin:0; padding-left:15px; }
+  .price-body li{ font-size:8.7pt; line-height:1.55; margin-bottom:2px; }
+
+  .cta{
+    border-top:1.2px solid var(--ink); margin-top:14px; padding-top:12px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+  }
+  .cta .who{ font-size:9.4pt; }
+  .cta .who b{ display:block; font-size:11pt; }
+  .cta .mail{ font-size:10pt; font-weight:700; color:var(--accent-d); }
+
+  .foot{
+    position:absolute; left:17mm; right:17mm; bottom:9mm;
+    display:flex; justify-content:space-between;
+    font-size:7pt; color:var(--muted); letter-spacing:.08em; text-transform:uppercase;
+    border-top:1px solid var(--line); padding-top:5px;
+  }
+
+  .note{
+    background:var(--wash-2); border-left:2.5px solid var(--line-2);
+    padding:9px 12px; font-size:8.3pt; color:var(--ink-soft); line-height:1.5;
+  }
+  .note b{ color:var(--ink); }
+
+  .spacer{ height:14px; }
+</style>
+</head>
+<body>
+
+<!-- ============ 1. ОБЛОЖКА ============ -->
+<section class="page cover">
+  <div class="cover-bar">
+    <div class="wordmark">The Guests</div>
+    <div class="date">4 августа 2026</div>
+  </div>
+
+  <div class="cover-body">
+    <div class="cover-rule"></div>
+    <div class="eyebrow" style="margin-bottom:12px">Коммерческое предложение</div>
+    <h1>Процессное управление<br>сервисом</h1>
+    <div class="sub">Четырёхнедельная программа: от «как есть сейчас» — к описанным,
+      измеряемым и управляемым процессам сервиса.</div>
+
+    <div class="cover-card">
+      <div class="eyebrow" style="color:var(--ink-soft);margin-bottom:5px">Стоимость программы</div>
+      <div class="price">1 250 000 тенге <span>в месяц</span></div>
+    </div>
+
+    <div class="cover-meta">
+      <div>
+        <div class="k">Кому</div>
+        <div class="v">Ресторан Kantin<small>г. Астана</small></div>
+      </div>
+      <div>
+        <div class="k">От кого</div>
+        <div class="v">The Guests<small>Консалтинг в ресторанном сервисе</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-foot small muted">Срок программы — 4 недели · Формат — работа на площадке ресторана</div>
+</section>
+
+
+<!-- ============ 2. СУТЬ + ПОДХОД + РЕЗУЛЬТАТ ============ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-num">01</div>
+    <div class="sec-title">Что мы предлагаем</div>
+  </div>
+
+  <p class="lead">За четыре недели мы переводим сервис ресторана из режима ручного управления
+    в режим управляемого процесса: описываем сквозной процесс обслуживания и бизнес-процессы
+    открытия и закрытия, доводим их до целевых действий каждого участника, ставим точки замера
+    результата и запускаем практику еженедельного анализа эффективности.</p>
+
+  <p class="lead">На выходе у ресторана есть не папка регламентов, а рабочая система: понятно,
+    кто и что делает в каждой точке процесса, по каким цифрам это проверяется и что менять,
+    когда цифра просела.</p>
+
+  <div class="spacer"></div>
+
+  <div class="sec-head" style="border-bottom-width:1px">
+    <div class="sec-num">02</div>
+    <div class="sec-title">Как устроена работа</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Практический интенсив, а не аудит</h4>
+      <p>Программа начинается с интенсива с вашей командой сервиса. Процессы описываем не
+        со стороны, а вместе с теми, кто в них работает каждый день, — поэтому они приживаются.</p>
+    </div>
+    <div class="card">
+      <h4>Сначала «как есть», потом «на вырост»</h4>
+      <p>Сперва фиксируем реальный процесс — открытие, обслуживание, закрытие. Только после
+        этого определяем ближайшую планку сервиса и моделируем процессы под неё.</p>
+    </div>
+    <div class="card">
+      <h4>Каждый процесс имеет точку замера</h4>
+      <p>Бизнес-процесс без метрики не управляется. Мы доводим детализацию до точек замера
+        результата и на них строим гипотезы по системе мотивации.</p>
+    </div>
+    <div class="card">
+      <h4>Решения проверяются на данных</h4>
+      <p>Гипотезы по точкам роста считаются на выгрузках вашей учётной системы: эффект в тенге
+        и метрика проверки — до старта, а не по факту.</p>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="sec-head" style="border-bottom-width:1px">
+    <div class="sec-num">03</div>
+    <div class="sec-title">Что остаётся у ресторана</div>
+  </div>
+
+  <ol class="deliv">
+    <li>Карта сквозного процесса сервиса и БП открытия и закрытия — в состоянии «как есть» и в целевой модели.</li>
+    <li>Детализированные бизнес-процессы, доведённые до целевых действий каждого участника.</li>
+    <li>Актуализированная сопровождающая документация сервиса.</li>
+    <li>Формализованный функционал участников процесса — роли и зоны ответственности.</li>
+    <li>Техническая инфраструктура хранения стандартов сервиса: единое место, где стандарт живёт и обновляется.</li>
+    <li>Точки замера результатов по процессам и гипотезы по развитию системы мотивации.</li>
+    <li>Работающая практика еженедельного анализа эффективности сервиса — с ответственным и форматом разбора.</li>
+    <li>Техническое задание на дальнейшее улучшение системы автоматизации.</li>
+    <li>Техническое задание на бизнес-процесс управления персоналом.</li>
+    <li>Программа недельной стажировки и месячной адаптации после найма.</li>
+  </ol>
+
+  <div class="foot"><span>The Guests — Kantin, Астана</span><span>Стр. 2</span></div>
+</section>
+
+
+<!-- ============ 3. ПРОГРАММА 4 НЕДЕЛИ ============ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-num">04</div>
+    <div class="sec-title">Программа работ: 4 недели</div>
+  </div>
+
+  <p class="lead" style="margin-bottom:14px">Содержание работ по неделям. Блоки идут внахлёст:
+    детализация процессов стартует уже на первой неделе, ТЗ пишутся на основе стандартов,
+    сформированных к третьей.</p>
+
+  <table class="gantt">
+    <thead>
+      <tr>
+        <th style="padding-left:0">Содержание работы</th>
+        <th class="wk">1 неделя</th>
+        <th class="wk">2 неделя</th>
+        <th class="wk">3 неделя</th>
+        <th class="wk">4 неделя</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="task">
+          <b>Интенсив и диагностика процесса</b>
+          <span>Практический интенсив с командой сервиса. Основы процессного управления
+            в сервисе. Анализ сквозного процесса сервиса и БП открытия и закрытия как есть сейчас.
+            Определение ближайшей планки сервиса, разработка гипотез по точкам роста,
+            моделирование процессов на вырост.</span>
+        </td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar"></div></td>
+        <td class="wk"><div class="bar"></div></td>
+        <td class="wk"><div class="bar"></div></td>
+      </tr>
+      <tr>
+        <td class="task">
+          <b>Детализация процессов и стандарты</b>
+          <span>Детализация БП сервиса до целевых действий участников процесса. Актуализация
+            имеющейся сопровождающей документации. Формализация функционала участников процесса.
+            Подготовка технической инфраструктуры хранения стандартов сервиса.</span>
+        </td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar"></div></td>
+      </tr>
+      <tr>
+        <td class="task">
+          <b>Точки замера, мотивация, еженедельный анализ</b>
+          <span>Детализация БП сервиса до точек замера результатов, формирование гипотез
+            по развитию системы мотивации. Внедрение практики еженедельного анализа
+            эффективности сервиса.</span>
+        </td>
+        <td class="wk"><div class="bar"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar"></div></td>
+      </tr>
+      <tr>
+        <td class="task">
+          <b>ТЗ на развитие автоматизации</b>
+          <span>Разработка технического задания на дальнейшее улучшение системы автоматизации.</span>
+        </td>
+        <td class="wk"><div class="bar"></div></td>
+        <td class="wk"><div class="bar"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+      </tr>
+      <tr>
+        <td class="task">
+          <b>ТЗ на управление персоналом, стажировка и адаптация</b>
+          <span>На основании разработанных стандартов — формирование ТЗ на БП управления
+            персоналом. Разработка программы недельной стажировки и месячной адаптации
+            после найма.</span>
+        </td>
+        <td class="wk"><div class="bar"></div></td>
+        <td class="wk"><div class="bar"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+        <td class="wk"><div class="bar on"></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="spacer"></div>
+
+  <div class="note">
+    <b>Почему именно такой порядок.</b> Стандарт, написанный до того, как процесс описан
+    и измерен, остаётся текстом. Поэтому ТЗ на автоматизацию и на управление персоналом
+    появляются в конце — они опираются на уже согласованные процессы, точки замера
+    и формализованный функционал ролей, а не наоборот.
+  </div>
+
+  <div class="foot"><span>The Guests — Kantin, Астана</span><span>Стр. 3</span></div>
+</section>
+
+
+<!-- ============ 4. КЕЙС ============ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-num">05</div>
+    <div class="sec-title">Как это выглядит на практике</div>
+  </div>
+
+  <p class="eyebrow" style="margin-bottom:6px">Кейс — Paulaner Bräuhaus Almaty</p>
+  <p class="lead" style="margin-bottom:14px">Тот же подход — разобрать процесс на цифры и
+    довести каждую находку до гипотезы с расчётом и метрикой — мы применили в Paulaner Bräuhaus
+    Almaty. Ниже — объём разбора и часть найденных точек роста.</p>
+
+  <div class="stats">
+    <div>
+      <div class="n">5 801</div>
+      <div class="l">чек разобран за 26 дней<br>(01–26.07.2026)</div>
+    </div>
+    <div>
+      <div class="n">292,8 <em>млн тг</em></div>
+      <div class="l">оборот в анализируемом<br>периоде</div>
+    </div>
+    <div>
+      <div class="n">233</div>
+      <div class="l">позиции меню в ABC-анализе:<br>еда, пиво, алкоголь</div>
+    </div>
+    <div>
+      <div class="n">9</div>
+      <div class="l">гипотез роста с расчётом<br>эффекта и метрикой</div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <p style="font-size:9.4pt;font-weight:700;margin-bottom:2px">Что было разобрано</p>
+  <p style="font-size:8.7pt;color:var(--ink-soft);margin-bottom:12px">Поток чеков по часам
+    открытия, по дням недели, по официантам и по зонам зала; ABC-анализ меню по трём категориям;
+    рейтинг эффективности всей команды официантов с персональными точками роста; сопоставление
+    графика смен с фактической выручкой в пересчёте на одну смену.</p>
+
+  <p style="font-size:9.4pt;font-weight:700;margin-bottom:4px">Часть найденных точек роста</p>
+
+  <div class="find">
+    <div class="mark">1</div>
+    <div>
+      <b>Обеденный провал 12:00–15:00</b>
+      <p>Дневные часы дают около 8% оборота при среднем чеке 37–58 тыс тг против 62–69 тыс тг
+        в вечерний пик. <span class="eff">Гипотеза: бизнес-ланч и сет-меню на эти часы,
+        ожидаемый рост оборота в окне 10–15%.</span> Метрика — оборот и число чеков
+        за 12:00–15:00 до и после.</p>
+    </div>
+  </div>
+
+  <div class="find">
+    <div class="mark">2</div>
+    <div>
+      <b>Акция с понятным порогом безубыточности</b>
+      <p>При себестоимости пива 8% скидка 25% в незагруженном окне окупается ростом объёма
+        на 37% — <span class="eff">порог посчитан заранее (25% / (92% − 25%)),</span>
+        а не оценён «на глаз». Метрика — объём пива и число чеков в окне акции.</p>
+    </div>
+  </div>
+
+  <div class="find">
+    <div class="mark">3</div>
+    <div>
+      <b>Цена лидера кухни не пересматривалась</b>
+      <p>Самая частая позиция кухни — 8,9% оборота категории. Повышение цены на 600 тг
+        <span class="eff">даёт около 360 000 тг в месяц при неизменном спросе.</span>
+        Метрика — число заказов блюда до и после, чтобы убедиться, что спрос не просел.</p>
+    </div>
+  </div>
+
+  <div class="find">
+    <div class="mark">4</div>
+    <div>
+      <b>График смен не совпадает с выручкой</b>
+      <p>Самый слабый день даёт 448 032 тг на смену против 669 561 тг в среднем по неделе (−33%)
+        при том же числе смен, что и в загруженный день. <span class="eff">Сокращение с 17
+        до 14 смен высвобождает около 13 смен в месяц</span> и поднимает отдачу до уровня пятницы.</p>
+    </div>
+  </div>
+
+  <div class="find">
+    <div class="mark">5</div>
+    <div>
+      <b>Окно запрета перекуров не покрывало пик</b>
+      <p>Запрет начинался в 19:00, тогда как часы 17:00–18:00 дают 26,9% месячного оборота.
+        <span class="eff">Сдвиг окна на 17:45–22:45 поднимает долю оборота под полным штатным
+        покрытием с 51% до 72%.</span> Метрика — скорость обслуживания и жалобы гостей в этом окне.</p>
+    </div>
+  </div>
+
+  <div class="find">
+    <div class="mark">6</div>
+    <div>
+      <b>Разрыв в эффективности внутри команды — более чем вдвое</b>
+      <p>Балл эффективности официантов, собранный из среднего чека, выручки на гостя и структуры
+        заказа, разошёлся от 3,4 до 7,2. <span class="eff">Рейтинг и персональные точки роста
+        стали основой менеджерского KPI</span> — с оценкой роста каждого относительно общей
+        динамики ресторана, а не относительно нуля.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>The Guests — Kantin, Астана</span><span>Стр. 4</span></div>
+</section>
+
+
+<!-- ============ 5. МЕТОД + ЭКСПЕРТ ============ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-num">06</div>
+    <div class="sec-title">Как мы обращаемся с цифрами</div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <h4>Разовое отделяем от системного</h4>
+      <p>Один банкет на 17,7 млн тг дал 6% выручки ресторана за 26 дней и в сыром отчёте
+        поднимал средний чек целого дня недели. В выводы он не пошёл — эффект показан отдельно.</p>
+    </div>
+    <div class="card">
+      <h4>Короткий срез проверяем длинным</h4>
+      <p>Выводы двухнедельного среза перепроверены на полном месяце. Там, где полный месяц
+        их не подтвердил, обоснование переписано — прямо в отчёте, а не задним числом.</p>
+    </div>
+    <div class="card">
+      <h4>Границы данных проговариваются</h4>
+      <p>Где не хватает выгрузки — так и написано. Экономию в тенге от сокращения смен
+        не считали, потому что нет ставки за смену: лучше пропуск, чем красивая выдуманная цифра.</p>
+    </div>
+    <div class="card">
+      <h4>Каждая гипотеза — с метрикой проверки</h4>
+      <p>Действие, срок, ожидаемый эффект и способ замера фиксируются до старта. Иначе через
+        месяц невозможно понять, сработало решение или просто был сезон.</p>
+    </div>
+  </div>
+
+
+  <div class="sec-head" style="border-bottom-width:1px">
+    <div class="sec-num">07</div>
+    <div class="sec-title">Что нужно от ресторана</div>
+  </div>
+
+  <table style="margin-bottom:16px">
+    <tbody>
+      <tr>
+        <td style="padding-left:0;width:52mm"><b>Команда сервиса</b></td>
+        <td>Участие в практическом интенсиве и в рабочих сессиях по описанию процессов —
+          без этого процессы не приживаются.</td>
+      </tr>
+      <tr>
+        <td style="padding-left:0"><b>Ответственный со стороны ресторана</b></td>
+        <td>Человек, который принимает решения по процессу и продолжает вести еженедельный
+          анализ эффективности после завершения программы.</td>
+      </tr>
+      <tr>
+        <td style="padding-left:0"><b>Доступ к выгрузкам учётной системы</b></td>
+        <td>Отчёты по чекам с учётным днём и суммой со скидкой, по позициям меню с количеством
+          порций, по номерам столов и залов — для точек замера и еженедельного анализа.</td>
+      </tr>
+      <tr>
+        <td style="padding-left:0"><b>График смен и текущая документация</b></td>
+        <td>Действующие регламенты, чек-листы и стандарты — они актуализируются,
+          а не переписываются с нуля.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="foot"><span>The Guests — Kantin, Астана</span><span>Стр. 5</span></div>
+</section>
+
+
+<!-- ============ 6. УСЛОВИЯ ============ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="sec-num">08</div>
+    <div class="sec-title">Кто ведёт программу</div>
+  </div>
+
+  <div class="expert">
+    <div class="photo"></div>
+    <div class="who">
+      <div class="nm">Жанна Дюсенова</div>
+      <div class="role">Эксперт проекта</div>
+      <p class="bio">Ведёт программу постановки процессного управления сервисом: практический
+        интенсив с командой, описание сквозного процесса и БП открытия и закрытия, детализацию
+        до целевых действий участников и до точек замера результата.</p>
+      <p class="bio">Отвечает за то, чтобы к концу четвёртой недели у ресторана остались
+        работающие стандарты, запущенная практика еженедельного анализа эффективности
+        и технические задания на автоматизацию и на управление персоналом.</p>
+    </div>
+  </div>
+
+
+  <div class="sec-head" style="border-bottom-width:1px;margin-top:18px">
+    <div class="sec-num">09</div>
+    <div class="sec-title">Стоимость и условия</div>
+  </div>
+
+  <div class="price-box">
+    <div class="price-top">
+      <div>
+        <div class="big">1 250 000 тенге</div>
+        <div class="per">в месяц</div>
+      </div>
+      <div class="rt">
+        Срок программы — <b>4 недели</b><br>
+        Формат — работа на площадке ресторана<br>
+        Порядок оплаты и реквизиты фиксируются договором
+      </div>
+    </div>
+    <div class="price-body">
+      <div class="eyebrow" style="margin-bottom:5px">В стоимость входит</div>
+      <ul>
+        <li>Практический интенсив с командой сервиса и рабочие сессии по описанию процессов</li>
+        <li>Полный перечень артефактов из раздела 03 — процессы, стандарты, точки замера, оба ТЗ</li>
+        <li>Настройка технической инфраструктуры хранения стандартов сервиса</li>
+        <li>Запуск практики еженедельного анализа эффективности с передачей её ответственному</li>
+        <li>Программа недельной стажировки и месячной адаптации после найма</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="who">
+      <b>The Guests</b>
+      Готовы стартовать в течение недели с момента согласования.
+    </div>
+    <div style="text-align:right">
+      <div class="eyebrow" style="margin-bottom:3px">Связаться</div>
+      <div class="mail">jeanne@the-guests.com</div>
+    </div>
+  </div>
+
+  <div class="foot"><span>The Guests — Kantin, Астана</span><span>Стр. 6</span></div>
+</section>
+
+</body>
+</html>
