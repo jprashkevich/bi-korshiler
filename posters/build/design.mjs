@@ -25,6 +25,15 @@ export const LOGO_SVG = fs.readFileSync(path.join(ROOT, 'posters/assets/yourt-lo
 export const qrDataUri = (id) =>
   'data:image/png;base64,' + b64(`posters/assets/qr/${id}.png`);
 
+/* QR отзывов приходят вектором (segno). Инлайним, чтобы масштабировался
+   без потерь и красился из CSS; viewBox segno не проставляет — добавляем. */
+export const qrSvg = (id) =>
+  fs.readFileSync(path.join(ROOT, `posters/assets/qr-review/qr-${id}.svg`), 'utf8')
+    .replace(/<\?xml[^>]*\?>\s*/, '')
+    .replace(/<svg([^>]*?)width="(\d+)"\s+height="(\d+)"/,
+             '<svg$1viewBox="0 0 $2 $3" width="100%" height="100%"')
+    .replace(/stroke="#[0-9a-fA-F]{3,8}"/, 'stroke="currentColor"');
+
 /* ─── Шаңырақ: вид юрты сверху — ключевой графический мотив ──
    id генерируется счётчиком: в сводном PDF на 13 страниц один и тот же
    макет повторяется, и одинаковые id у clipPath ломали бы отрисовку. */
