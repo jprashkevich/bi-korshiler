@@ -22,11 +22,14 @@ export const FONT_CSS = `
 
 export const LOGO_SVG = fs.readFileSync(path.join(ROOT, 'posters/assets/yourt-logo.svg'), 'utf8');
 
-export const qrDataUri = (id) =>
-  'data:image/png;base64,' + b64(`posters/assets/qr/${id}.png`);
+/* Оба набора QR инлайнятся вектором: на плакате код печатается 100+ мм,
+   и растр пришлось бы растягивать с интерполяцией — края модулей плывут,
+   часть декодеров перестаёт читать. В SVG модуль остаётся модулем.
+   Бронирование: PNG переведены в SVG скриптом build/qr_png_to_svg.py.
+   Отзывы: вектор от segno, viewBox он не проставляет — добавляем. */
+export const qrBooking = (id) =>
+  fs.readFileSync(path.join(ROOT, `posters/assets/qr/${id}.svg`), 'utf8');
 
-/* QR отзывов приходят вектором (segno). Инлайним, чтобы масштабировался
-   без потерь и красился из CSS; viewBox segno не проставляет — добавляем. */
 export const qrSvg = (id) =>
   fs.readFileSync(path.join(ROOT, `posters/assets/qr-review/qr-${id}.svg`), 'utf8')
     .replace(/<\?xml[^>]*\?>\s*/, '')

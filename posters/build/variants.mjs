@@ -10,7 +10,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 import { COPY, SITE, typo } from './content.mjs';
-import { LOGO_SVG, qrDataUri, shanyrak as shanyrakSvg, TOKENS } from './design.mjs';
+import { LOGO_SVG, qrBooking, shanyrak as shanyrakSvg, TOKENS } from './design.mjs';
 
 const kz = COPY.kz, ru = COPY.ru;
 
@@ -79,8 +79,8 @@ export const kest = (s) => ({
 
   .act{display:flex;align-items:center;gap:9mm;padding:8mm;
        border-radius:6mm;background:var(--sand)}
-  .act .qr{flex:none;width:90mm;height:90mm;border-radius:2mm;
-       background:#fff;padding:4mm}
+  .act .qr{flex:none;width:70mm;height:70mm;border-radius:2mm;color:var(--ink);
+       background:#fff;padding:0;box-shadow:0 0 0 8mm #fff}
   .act__txt b{display:block;font-size:11.5pt;font-weight:800;line-height:1.24;letter-spacing:-.018em}
   .act__txt b+b{margin-top:2.4mm;color:var(--ink-soft);font-weight:700}
   .act__txt p{margin-top:4mm;font-size:8pt;line-height:1.45;color:var(--muted);font-weight:500}
@@ -108,7 +108,7 @@ export const kest = (s) => ({
         <div><b>${kz.steps[i]}</b><span>${ru.steps[i]}</span></div></div>`).join('')}
     </div>
     <div class="act">
-      <img class="qr" src="${qrDataUri(s.id)}" alt="QR">
+      <div class="qr">${qrBooking(s.id)}</div>
       <div class="act__txt">
         <b>${kz.cta}</b><b>${ru.cta}</b>
         <p>${kz.scan}<br>${ru.scan}</p>
@@ -134,7 +134,7 @@ export const xl = (s) => ({
        color:var(--accent)}
   h1{margin-top:5mm;font-size:24pt;line-height:1.06;font-weight:800;letter-spacing:-.028em}
   h1+h1{margin-top:3.6mm;color:var(--ink-soft);font-weight:700}
-  .qr{width:122mm;height:122mm;margin:0 auto}
+  .qr{width:103mm;height:103mm;margin:0 auto;color:var(--ink)}
   .cta b{display:block;font-size:13pt;font-weight:800;line-height:1.24;letter-spacing:-.018em}
   .cta b+b{margin-top:2.6mm;color:var(--ink-soft);font-weight:700}
   .cta small{display:block;margin-top:4mm;font-size:7.8pt;line-height:1.45;
@@ -156,7 +156,7 @@ export const xl = (s) => ({
       <h1>${h1lines(kz.h1)}</h1>
       <h1>${h1lines(ru.h1)}</h1>
     </div>
-    <img class="qr" src="${qrDataUri(s.id)}" alt="QR">
+    <div class="qr">${qrBooking(s.id)}</div>
     <div class="cta">
       <div><b>${kz.cta}</b><b>${ru.cta}</b></div>
       <small>${kz.scan}<br>${ru.scan}</small>
@@ -190,8 +190,8 @@ export const steps = (s) => ({
 
   .main{display:flex;align-items:stretch;gap:10mm;padding:9mm;
        border-radius:6mm;background:var(--sand)}
-  .main .qr{flex:none;width:100mm;height:100mm;background:#fff;
-       border-radius:3mm;padding:4mm}
+  .main .qr{flex:none;width:78mm;height:78mm;background:#fff;color:var(--ink);
+       border-radius:3mm;box-shadow:0 0 0 8mm #fff}
   .steps{flex:1;display:flex;flex-direction:column;justify-content:center;gap:9mm}
   .step{display:flex;gap:3.6mm;align-items:flex-start}
   .step__n{flex:none;width:7mm;height:7mm;border-radius:50%;background:var(--accent);
@@ -215,7 +215,7 @@ export const steps = (s) => ({
     </div>
     ${bilingual}
     <div class="main">
-      <img class="qr" src="${qrDataUri(s.id)}" alt="QR">
+      <div class="qr">${qrBooking(s.id)}</div>
       <div class="steps">
         ${[0, 1, 2].map((i) => `<div class="step"><span class="step__n">${i + 1}</span>
           <div><b>${kz.steps[i]}</b><span>${ru.steps[i]}</span></div></div>`).join('')}
@@ -251,7 +251,7 @@ export const shanyrak = (s) => ({
   .card{position:relative;width:100mm;background:#fff;border-radius:4mm;
         padding:7mm 7mm 6mm;text-align:center;
         box-shadow:0 1.5mm 7mm rgba(22,24,28,.10)}
-  .card .qr{width:78mm;height:78mm;margin:0 auto}
+  .card .qr{width:66mm;height:66mm;margin:0 auto;color:var(--ink)}
   .card b{display:block;margin-top:5mm;font-size:10pt;font-weight:800;
           line-height:1.26;letter-spacing:-.012em}
   .card b+b{margin-top:1.8mm;color:var(--ink-soft);font-weight:700}
@@ -271,7 +271,7 @@ export const shanyrak = (s) => ({
     <div class="medal">
       <div class="medal__bg">${shanyrakSvg({ spokes: 24, stroke: .5 })}</div>
       <div class="card">
-        <img class="qr" src="${qrDataUri(s.id)}" alt="QR">
+        <div class="qr">${qrBooking(s.id)}</div>
         <b>${kz.cta}</b><b>${ru.cta}</b>
         <small>${kz.scan} · ${ru.scan}</small>
       </div>
