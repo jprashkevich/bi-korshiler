@@ -28,7 +28,7 @@ const SETS = {
   },
   review: {
     variants: REVIEW_VARIANTS, spaces: REVIEW_SPACES, demo: 'ast-flagman',
-    dir: 'review', file: (s) => `Yourt_otzyv_${s.city}_${s.name.replace(/\s+/g, '_')}`,
+    dir: 'review', file: (s) => `Yourt_otzyv_${s.cityLat}_${s.name.replace(/\s+/g, '_')}`,
   },
 };
 
