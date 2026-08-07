@@ -7,3 +7,4 @@ images/photos/
 # прочее
 *.pyc
 __pycache__/
+posters/build/.tmp/
