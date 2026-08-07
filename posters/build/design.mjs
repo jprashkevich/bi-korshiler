@@ -25,8 +25,12 @@ export const LOGO_SVG = fs.readFileSync(path.join(ROOT, 'posters/assets/yourt-lo
 export const qrDataUri = (id) =>
   'data:image/png;base64,' + b64(`posters/assets/qr/${id}.png`);
 
-/* ─── Шаңырақ: вид юрты сверху — ключевой графический мотив ── */
-export function shanyrak({ spokes = 20, stroke = 0.9, id = 'sh' } = {}) {
+/* ─── Шаңырақ: вид юрты сверху — ключевой графический мотив ──
+   id генерируется счётчиком: в сводном PDF на 13 страниц один и тот же
+   макет повторяется, и одинаковые id у clipPath ломали бы отрисовку. */
+let shId = 0;
+export function shanyrak({ spokes = 20, stroke = 0.9 } = {}) {
+  const id = `sh${++shId}`;
   const R_OUT = 49, R_MID = 46.2, R_HUB = 16, R_HUB_IN = 14.3;
   let uyq = '';
   for (let i = 0; i < spokes; i++) {

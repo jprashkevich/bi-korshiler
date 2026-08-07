@@ -78,8 +78,12 @@ async function main() {
       all.push(html(fn, s).replace(/^[\s\S]*?<body>|<\/body>[\s\S]*$/g, ''));
       console.log('✓', s.name);
     }
-    /* одним файлом на печать — 13 страниц */
-    const merged = html(fn, SPACES[0]).replace(/<body>[\s\S]*<\/body>/, `<body>${all.join('')}</body>`);
+    /* одним файлом на печать — 13 страниц.
+       html,body жёстко заданы в 297мм под одиночный лист: для многостраничного
+       файла высоту отпускаем, иначе страницы со второй обрезаются. */
+    const merged = html(fn, SPACES[0])
+      .replace(/<body>[\s\S]*<\/body>/, `<body>${all.join('')}</body>`)
+      .replace('</style>', 'html,body{height:auto}</style>');
     const mf = path.join(TMP, `${key}-all.html`);
     fs.writeFileSync(mf, merged);
     await pdf(browser, mf, path.join(OUT, `Yourt_posters_${key}_ALL.pdf`));

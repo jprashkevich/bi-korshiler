@@ -66,7 +66,7 @@ export const v1 = (s) => ({
       <div class="col"><span class="lang">${ru.lang}</span><p>${typo(ru.lead + " " + ru.body)}</p></div>
     </div>
     <div class="medal">
-      <div class="medal__bg">${shanyrak({ spokes: 24, stroke: .5, id: 'v1' })}</div>
+      <div class="medal__bg">${shanyrak({ spokes: 24, stroke: .5 })}</div>
       <div class="card">
         <img class="qr" src="${qrDataUri(s.id)}" alt="QR">
         <b>${kz.cta}</b><b>${ru.cta}</b>
@@ -126,7 +126,7 @@ export const v2 = (s) => ({
     <div class="steps">
       ${[0, 1, 2].map((i) => `<div class="step">
         <div class="step__n">0${i + 1}</div>
-        <div class="step__mark">${shanyrak({ spokes: 8, stroke: 2.6, id: 'v2s' + i })}</div>
+        <div class="step__mark">${shanyrak({ spokes: 8, stroke: 2.6 })}</div>
         <b>${kz.steps[i]}</b><span>${ru.steps[i]}</span></div>`).join('')}
     </div>
     <div class="act">
@@ -285,7 +285,7 @@ export const v4 = (s) => ({
   .ft b{color:var(--accent);font-weight:700}`,
   body: `<div class="sheet">
     <div class="top">
-      <div class="top__bg">${shanyrak({ spokes: 24, stroke: .8, id: 'v4' })}</div>
+      <div class="top__bg">${shanyrak({ spokes: 24, stroke: .8 })}</div>
       <div class="hd">
         <span class="logo">${LOGO_SVG}</span>
         <span class="hd__space">${spaceLabel(s)}</span>
