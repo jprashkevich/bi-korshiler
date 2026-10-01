@@ -7,3 +7,15 @@ images/photos/
 # прочее
 *.pyc
 __pycache__/
+
+# reels-agent: тяжёлые и личные файлы
+reels-agent/remotion/node_modules/
+reels-agent/remotion/out/
+reels-agent/remotion/public/footage/*
+!reels-agent/remotion/public/footage/.gitkeep
+reels-agent/footage/raw/*
+!reels-agent/footage/raw/.gitkeep
+reels-agent/batches/*/out/
+reels-agent/hooks/inbox/*
+!reels-agent/hooks/inbox/.gitkeep
+reels-agent/.remotion/

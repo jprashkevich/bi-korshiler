@@ -1,0 +1,31 @@
+{
+  "name": "silent-reels-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion-проект для сборки «тихих» рилсов: текст-хук поверх b-roll",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Reel out/preview.mp4",
+    "still": "remotion still src/index.ts Reel out/preview.png --frame=45",
+    "batch": "node ../scripts/render-batch.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.531",
+    "@remotion/cli": "4.0.531",
+    "@remotion/fonts": "^4.0.531",
+    "@remotion/google-fonts": "4.0.531",
+    "@remotion/layout-utils": "^4.0.531",
+    "@remotion/renderer": "4.0.531",
+    "@remotion/zod-types": "4.0.531",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.531",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "typescript": "5.8.3"
+  }
+}
