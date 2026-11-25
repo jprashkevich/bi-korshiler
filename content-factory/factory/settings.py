@@ -38,6 +38,9 @@ class Settings:
     # Threads
     threads_user_id: str = os.getenv("THREADS_USER_ID", "")
     threads_token: str = os.getenv("THREADS_ACCESS_TOKEN", "")
+    threads_app_id: str = os.getenv("THREADS_APP_ID", "")
+    threads_app_secret: str = os.getenv("THREADS_APP_SECRET", "")
+    threads_redirect_uri: str = os.getenv("THREADS_REDIRECT_URI", "https://localhost/")
 
     # Google Sheets (необязательно)
     google_sa_json: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
@@ -45,10 +48,6 @@ class Settings:
 
     # Рендер
     chromium_path: str = os.getenv("CHROMIUM_EXECUTABLE", "")
-
-    @property
-    def threads_enabled(self) -> bool:
-        return bool(self.threads_user_id and self.threads_token)
 
     @property
     def sheets_enabled(self) -> bool:

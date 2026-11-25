@@ -37,7 +37,7 @@ def on_callback(cb: dict) -> None:
         telegram.answer_callback(cb["id"], "Одобрено")
         telegram.edit_keyboard(chat, msg_id, None)
         ids = []
-        if settings.threads_enabled:
+        if threads.enabled():
             try:
                 ids = threads.publish_thread(post["package"]["threads"])
             except Exception as exc:
@@ -97,11 +97,34 @@ def on_message(msg: dict) -> None:
     if text.startswith("/id"):
         telegram.send_message(chat, f"chat_id: <code>{chat}</code>\nваш user_id: <code>{msg['from']['id']}</code>")
         return
+    if text.startswith("/threads") and allowed(msg["from"]["id"]):
+        try:
+            url = threads.authorize_url()
+        except threads.ThreadsError as exc:
+            telegram.send_message(chat, e(str(exc)))
+            return
+        prompt = telegram.send_message(
+            chat, f"1. Откройте ссылку и разрешите доступ аккаунту BIG Life:\n{e(url)}\n\n"
+                  "2. Браузер перейдёт на страницу, которая не откроется, — это нормально. "
+                  "Скопируйте адрес этой страницы целиком (в нём есть code=...) и пришлите ответом на это сообщение. "
+                  "Код действует 1 час.", force_reply=True)
+        db.kv_set(f"threads_prompt:{chat}:{prompt}", "1")
+        return
     if text.startswith("/run") and allowed(msg["from"]["id"]):
         telegram.send_message(chat, "Запускаю сбор материалов и подготовку постов на сегодня.")
         pipeline.run_daily()
         return
     if not reply or not text:
+        return
+    if db.kv_get(f"threads_prompt:{chat}:{reply['message_id']}") == "1" and allowed(msg["from"]["id"]):
+        db.kv_set(f"threads_prompt:{chat}:{reply['message_id']}", "")
+        try:
+            username = threads.connect(text)
+            telegram.send_message(chat, f"Threads подключён: @{e(str(username))}. "
+                                        "Одобренные посты будут публиковаться туда тредом.")
+        except Exception as exc:
+            telegram.send_message(chat, f"Не удалось подключить Threads: {e(str(exc))[:400]}. "
+                                        "Отправьте /threads и попробуйте ещё раз.")
         return
     raw = db.kv_get(f"redo_prompt:{chat}:{reply['message_id']}")
     if not raw or not allowed(msg["from"]["id"]):
@@ -117,6 +140,8 @@ def on_message(msg: dict) -> None:
 def maybe_run_daily() -> None:
     now = datetime.now(ZoneInfo(settings.timezone))
     key = now.date().isoformat()
+    if not settings.telegram_chat_id:
+        return                            # группа ещё не настроена — посты некуда отправлять
     if now.hour < settings.daily_run_hour or db.kv_get("last_daily") == key:
         return
     db.kv_set("last_daily", key)          # отмечаем заранее, чтобы при сбое не запускать повторно в цикле

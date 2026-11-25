@@ -74,3 +74,10 @@ def test_pick_prefers_rubric_and_skips_used(monkeypatch):
                 score=sc, used=used, score_data={"best_rubric": rub, "relevance": 8, "has_number": False}))
     assert score.pick("science")["title"] == "t0"     # 7 + бонус рубрики > 7.5; использованный пропущен
     assert score.pick("number", need_number=True) is None
+
+
+def test_threads_extract_code():
+    from factory.threads import extract_code
+    assert extract_code("https://localhost/?code=AQBx12#_") == "AQBx12"
+    assert extract_code("https://localhost/?code=AQBx12&state=1") == "AQBx12"
+    assert extract_code("  AQBx12#_ ") == "AQBx12"

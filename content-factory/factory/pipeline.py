@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import update
 
-from . import db, ingest, render, score, sheets, telegram, writer
+from . import db, ingest, render, score, sheets, telegram, threads, writer
 from .models import PostPackage
 from .settings import settings
 
@@ -112,7 +112,7 @@ def deliver(post_id: int) -> None:
 
     threads = "\n\n".join(f"{i}/ {e(t)}" for i, t in enumerate(pkg.threads, 1))
     facts = "\n".join(f"• {e(f)}" for f in pkg.fact_check)
-    threads_note = ("опубликуется после «Одобрить»" if settings.threads_enabled
+    threads_note = ("опубликуется после «Одобрить»" if threads.enabled()
                     else "Threads не подключён, опубликуйте вручную")
     details = (f"<b>Қазақша:</b> {e(pkg.summary_kz)}\n\n<b>O‘zbekcha:</b> {e(pkg.summary_uz)}\n\n"
                f"<b>Alt-текст:</b> {e(pkg.alt_text)}\n\n"
