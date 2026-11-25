@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import update
 
-from . import db, ingest, reels, render, score, sheets, telegram, threads, tts, writer
+from . import db, ingest, people, reels, render, score, sheets, telegram, threads, tts, writer
 from .models import PostPackage, ReelPackage
 from .settings import settings
 
@@ -65,14 +65,29 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
     name = f"{post['slot_date']}-post{post_id}"
     if rubric.get("format") == "reels" and tts.enabled():
         pkg = writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous)
-        files = reels.render_video(pkg, rubric["title"], name)
-        data = {**pkg.model_dump(), "format": "reels"}
+        pictures = find_pictures(pkg, pkg.scenes)
+        files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
+        data = {**pkg.model_dump(), "format": "reels", "pictures": pictures}
     else:
         pkg = writer.write(post["rubric"], item, feedback=feedback, previous=previous)
-        files = render.render(pkg, rubric["title"], name)
-        data = {**pkg.model_dump(), "format": "carousel"}
+        pictures = find_pictures(pkg, pkg.slides)
+        files = render.render(pkg, rubric["title"], name, pictures=pictures)
+        data = {**pkg.model_dump(), "format": "carousel", "pictures": pictures}
     db.update_post(post_id, package=data, files=[str(f) for f in files], status="generated")
     deliver(post_id)
+
+
+def find_pictures(pkg, frames) -> dict:
+    """Фото из Википедии для людей и организаций, которые стоят на слайдах/сценах person."""
+    wanted = {f.person for f in frames if f.type == "person" and f.person}
+    out = {}
+    for ref in pkg.people:
+        if ref.name_en not in wanted:
+            continue
+        pic = people.find(ref.name_en, ref.kind)
+        out[ref.name_en] = pic and {"path": str(pic.path), "credit": pic.credit, "title": pic.title,
+                                    "description": pic.description, "url": pic.page_url}
+    return out
 
 
 def _zip(files: list[str], name: str):
@@ -134,6 +149,17 @@ def deliver(post_id: int) -> None:
                + extra +
                f"<b>Threads ({threads_note}):</b>\n{thread_text}\n\n"
                f"<b>Проверка фактов:</b>\n{facts}")
+    pics = post["package"].get("pictures") or {}
+    if pics:
+        lines = []
+        for name, pic in pics.items():
+            if pic:
+                lines.append(f"• {e(name)}: <a href=\"{e(pic['url'])}\">{e(pic['title'])}</a> — {e(pic['description'])}. "
+                             f"Проверьте, что на фото тот самый человек.")
+            else:
+                lines.append(f"• {e(name)}: свободного фото не нашлось, на слайде инициал. "
+                             f"Можно заменить вручную в Canva.")
+        details += "\n\n<b>Фото для коллажа:</b>\n" + "\n".join(lines)
     if post["feedback"]:
         details += "\n\n<i>Учтены комментарии:</i> " + e("; ".join(post["feedback"]))
     msg_id = telegram.send_message(chat, details, keyboard=keyboard(post_id))

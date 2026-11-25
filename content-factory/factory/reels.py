@@ -84,7 +84,7 @@ def render_cover(pkg: ReelPackage, rubric_title: str, out: Path) -> Path:
     return out
 
 
-def render_video(pkg: ReelPackage, rubric_title: str, name: str,
+def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict | None = None,
                  speech_fn=tts.synthesize) -> list[Path]:
     """Возвращает [mp4, обложка.png]. speech_fn подменяется в тестах."""
     out_dir = OUTPUT_DIR / name
@@ -97,7 +97,10 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str,
         d = s.model_dump()
         d["title"], d["text"], d["eyebrow"] = typograf(d["title"]), typograf(d["text"]), d["eyebrow"]
         scenes.append(d)
+    from .render import illustrations, picture_uris
     html = _env.get_template("reels.html.j2").render(
+        ills=illustrations(), pictures=picture_uris(pictures),
+        people={p.name_en: p.model_dump() for p in pkg.people},
         scenes=scenes, accent=pkg.accent, rubric_title=rubric_title, timeline=tl, subtitles=subs,
         total=total, assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
     page_path = out_dir / "reel.html"

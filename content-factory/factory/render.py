@@ -42,8 +42,32 @@ def _prepare(slide: dict) -> dict:
     return out
 
 
-def render_html(pkg: PostPackage, rubric_title: str) -> str:
+def illustrations() -> dict[str, str]:
+    """id → file:// URI для иллюстраций из config/illustrations.yaml."""
+    path = CONFIG_DIR / "illustrations.yaml"
+    if not path.exists():
+        return {}
+    out = {}
+    for it in yaml.safe_load(path.read_text(encoding="utf-8")).get("illustrations", []):
+        f = TEMPLATES_DIR / "assets" / "illustrations" / it["file"]
+        if f.exists():
+            out[it["id"]] = f.resolve().as_uri()
+    return out
+
+
+def picture_uris(pictures: dict | None) -> dict[str, dict]:
+    out = {}
+    for name, pic in (pictures or {}).items():
+        if pic and Path(pic["path"]).exists():
+            out[name] = {"uri": Path(pic["path"]).resolve().as_uri(), "credit": pic.get("credit", "")}
+    return out
+
+
+def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = None) -> str:
     return _env.get_template("carousel.html.j2").render(
+        ills=illustrations(),
+        pictures=picture_uris(pictures),
+        people={p.name_en: p.model_dump() for p in pkg.people},
         slides=[_prepare(s.model_dump()) for s in pkg.slides],
         accent=pkg.accent,
         photo=photo_path(pkg.photo_id),
@@ -53,11 +77,11 @@ def render_html(pkg: PostPackage, rubric_title: str) -> str:
     )
 
 
-def render(pkg: PostPackage, rubric_title: str, name: str) -> list[Path]:
+def render(pkg: PostPackage, rubric_title: str, name: str, pictures: dict | None = None) -> list[Path]:
     out_dir = OUTPUT_DIR / name
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / "carousel.html"
-    html_path.write_text(render_html(pkg, rubric_title), encoding="utf-8")
+    html_path.write_text(render_html(pkg, rubric_title, pictures), encoding="utf-8")
     files = []
     launch = {"executable_path": settings.chromium_path} if settings.chromium_path else {}
     with sync_playwright() as pw:

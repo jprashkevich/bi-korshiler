@@ -21,6 +21,10 @@ def system_prompt() -> str:
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
     photos = load_yaml("photos.yaml")["photos"]
     catalog = "\n".join(f"- {p['id']}: {p['desc']}" for p in photos)
+    from .render import illustrations
+    available = illustrations()
+    ills = "\n".join(f"- {i['id']}: {i['desc']}" for i in load_yaml("illustrations.yaml").get("illustrations", [])
+                     if i["id"] in available) or "- (пока нет)"
     return f"""Ты — ведущий автор Instagram-паблика BIG Life и специалист по вирусным каруселям.
 Пишешь по-русски живо и коротко: на слайде читатель тратит 2–3 секунды.
 
@@ -36,6 +40,17 @@ def system_prompt() -> str:
 
 ## Каталог реальных фото BIG Life
 {catalog}
+
+## Каталог иллюстраций BIG Life (изометрия в фирменных цветах)
+{ills}
+
+## Иллюстрации, люди и коллажи
+- На обложку (cover) почти всегда ставь подходящую иллюстрацию: illustration_id. Это повышает узнаваемость ленты.
+- Для слайда insight выбирай что-то одно: реальное фото BIG Life (photo_id) или иллюстрацию (illustration_id).
+  Реальное фото — когда речь о жизни дворов, иллюстрация — когда об общей идее.
+- Если в источнике назван исследователь или организация (университет, институт), добавь их в people
+  и сделай один слайд person: коллаж с фото и подписью, а в заголовке — что этот человек или команда выяснили.
+  Не придумывай людей; если в источнике никто не назван, people пустой и слайда person нет.
 """
 
 

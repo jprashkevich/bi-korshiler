@@ -121,3 +121,35 @@ def test_reel_timeline_and_subtitles():
     assert all(a["end"] <= b["start"] + 0.01 for a, b in zip(tl, tl[1:]))
     assert all(len(s["text"]) <= reels.SUB_MAX + 15 for s in subs)
     assert subs[0]["start"] == 0
+
+
+def test_illustrations_catalog_matches_files():
+    from factory.render import illustrations
+    from factory.writer import load_yaml
+    ills = illustrations()
+    assert len(ills) >= 6
+    ids = {i["id"] for i in load_yaml("illustrations.yaml")["illustrations"]}
+    assert set(ills) <= ids
+
+
+def test_carousel_html_has_illustration_and_person_collage(tmp_path):
+    from factory.render import render_html
+    photo = tmp_path / "p.jpg"
+    photo.write_bytes(b"x")
+    html = render_html(sample(), "Наука о соседстве",
+                       {"Dan Buettner": {"path": str(photo), "credit": "Фото: X / CC BY-SA 2.0, Wikimedia Commons"}})
+    assert "ill-elevator.jpg" in html and "cover-ill" in html
+    assert 'class="collage"' in html and "Дэн Бюттнер" in html and "CC BY-SA 2.0" in html
+
+
+def test_person_slide_without_photo_shows_initial():
+    from factory.render import render_html
+    html = render_html(sample(), "Наука о соседстве", {})
+    assert 'class="mono"' in html
+
+
+def test_commons_filename_parsing():
+    from factory.people import _commons_file_from_url
+    url = "https://upload.wikimedia.org/wikipedia/commons/a/ab/DanBuettnerOct10.jpg?utm_source=x"
+    assert _commons_file_from_url(url) == "DanBuettnerOct10.jpg"
+    assert _commons_file_from_url("https://upload.wikimedia.org/wikipedia/en/a/ab/X.jpg") is None
