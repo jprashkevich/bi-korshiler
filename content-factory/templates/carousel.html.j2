@@ -37,7 +37,10 @@ p{font-size:30px;line-height:1.5;margin:0}
 .cover-ill{position:absolute;right:-50px;bottom:-90px;width:470px;height:627px;transform:rotate(-4deg);border-radius:36px;box-shadow:0 30px 60px rgba(0,0,0,.35);z-index:1;overflow:hidden;border:10px solid #fff}
 .cover-ill img{width:100%;height:100%;object-fit:cover}
 /* Коллаж: фото в духе вырезки из журнала — ч/б с цветным тоном, растр, скотч, наклейка с подписью */
-.collage{position:relative;width:640px;height:720px;margin:10px auto 0;flex:0 0 auto}
+.collage{position:relative;width:620px;flex:1 1 0;min-height:440px;max-height:700px;margin:10px auto 0}
+.namecard{display:inline-flex;flex-direction:column;align-self:flex-start;background:var(--navy);color:#fff;border-radius:22px;padding:26px 34px;margin:30px 0 46px;transform:rotate(-1.5deg);box-shadow:0 16px 40px rgba(40,52,138,.25)}
+.namecard b{font-family:var(--display);font-size:52px;line-height:1.05}
+.namecard span{font-size:26px;font-weight:600;opacity:.85;margin-top:8px;max-width:30ch}
 .collage .paper{position:absolute;inset:0;background:var(--accent);transform:rotate(5deg);border-radius:6px;opacity:.9}
 .collage .frame{position:absolute;inset:18px 24px 30px 18px;background:#fff;padding:18px;transform:rotate(-3deg);box-shadow:0 18px 40px rgba(20,26,46,.25)}
 .collage .photo-in{position:relative;width:100%;height:100%;overflow:hidden;background:#ccc}
@@ -86,20 +89,28 @@ p{font-size:30px;line-height:1.5;margin:0}
   <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
 </section>
 {% elif s.type == 'person' %}{% set pic = pictures.get(s.person, {}) %}{% set ref = people.get(s.person, {}) %}
+{% if pic.uri %}
 <section class="f light" id="s{{ n }}">
   <div class="head"><span class="num">{{ '%02d' % (n - 1) }}</span><span class="eyebrow" style="color:var(--muted)">{{ s.eyebrow }}</span></div>
   <div class="collage">
     <div class="paper"></div>
-    <div class="frame"><div class="tape"></div><div class="photo-in">
-      {% if pic.uri %}<img src="{{ pic.uri }}" alt="">{% else %}<div class="mono">{{ (ref.name_ru or s.person or '?')[:1] }}</div>{% endif %}
-    </div></div>
+    <div class="frame"><div class="tape"></div><div class="photo-in"><img src="{{ pic.uri }}" alt=""></div></div>
     <div class="tag"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
   </div>
-  <h2 style="margin-top:70px;font-size:56px">{{ s.title }}</h2>
+  <h2 style="margin-top:64px;font-size:56px">{{ s.title }}</h2>
   {% if s.text %}<p style="color:var(--body);max-width:32ch;font-size:28px">{{ s.text }}</p>{% endif %}
-  {% if pic.credit %}<div class="credit" style="margin-top:auto">{{ pic.credit }}</div>{% endif %}
+  <div class="credit">{{ pic.credit }}</div>
   <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
 </section>
+{% else %}{# свободного фото нет — карточка без коллажа, а не заглушка с буквой #}
+<section class="f light" id="s{{ n }}" style="justify-content:center">
+  <div class="head"><span class="num">{{ '%02d' % (n - 1) }}</span><span class="eyebrow" style="color:var(--muted)">{{ s.eyebrow }}</span></div>
+  <div class="namecard"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
+  <h2 style="font-size:76px">{{ s.title }}</h2>
+  {% if s.text %}<p style="color:var(--body);max-width:30ch;font-size:32px">{{ s.text }}</p>{% endif %}
+  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
+</section>
+{% endif %}
 {% elif s.type == 'event' %}
 <section class="f light" id="s{{ n }}">
   {% if dphotos.get(s.photo_ref) %}<div class="evphoto"><img src="{{ dphotos[s.photo_ref] }}" alt="">

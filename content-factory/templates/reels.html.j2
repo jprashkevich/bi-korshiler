@@ -40,6 +40,9 @@
 .collage .tag b{display:block;font-family:var(--display);font-size:42px;line-height:1.05}
 .collage .tag span{font-size:24px;font-weight:700;opacity:.75}
 .collage .mono{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:260px;font-weight:800;color:#fff;background:var(--navy)}
+.namecard{display:flex;flex-direction:column;background:#fff;color:var(--navy);border-radius:28px;padding:34px 42px;max-width:820px;align-self:flex-start}
+.namecard b{font-family:var(--display);font-size:64px;line-height:1.05}
+.namecard span{font-size:32px;font-weight:700;opacity:.75;margin-top:10px}
 .credit{position:absolute;left:0;right:0;bottom:-90px;font-size:18px;opacity:.6;text-align:center}
 </style></head><body>
 <div id="stage">
@@ -55,14 +58,16 @@
     {% endif %}
     {% if s.text and not has_vis %}<div class="text">{{ s.text }}</div>{% endif %}
     {% if s.type == 'person' %}{% set pic = pictures.get(s.person, {}) %}{% set ref = people.get(s.person, {}) %}
+      {% if pic.uri %}
       <div class="vis collage" data-anim="collage">
         <div class="paper" data-part="paper"></div>
-        <div class="frame" data-part="frame"><div class="tape" data-part="tape"></div><div class="photo-in">
-          {% if pic.uri %}<img src="{{ pic.uri }}" alt="">{% else %}<div class="mono">{{ (ref.name_ru or s.person or '?')[:1] }}</div>{% endif %}
-        </div></div>
+        <div class="frame" data-part="frame"><div class="tape" data-part="tape"></div><div class="photo-in"><img src="{{ pic.uri }}" alt=""></div></div>
         <div class="tag" data-part="tag"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
-        {% if pic.credit %}<div class="credit">{{ pic.credit }}</div>{% endif %}
+        <div class="credit">{{ pic.credit }}</div>
       </div>
+      {% else %}
+      <div class="vis namecard" data-anim="ill"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
+      {% endif %}
     {% elif ills.get(s.illustration_id) %}
       <div class="vis ill" data-anim="ill"><img src="{{ ills[s.illustration_id] }}" alt=""></div>
     {% endif %}

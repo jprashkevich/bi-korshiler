@@ -153,10 +153,10 @@ def test_cover_pill_hidden_when_equal_to_rubric():
     assert 'class="pill">Исследование' in render_html(pkg, "Наука о соседстве")
 
 
-def test_person_slide_without_photo_shows_initial():
+def test_person_slide_without_photo_is_a_namecard():
     from factory.render import render_html
     html = render_html(sample(), "Наука о соседстве", {})
-    assert 'class="mono"' in html
+    assert 'class="namecard"' in html and 'class="collage"' not in html and 'class="mono"' not in html
 
 
 def test_commons_filename_parsing():
