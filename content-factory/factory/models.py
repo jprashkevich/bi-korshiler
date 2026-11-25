@@ -52,3 +52,31 @@ class PostPackage(BaseModel):
     source_line: str = Field(description="Источник для последнего слайда и подписи: издание/журнал, год; исследователи, если названы в источнике", max_length=220)
     threads: list[str] = Field(description="Тред для Threads: 3–5 сообщений, каждое до 450 символов, последнее — вопрос аудитории. Другая подача, чем в карусели, разговорный тон")
     fact_check: list[str] = Field(description="Каждое фактическое утверждение поста и где оно есть в источнике (для проверки человеком)")
+
+
+SceneType = Literal["hook", "stat", "context", "insight", "question", "cta"]
+
+
+class Scene(BaseModel):
+    type: SceneType = Field(description=(
+        "hook — первая сцена, интрига за 1–2 секунды; stat — одна крупная цифра (title = сама цифра, "
+        "например «52 000», «37%», «в 2 раза»); context — кто, где, сколько людей изучали; "
+        "insight — главный вывод; question — вопрос аудитории; cta — финальная сцена с призывом"))
+    eyebrow: str = Field(description="Короткая надпись над текстом, 1–3 слова", max_length=30)
+    title: str = Field(description="Крупный текст на экране, до 45 символов. Не повторяет озвучку слово в слово", max_length=60)
+    text: str = Field(description="Вторая строка на экране, до 80 символов, или пусто", max_length=100)
+    voice: str = Field(description="Что говорит голос в этой сцене: 1–2 коротких разговорных предложения на русском", max_length=260)
+
+
+class ReelPackage(BaseModel):
+    headline: str = Field(description="Тема ролика одной строкой для контент-плана", max_length=120)
+    accent: Accent
+    cover_title: str = Field(description="Текст обложки Reels, до 40 символов, интрига", max_length=50)
+    scenes: list[Scene]
+    caption_ru: str = Field(description="Подпись к Reels на русском: хук в первой строке, 2–4 коротких абзаца, призыв сохранить/отправить соседу, без эмодзи и хэштегов", max_length=1500)
+    hashtags: list[str] = Field(description="5–8 хэштегов без символа #")
+    summary_kz: str = Field(description="Краткое содержание на казахском, 2–3 предложения", max_length=500)
+    summary_uz: str = Field(description="Краткое содержание на узбекском (латиница), 2–3 предложения", max_length=500)
+    source_line: str = Field(description="Источник: издание/журнал, год; исследователи, если названы", max_length=220)
+    threads: list[str] = Field(description="Тред для Threads: 3–5 сообщений до 450 символов, последнее — вопрос аудитории")
+    fact_check: list[str] = Field(description="Каждое фактическое утверждение и где оно есть в источнике")

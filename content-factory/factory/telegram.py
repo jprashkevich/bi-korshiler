@@ -43,6 +43,16 @@ def send_album(chat_id: str, paths: list[Path], caption: str = "") -> list[int]:
     return [m["message_id"] for m in result]
 
 
+def send_video(chat_id: str, path: Path, cover: Path | None = None, caption: str = "") -> int:
+    files = {"video": (path.name, path.read_bytes(), "video/mp4")}
+    if cover:
+        files["thumbnail"] = (cover.name, cover.read_bytes(), "image/png")
+    result = _call("sendVideo", http_timeout=300, files=files, chat_id=chat_id, width=1080, height=1920,
+                   supports_streaming="true", thumbnail="attach://thumbnail" if cover else None,
+                   caption=caption[:CAPTION_LIMIT] or None)
+    return result["message_id"]
+
+
 def send_document(chat_id: str, path: Path, caption: str = "") -> int:
     with path.open("rb") as fh:
         result = _call("sendDocument", http_timeout=120, files={"document": (path.name, fh)},

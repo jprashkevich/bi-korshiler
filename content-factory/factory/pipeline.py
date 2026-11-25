@@ -9,8 +9,8 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import update
 
-from . import db, ingest, render, score, sheets, telegram, threads, writer
-from .models import PostPackage
+from . import db, ingest, reels, render, score, sheets, telegram, threads, tts, writer
+from .models import PostPackage, ReelPackage
 from .settings import settings
 
 log = logging.getLogger(__name__)
@@ -61,10 +61,17 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
     post = db.get_post(post_id)
     item = db.get_item(post["item_id"])
     previous = post["package"] if feedback else None
-    pkg = writer.write(post["rubric"], item, feedback=feedback, previous=previous)
-    rubric_title = writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]["title"]
-    files = render.render(pkg, rubric_title, f"{post['slot_date']}-post{post_id}")
-    db.update_post(post_id, package=pkg.model_dump(), files=[str(f) for f in files], status="generated")
+    rubric = writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]
+    name = f"{post['slot_date']}-post{post_id}"
+    if rubric.get("format") == "reels" and tts.enabled():
+        pkg = writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous)
+        files = reels.render_video(pkg, rubric["title"], name)
+        data = {**pkg.model_dump(), "format": "reels"}
+    else:
+        pkg = writer.write(post["rubric"], item, feedback=feedback, previous=previous)
+        files = render.render(pkg, rubric["title"], name)
+        data = {**pkg.model_dump(), "format": "carousel"}
+    db.update_post(post_id, package=data, files=[str(f) for f in files], status="generated")
     deliver(post_id)
 
 
@@ -90,7 +97,8 @@ def keyboard(post_id: int) -> list[list[dict]]:
 def deliver(post_id: int) -> None:
     from pathlib import Path
     post = db.get_post(post_id)
-    pkg = PostPackage.model_validate(post["package"])
+    is_reel = post["package"].get("format") == "reels"
+    pkg = (ReelPackage if is_reel else PostPackage).model_validate(post["package"])
     item = db.get_item(post["item_id"])
     cfg = writer.load_yaml("rubrics.yaml")
     d = date.fromisoformat(post["slot_date"])
@@ -98,9 +106,15 @@ def deliver(post_id: int) -> None:
     e = html.escape
     chat = settings.telegram_chat_id
 
-    telegram.send_album(chat, [Path(f) for f in post["files"]])
-    telegram.send_document(chat, _zip(post["files"], f"BIGLife-{post['slot_date']}-{post_id}"),
-                           caption="Слайды в исходном качестве для загрузки в Instagram")
+    if is_reel:
+        video, cover = (Path(f) for f in post["files"])
+        telegram.send_video(chat, video, cover)
+        telegram.send_document(chat, _zip(post["files"], f"BIGLife-{post['slot_date']}-{post_id}"),
+                               caption="Reels (MP4) и обложка в исходном качестве для загрузки в Instagram")
+    else:
+        telegram.send_album(chat, [Path(f) for f in post["files"]])
+        telegram.send_document(chat, _zip(post["files"], f"BIGLife-{post['slot_date']}-{post_id}"),
+                               caption="Слайды в исходном качестве для загрузки в Instagram")
 
     head = (f"<b>Пост #{post_id} · {e(when)}</b>\n"
             f"Рубрика: {e(cfg['rubrics'][post['rubric']]['title'])}\n"
@@ -110,13 +124,15 @@ def deliver(post_id: int) -> None:
                + " ".join(f"#{h}" for h in pkg.hashtags))
     telegram.send_message(chat, head + "\n<b>Подпись (скопировать):</b>\n\n" + e(caption))
 
-    threads = "\n\n".join(f"{i}/ {e(t)}" for i, t in enumerate(pkg.threads, 1))
+    thread_text = "\n\n".join(f"{i}/ {e(t)}" for i, t in enumerate(pkg.threads, 1))
     facts = "\n".join(f"• {e(f)}" for f in pkg.fact_check)
     threads_note = ("опубликуется после «Одобрить»" if threads.enabled()
                     else "Threads не подключён, опубликуйте вручную")
+    extra = (f"<b>Текст озвучки:</b> {e(' '.join(s.voice for s in pkg.scenes))}\n\n" if is_reel
+             else f"<b>Alt-текст:</b> {e(pkg.alt_text)}\n\n")
     details = (f"<b>Қазақша:</b> {e(pkg.summary_kz)}\n\n<b>O‘zbekcha:</b> {e(pkg.summary_uz)}\n\n"
-               f"<b>Alt-текст:</b> {e(pkg.alt_text)}\n\n"
-               f"<b>Threads ({threads_note}):</b>\n{threads}\n\n"
+               + extra +
+               f"<b>Threads ({threads_note}):</b>\n{thread_text}\n\n"
                f"<b>Проверка фактов:</b>\n{facts}")
     if post["feedback"]:
         details += "\n\n<i>Учтены комментарии:</i> " + e("; ".join(post["feedback"]))

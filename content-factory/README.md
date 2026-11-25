@@ -26,7 +26,7 @@ RSS (22 ленты) → ИИ-скоринг тем → тексты (Claude) →
 ## Рубрики и сетка
 
 Настраиваются в `config/rubrics.yaml`: 14 слотов в неделю. Пока рубрика «Жизнь дворов» берёт материал
-как «Наука о соседстве» (этап 2 — отчёты из Google Drive), «Цифра дня» выходит каруселью (этап 3 — Reels с озвучкой).
+как «Наука о соседстве» (этап 2 — отчёты из Google Drive), «Цифра дня» выходит как Reels с озвучкой, если подключён ElevenLabs, иначе каруселью.
 
 Голос бренда и запреты — `config/brand.md`, ленты — `config/feeds.yaml`, каталог фото — `config/photos.yaml`
 (фото лежат в `images/` в корне репозитория; новое фото = файл в `images/` + строка с описанием в каталоге).
@@ -46,9 +46,10 @@ RSS (22 ленты) → ИИ-скоринг тем → тексты (Claude) →
 | `TELEGRAM_CHAT_ID` | id группы (добавьте бота в группу и отправьте `/id`) |
 | `TELEGRAM_APPROVER_IDS` | user_id тех, кто может нажимать кнопки, через запятую |
 | `THREADS_APP_ID`, `THREADS_APP_SECRET` | Ключи приложения Threads из кабинета Meta. Сам аккаунт подключается командой `/threads` в боте; токен продлевается автоматически |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` | Озвучка Reels «Цифра дня» вашим голосом. Без них рубрика выходит каруселью |
 | `GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_SHEET_ID` | Необязательно: контент-план в Google Sheets (таблицу расшарить на email сервисного аккаунта) |
 
-Необязательные настройки: `DAILY_RUN_HOUR` (по умолчанию 6:00 по Алматы), `POSTS_PER_DAY`,
+Необязательные настройки: `ELEVENLABS_MODEL` (по умолчанию `eleven_multilingual_v2`), `ELEVENLABS_SPEED`, `ELEVENLABS_STABILITY`, `ELEVENLABS_STYLE`, `DAILY_RUN_HOUR` (по умолчанию 6:00 по Алматы), `POSTS_PER_DAY`,
 `WRITER_MODEL` / `SCORER_MODEL` (по умолчанию `claude-opus-5-5`), `WRITER_EFFORT` (`high`), `SCORER_EFFORT` (`low`).
 
 Чтобы бот видел ответы на свои сообщения в группе, у @BotFather отключите Group Privacy или сделайте бота админом группы.
@@ -69,7 +70,7 @@ python -m factory worker                    # бот + расписание
 
 - [x] Этап 1: RSS, скоринг, карусели, Telegram с кнопками, Threads, Google Sheets.
 - [ ] Этап 2: рубрика «Жизнь дворов» из отчётов в Google Drive.
-- [ ] Этап 3: Reels «Цифра дня» с анимацией и озвучкой голосом через ElevenLabs.
+- [x] Этап 3: Reels «Цифра дня» с анимацией, субтитрами и озвучкой голосом через ElevenLabs.
 - [ ] Этап 4: еженедельный отчёт и учёт метрик Instagram при выборе тем.
 
 ## Важно

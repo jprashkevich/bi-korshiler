@@ -144,6 +144,7 @@ def status_report() -> str:
     """Какие настройки видит сервис (только «задано / не задано», без значений)."""
     import os
     names = ["ANTHROPIC_API_KEY", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "TELEGRAM_APPROVER_IDS",
+             "ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID",
              "THREADS_APP_ID", "THREADS_APP_SECRET", "GOOGLE_SHEET_ID", "GOOGLE_SERVICE_ACCOUNT_JSON"]
     lines = []
     for n in names:

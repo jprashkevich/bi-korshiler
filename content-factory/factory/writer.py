@@ -83,3 +83,33 @@ def normalize(pkg: PostPackage) -> PostPackage:
     pkg.hashtags = [h.lstrip("#").replace(" ", "") for h in pkg.hashtags][:8]
     pkg.threads = [t.strip() for t in pkg.threads if t.strip()][:5]
     return pkg
+
+
+REEL_RULES = """
+## Как устроен сценарий Reels «Цифра дня»
+- 5–6 сцен, общая озвучка 70–110 слов (25–40 секунд). Это голос живого человека из команды BIG Life:
+  разговорно, тепло, короткими фразами, как будто рассказываешь соседу.
+- Сцена 1 — hook: интрига за первые 2 секунды (вопрос или неожиданное утверждение).
+- Одна сцена stat с главной цифрой из источника. Цифру не придумывать; если в источнике нет цифры,
+  stat не используется, а главная мысль подаётся сценой insight.
+- Затем context (кто изучал, сколько людей), insight (что это значит для жизни во дворе).
+- Последняя сцена — cta или question: вопрос аудитории и призыв написать в комментариях или отправить ролик соседу.
+- Текст на экране (title) короткий и не повторяет озвучку дословно: на экране — ключевые слова, в голосе — мысль.
+- В озвучке без скобок, сокращений, латиницы и спецсимволов: «десять процентов», «Чикагский университет».
+  Имена иностранных учёных — по-русски.
+"""
+
+
+def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = None,
+               previous: dict | None = None):
+    from .models import ReelPackage
+    article = ingest.fetch_article_text(item["url"]) if item else ""
+    user = build_user_prompt(rubric_key, item, article, feedback or [], previous)
+    user = user.replace("Формат: карусель", "Формат: Reels-ролик, а не карусель (количество слайдов игнорируй)", 1)
+    pkg = llm.ask(ReelPackage, system=system_prompt() + REEL_RULES, user=user,
+                  model=settings.writer_model, effort=settings.writer_effort)
+    if pkg.scenes and pkg.scenes[0].type != "hook":
+        pkg.scenes[0].type = "hook"
+    pkg.hashtags = [h.lstrip("#").replace(" ", "") for h in pkg.hashtags][:8]
+    pkg.threads = [t.strip() for t in pkg.threads if t.strip()][:5]
+    return pkg

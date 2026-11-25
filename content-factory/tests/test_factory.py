@@ -81,3 +81,43 @@ def test_threads_extract_code():
     assert extract_code("https://localhost/?code=AQBx12#_") == "AQBx12"
     assert extract_code("https://localhost/?code=AQBx12&state=1") == "AQBx12"
     assert extract_code("  AQBx12#_ ") == "AQBx12"
+
+
+@pytest.mark.parametrize("fixture,fmt,n_files", [("sample_package.json", "carousel", 6), ("sample_reel.json", "reels", 2)])
+def test_deliver_sends_package_with_buttons(tmp_path, monkeypatch, fixture, fmt, n_files):
+    """Отправка в Telegram без сети: альбом/видео, ZIP, подпись, блок с кнопками."""
+    from factory import db, pipeline, telegram
+    db.init()
+    files = []
+    for i in range(n_files):
+        f = tmp_path / (f"f{i}.png" if fmt == "carousel" or i else "reel.mp4")
+        f.write_bytes(b"x")
+        files.append(str(f))
+    pkg = json.loads((HERE / "fixtures" / fixture).read_text())
+    pkg["format"] = fmt
+    with db.engine.begin() as c:
+        pid = c.execute(db.posts.insert().values(
+            rubric="number" if fmt == "reels" else "science", slot_date="2026-11-30", slot=0, status="generated",
+            package=pkg, files=files, feedback=[], created_at=db.now(), updated_at=db.now())).inserted_primary_key[0]
+    sent = []
+    monkeypatch.setattr(telegram, "send_album", lambda *a, **k: sent.append("album") or [1])
+    monkeypatch.setattr(telegram, "send_video", lambda *a, **k: sent.append("video") or 1)
+    monkeypatch.setattr(telegram, "send_document", lambda *a, **k: sent.append("doc") or 2)
+    monkeypatch.setattr(telegram, "send_message",
+                        lambda chat, text, keyboard=None, **k: sent.append("buttons" if keyboard else "msg") or 3)
+    pipeline.deliver(pid)
+    assert sent == [("video" if fmt == "reels" else "album"), "doc", "msg", "buttons"]
+    assert db.get_post(pid)["status"] == "sent"
+
+
+def test_reel_timeline_and_subtitles():
+    from factory import reels, tts
+    from factory.models import ReelPackage
+    pkg = ReelPackage.model_validate(json.loads((HERE / "fixtures/sample_reel.json").read_text()))
+    full, offsets = reels.voice_text(pkg)
+    speech = tts.Speech(Path("x.mp3"), [i / 14 for i in range(len(full))], len(full) / 14)
+    tl, subs, total = reels.timeline(pkg, speech)
+    assert len(tl) == len(pkg.scenes) and tl[0]["start"] == 0 and tl[-1]["end"] == total
+    assert all(a["end"] <= b["start"] + 0.01 for a, b in zip(tl, tl[1:]))
+    assert all(len(s["text"]) <= reels.SUB_MAX + 15 for s in subs)
+    assert subs[0]["start"] == 0

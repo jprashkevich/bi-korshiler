@@ -24,7 +24,7 @@ rubrics:
   number:
     title: Цифра дня
     source: rss
-    format: carousel        # этап 3: Reels с озвучкой
+    format: reels           # если ElevenLabs не подключён — карусель из 4 слайдов
     slides: 4
     brief: >
       Одна сильная цифра из исследования крупно на слайде, затем контекст (кто, где, сколько людей),
