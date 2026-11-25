@@ -70,6 +70,19 @@ def on_callback(cb: dict) -> None:
 
 
 def replace_topic(post: dict, chat) -> None:
+    import json
+    from . import drive, writer
+    if writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]["source"] == "drive":
+        events = drive.to_dicts(drive.pick_events(drive.recent_events()))
+        if len(events) < 2:
+            telegram.send_message(chat, "Новых фотоотчётов за неделю не осталось.")
+            return
+        new_id = pipeline.create_post(post["rubric"], datetime.fromisoformat(post["slot_date"]).date(), post["slot"], None)
+        db.kv_set(f"post_events:{new_id}", json.dumps(events, ensure_ascii=False))
+        telegram.send_message(chat, f"Готовлю пост #{new_id} по другим мероприятиям, это займёт пару минут.")
+        run_safely(new_id, chat)
+        drive.mark_used(events)
+        return
     item = pipeline.choose_item(post["rubric"], exclude_ids={post["item_id"]} if post["item_id"] else set())
     if item is None and post["item_id"] is not None:
         telegram.send_message(chat, "Подходящих тем больше нет — дождитесь нового сбора RSS.")
@@ -152,6 +165,15 @@ def status_report() -> str:
         lines.append(f"{'✅' if not problem else '❌'} {e(problem or n)}")
     commit = os.environ.get("RENDER_GIT_COMMIT", "")[:7] or "неизвестна"
     lines.append(f"\nThreads подключён: {'да' if threads.enabled() else 'нет'}")
+    from . import drive
+    if drive.enabled():
+        try:
+            n = len(drive.recent_events())
+            lines.append(f"Фотоотчёты Drive: доступ есть, новых мероприятий за неделю — {n}")
+        except Exception as exc:
+            lines.append(f"Фотоотчёты Drive: нет доступа ({e(str(exc))[:120]}). Откройте папку email сервисного аккаунта")
+    else:
+        lines.append("Фотоотчёты Drive: не настроены (нужны GOOGLE_DRIVE_FOLDER_ID и GOOGLE_SERVICE_ACCOUNT_JSON)")
     lines.append(f"Версия кода: {commit}")
     lines.append(f"Последний ежедневный запуск: {db.kv_get('last_daily') or 'ещё не было'}")
     return "<b>Состояние завода</b>\n" + "\n".join(lines)

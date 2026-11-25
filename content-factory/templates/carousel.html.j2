@@ -50,12 +50,18 @@ p{font-size:30px;line-height:1.5;margin:0}
 .collage .tag span{font-size:22px;font-weight:600;opacity:.85}
 .collage .mono{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:220px;font-weight:800;color:#fff;background:var(--navy)}
 .credit{font-size:16px;opacity:.55;margin-top:44px}
+.bgphoto{position:absolute;inset:0;z-index:0}
+.bgphoto img{width:100%;height:100%;object-fit:cover}
+.bgphoto::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,52,138,.55) 0%,rgba(40,52,138,.15) 30%,rgba(40,52,138,.55) 60%,rgba(28,36,100,.95) 100%)}
+.evphoto{height:860px;border-radius:28px;overflow:hidden;margin:-10px -10px 44px;box-shadow:0 14px 40px rgba(40,52,138,.18);flex:0 0 auto}
+.evphoto img{width:100%;height:100%;object-fit:cover;display:block}
 </style></head><body>
 {% set total = slides|length %}
 {% for s in slides %}{% set n = loop.index %}
 {% if s.type == 'cover' %}
 <section class="f navy" id="s{{ n }}" style="justify-content:space-between">
-  <div class="glow"></div><div class="glow b"></div>
+  {% if dphotos.get(s.photo_ref) %}<div class="bgphoto"><img src="{{ dphotos[s.photo_ref] }}" alt=""></div>
+  {% else %}<div class="glow"></div><div class="glow b"></div>{% endif %}
   {% if ills.get(s.illustration_id) %}<div class="cover-ill"><img src="{{ ills[s.illustration_id] }}" alt=""></div>{% endif %}
   <div class="z top"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"><span class="eyebrow" style="color:var(--accent)">{{ rubric_title }}</span></div>
   <div class="z">
@@ -87,6 +93,14 @@ p{font-size:30px;line-height:1.5;margin:0}
   <h2 style="margin-top:70px;font-size:56px">{{ s.title }}</h2>
   {% if s.text %}<p style="color:var(--body);max-width:32ch;font-size:28px">{{ s.text }}</p>{% endif %}
   {% if pic.credit %}<div class="credit" style="margin-top:auto">{{ pic.credit }}</div>{% endif %}
+  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
+</section>
+{% elif s.type == 'event' %}
+<section class="f light" id="s{{ n }}">
+  {% if dphotos.get(s.photo_ref) %}<div class="evphoto"><img src="{{ dphotos[s.photo_ref] }}" alt=""></div>{% endif %}
+  <span class="eyebrow" style="color:var(--accent);margin-bottom:16px">{{ s.eyebrow }}</span>
+  <h2 style="font-size:58px">{{ s.title }}</h2>
+  {% if s.text %}<p style="color:var(--body);max-width:32ch;font-size:28px">{{ s.text }}</p>{% endif %}
   <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
 </section>
 {% elif s.type in ('statement', 'stat') %}

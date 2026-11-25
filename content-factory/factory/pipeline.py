@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import html
+import json
 import logging
 import zipfile
 from datetime import date, datetime
@@ -9,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import update
 
-from . import db, ingest, people, reels, render, score, sheets, telegram, threads, tts, writer
+from . import db, drive, ingest, people, reels, render, score, sheets, telegram, threads, tts, writer
 from .models import PostPackage, ReelPackage
 from .settings import settings
 
@@ -25,14 +26,14 @@ def today() -> date:
 def resolve_rubric(key: str) -> str:
     rubrics = writer.load_yaml("rubrics.yaml")["rubrics"]
     r = rubrics[key]
-    if r["source"] == "drive":   # этап 2: отчёты из Google Drive ещё не подключены
+    if r["source"] == "drive" and not drive.enabled():   # Drive не подключён — запасная рубрика
         return r.get("fallback", "science")
     return key
 
 
 def choose_item(rubric_key: str, exclude_ids: set[int] = frozenset()) -> dict | None:
     r = writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key]
-    if r["source"] == "brand":
+    if r["source"] in ("brand", "drive"):
         return None
     item = score.pick(rubric_key, prefer_kind=r.get("prefer_kind"), need_number=rubric_key == "number")
     if item is None and rubric_key == "number":   # нет материала с цифрой — берём лучшую тему для науки
@@ -63,7 +64,13 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
     previous = post["package"] if feedback else None
     rubric = writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]
     name = f"{post['slot_date']}-post{post_id}"
-    if rubric.get("format") == "reels" and tts.enabled():
+    if rubric.get("source") == "drive":
+        events = json.loads(db.kv_get(f"post_events:{post_id}", "[]"))
+        pkg = writer.write_courtyard(events, feedback=feedback, previous=previous)
+        photos = {ph["id"]: str(drive.download(ph["id"])) for ev in events for ph in ev["photos"]}
+        files = render.render(pkg, rubric["title"], name, drive_photos=photos)
+        data = {**pkg.model_dump(), "format": "carousel", "pictures": {}, "events": [e["label"] for e in events]}
+    elif rubric.get("format") == "reels" and tts.enabled():
         pkg = writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous)
         pictures = find_pictures(pkg, pkg.scenes)
         files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
@@ -149,6 +156,10 @@ def deliver(post_id: int) -> None:
                + extra +
                f"<b>Threads ({threads_note}):</b>\n{thread_text}\n\n"
                f"<b>Проверка фактов:</b>\n{facts}")
+    if post["package"].get("events"):
+        details += ("\n\n<b>Мероприятия из фотоотчётов:</b>\n" + "\n".join(f"• {e(x)}" for x in post["package"]["events"])
+                    + "\nНа фото жители дворов: перед публикацией убедитесь, что у BIG Life есть согласие "
+                      "на использование снимков, особенно с детьми.")
     pics = post["package"].get("pictures") or {}
     if pics:
         lines = []
@@ -177,6 +188,18 @@ def run_daily(day: date | None = None) -> list[int]:
     created = []
     for slot, key in enumerate(slots):
         rubric_key = resolve_rubric(key)
+        events = None
+        if writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key]["source"] == "drive":
+            try:
+                events = drive.to_dicts(drive.pick_events(drive.recent_events(today=day)))
+            except Exception as exc:
+                log.exception("Google Drive")
+                events = []
+                telegram.send_message(settings.telegram_chat_id,
+                                      f"Не удалось прочитать фотоотчёты из Drive: {html.escape(str(exc))[:300]}. "
+                                      "Проверьте, что папка открыта сервисному аккаунту.")
+            if len(events) < 2:          # мало свежих мероприятий — ставим запасную рубрику
+                rubric_key, events = writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key].get("fallback", "science"), None
         item = choose_item(rubric_key)
         if item is None and writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key]["source"] == "rss":
             telegram.send_message(settings.telegram_chat_id,
@@ -184,8 +207,12 @@ def run_daily(day: date | None = None) -> list[int]:
             continue
         mark_used(item)
         post_id = create_post(rubric_key, day, slot, item)
+        if events:
+            db.kv_set(f"post_events:{post_id}", json.dumps(events, ensure_ascii=False))
         try:
             generate(post_id)
+            if events:
+                drive.mark_used(events)
             created.append(post_id)
         except Exception as exc:
             log.exception("Пост %s не собран", post_id)

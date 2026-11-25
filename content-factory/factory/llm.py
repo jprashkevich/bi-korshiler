@@ -50,9 +50,10 @@ def strict_schema(model: type[BaseModel]) -> dict:
     return walk(schema)
 
 
-def ask(model_cls: type[T], *, system: str, user: str, model: str, effort: str,
+def ask(model_cls: type[T], *, system: str, user: str | list, model: str, effort: str,
         max_tokens: int = 16000) -> T:
-    """Один запрос с JSON-ответом по схеме model_cls. При ошибке валидации — одна повторная попытка."""
+    """Один запрос с JSON-ответом по схеме model_cls. При ошибке валидации — одна повторная попытка.
+    user — строка или список блоков контента (текст и изображения)."""
     messages = [{"role": "user", "content": user}]
     schema = strict_schema(model_cls)
     for attempt in range(2):

@@ -153,3 +153,36 @@ def test_commons_filename_parsing():
     url = "https://upload.wikimedia.org/wikipedia/commons/a/ab/DanBuettnerOct10.jpg?utm_source=x"
     assert _commons_file_from_url(url) == "DanBuettnerOct10.jpg"
     assert _commons_file_from_url("https://upload.wikimedia.org/wikipedia/en/a/ab/X.jpg") is None
+
+
+def test_drive_recent_events_parses_structure(monkeypatch):
+    from datetime import date
+    from factory import db, drive
+    db.init()
+    db.kv_set("drive_used_events", '["used-ev"]')
+    tree = {
+        "root": [{"id": "m11", "name": "2026-11", "mimeType": drive.FOLDER}, {"id": "m07", "name": "2026-07", "mimeType": drive.FOLDER}],
+        "m11": [{"id": "zk1", "name": "Urban Hills", "mimeType": drive.FOLDER}],
+        "zk1": [{"id": "ev1", "name": "24.11 · Точки Опоры · vTSZ", "mimeType": drive.FOLDER},
+                {"id": "ev2", "name": "01.11 · Старое · abcd", "mimeType": drive.FOLDER},
+                {"id": "used-ev", "name": "23.11 · Уже было · zzzz", "mimeType": drive.FOLDER},
+                {"id": "ev3", "name": "без даты", "mimeType": drive.FOLDER}],
+        "ev1": [{"id": "p1", "name": "b.jpg", "mimeType": "image/jpeg"}, {"id": "p0", "name": "a.jpg", "mimeType": "image/jpeg"},
+                {"id": "v1", "name": "c.mp4", "mimeType": "video/mp4"}],
+    }
+    monkeypatch.setattr(drive, "root_id", lambda: "root")
+    monkeypatch.setattr(drive, "_children", lambda fid, folders_only=False: [
+        f for f in tree.get(fid, []) if not folders_only or f["mimeType"] == drive.FOLDER])
+    events = drive.recent_events(today=date(2026, 11, 25))
+    assert [e.folder_id for e in events] == ["ev1"]
+    ev = events[0]
+    assert ev.complex == "Urban Hills" and ev.activity == "Точки Опоры" and ev.day == "2026-11-24"
+    assert [p["id"] for p in ev.photos] == ["p0", "p1"] and ev.videos == 1
+    assert ev.label == "24.11 · Urban Hills · Точки Опоры"
+
+
+def test_pick_events_prefers_variety():
+    from factory.drive import Event, pick_events
+    evs = [Event("1", "A", "Йога", "2026-11-25"), Event("2", "A", "Йога", "2026-11-24"),
+           Event("3", "B", "Танцы", "2026-11-24"), Event("4", "C", "Йога", "2026-11-23")]
+    assert [e.folder_id for e in pick_events(evs, limit=3)] == ["1", "3", "2"]

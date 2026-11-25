@@ -128,3 +128,54 @@ def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = 
     pkg.hashtags = [h.lstrip("#").replace(" ", "") for h in pkg.hashtags][:8]
     pkg.threads = [t.strip() for t in pkg.threads if t.strip()][:5]
     return pkg
+
+
+COURTYARD_RULES = """
+## Рубрика «Жизнь дворов»: фото-дайджест
+Ниже — свежие мероприятия во дворах BIG Life: ЖК, дата, название активности и реальные фото из отчётов.
+- Карусель: cover → по одному слайду event на мероприятие (3–5 штук) → cta.
+- Для каждого event выбери лучшее фото этого мероприятия (photo_ref = id фото из списка) и напиши
+  заголовок (что происходило, живо и по-соседски) и 1–2 предложения текста.
+- Пиши только о том, что видно на фото и следует из названия. Не придумывай число участников, имена,
+  цитаты и детали, которых не видно. Можно эмоции и атмосферу, которые видны на фото.
+- eyebrow для event: «ДД.ММ · Название ЖК».
+- Для cover выбери photo_ref самого яркого фото; заголовок — общий хук недели во дворах.
+- Предпочитай фото, где люди заняты делом и видна атмосфера; избегай крупных лиц детей,
+  размытых и тёмных кадров. Если среди фото есть явно неподходящие (скриншоты, документы) — не бери их.
+- Не используй illustration_id в этой рубрике; photo_id из каталога — тоже нет.
+- people пустой, слайдов person нет. source_line: «Фотоотчёты BIG Life».
+"""
+
+
+def write_courtyard(events: list[dict], feedback: list[str] | None = None, previous: dict | None = None):
+    """Фото-дайджест по мероприятиям из Drive. Фото передаются модели как изображения."""
+    import base64
+    import io
+    from PIL import Image
+    from . import drive
+    from .models import PostPackage
+    content: list[dict] = [{"type": "text", "text": build_user_prompt("courtyard", None, "", feedback or [], previous)
+                            .replace("Внешнего источника нет: пост о продукте BIG Life на основе описания бренда. "
+                                     "source_line: «BIG Life».", "Источник — фотоотчёты ниже.")}]
+    for ev in events:
+        content.append({"type": "text", "text": f"\nМероприятие: {ev['label']}"
+                                                 + (f" (ещё {ev['videos']} видео)" if ev.get("videos") else "")})
+        for ph in ev["photos"]:
+            path = drive.download(ph["id"])
+            im = Image.open(path)
+            im.thumbnail((768, 768))
+            buf = io.BytesIO()
+            im.save(buf, "JPEG", quality=80)
+            content.append({"type": "text", "text": f"Фото id={ph['id']}:"})
+            content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                                        "data": base64.b64encode(buf.getvalue()).decode()}})
+    pkg = llm.ask(PostPackage, system=system_prompt() + COURTYARD_RULES, user=content,
+                  model=settings.writer_model, effort=settings.writer_effort)
+    valid = {ph["id"] for ev in events for ph in ev["photos"]}
+    for sl in pkg.slides:
+        if sl.photo_ref not in valid:
+            sl.photo_ref = ""
+        sl.illustration_id = ""
+    pkg.photo_id = ""
+    pkg.people = []
+    return normalize(pkg)

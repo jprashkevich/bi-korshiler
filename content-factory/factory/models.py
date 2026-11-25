@@ -30,13 +30,14 @@ class ScoreBatch(BaseModel):
     scores: list[ItemScore]
 
 
-SlideType = Literal["cover", "insight", "person", "statement", "stat", "list", "steps", "question", "cta"]
+SlideType = Literal["cover", "insight", "person", "event", "statement", "stat", "list", "steps", "question", "cta"]
 
 
 class Slide(BaseModel):
     type: SlideType = Field(description=(
         "cover — обложка с хуком (первый слайд); insight — заголовок, текст и фото или иллюстрация; "
         "person — коллаж с фото исследователя или организации из people (заголовок — что он выяснил); "
+        "event — мероприятие во дворе с реальным фото из отчёта (только для рубрики «Жизнь дворов»); "
         "statement — крупная фраза-вывод на цветном фоне; stat — одна большая цифра с пояснением; "
         "list — заголовок и 2–4 карточки (например фразы или факты); steps — заголовок и 3–4 шага; "
         "question — вопрос аудитории; cta — финальный слайд с призывом (последний слайд)"))
@@ -47,6 +48,7 @@ class Slide(BaseModel):
     item_labels: list[str] = Field(description="Для list: короткие подписи к пунктам (например «У подъезда»); иначе пустой список")
     illustration_id: str = Field(description="id иллюстрации из каталога для cover или insight, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
+    photo_ref: str = Field(description="Для event (и cover в «Жизни дворов»): id фото из отчёта; иначе пустая строка")
 
 
 class PostPackage(BaseModel):

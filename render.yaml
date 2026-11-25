@@ -42,6 +42,8 @@ services:
         sync: false
       - key: GOOGLE_SHEET_ID
         sync: false
+      - key: GOOGLE_DRIVE_FOLDER_ID
+        value: 1QTob9XH2ZcJTSFE8auFQvxIg6zmUxfKK
 
 databases:
   - name: biglife-factory-db

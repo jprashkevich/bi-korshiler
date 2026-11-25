@@ -63,8 +63,10 @@ def picture_uris(pictures: dict | None) -> dict[str, dict]:
     return out
 
 
-def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = None) -> str:
+def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = None,
+                drive_photos: dict | None = None) -> str:
     return _env.get_template("carousel.html.j2").render(
+        dphotos={k: Path(v).resolve().as_uri() for k, v in (drive_photos or {}).items()},
         ills=illustrations(),
         pictures=picture_uris(pictures),
         people={p.name_en: p.model_dump() for p in pkg.people},
@@ -77,11 +79,12 @@ def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = Non
     )
 
 
-def render(pkg: PostPackage, rubric_title: str, name: str, pictures: dict | None = None) -> list[Path]:
+def render(pkg: PostPackage, rubric_title: str, name: str, pictures: dict | None = None,
+           drive_photos: dict | None = None) -> list[Path]:
     out_dir = OUTPUT_DIR / name
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / "carousel.html"
-    html_path.write_text(render_html(pkg, rubric_title, pictures), encoding="utf-8")
+    html_path.write_text(render_html(pkg, rubric_title, pictures, drive_photos), encoding="utf-8")
     files = []
     launch = {"executable_path": settings.chromium_path} if settings.chromium_path else {}
     with sync_playwright() as pw:
