@@ -8,7 +8,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from . import db, pipeline, sheets, telegram, threads
-from .settings import settings
+from .settings import env_problem, settings
 
 log = logging.getLogger(__name__)
 e = html.escape
@@ -97,6 +97,9 @@ def on_message(msg: dict) -> None:
     if text.startswith("/id"):
         telegram.send_message(chat, f"chat_id: <code>{chat}</code>\nваш user_id: <code>{msg['from']['id']}</code>")
         return
+    if text.startswith("/status") and allowed(msg["from"]["id"]):
+        telegram.send_message(chat, status_report())
+        return
     if text.startswith("/threads") and allowed(msg["from"]["id"]):
         try:
             url = threads.authorize_url()
@@ -135,6 +138,22 @@ def on_message(msg: dict) -> None:
     db.kv_set(f"redo_prompt:{chat}:{reply['message_id']}", "")
     telegram.send_message(chat, f"Переделываю пост #{post['id']} с учётом комментария.", reply_to=msg["message_id"])
     run_safely(post["id"], chat, feedback=feedback)
+
+
+def status_report() -> str:
+    """Какие настройки видит сервис (только «задано / не задано», без значений)."""
+    import os
+    names = ["ANTHROPIC_API_KEY", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "TELEGRAM_APPROVER_IDS",
+             "THREADS_APP_ID", "THREADS_APP_SECRET", "GOOGLE_SHEET_ID", "GOOGLE_SERVICE_ACCOUNT_JSON"]
+    lines = []
+    for n in names:
+        problem = env_problem(n)
+        lines.append(f"{'✅' if not problem else '❌'} {e(problem or n)}")
+    commit = os.environ.get("RENDER_GIT_COMMIT", "")[:7] or "неизвестна"
+    lines.append(f"\nThreads подключён: {'да' if threads.enabled() else 'нет'}")
+    lines.append(f"Версия кода: {commit}")
+    lines.append(f"Последний ежедневный запуск: {db.kv_get('last_daily') or 'ещё не было'}")
+    return "<b>Состояние завода</b>\n" + "\n".join(lines)
 
 
 def maybe_run_daily() -> None:

@@ -18,7 +18,7 @@ from urllib.parse import urlencode
 import httpx
 
 from . import db
-from .settings import settings
+from .settings import env, env_problem, settings
 
 log = logging.getLogger(__name__)
 GRAPH = "https://graph.threads.com"
@@ -45,11 +45,24 @@ def enabled() -> bool:
 
 # ---------- подключение ----------
 
+def app_id() -> str:
+    return env("THREADS_APP_ID")
+
+
+def app_secret() -> str:
+    return env("THREADS_APP_SECRET")
+
+
+def redirect_uri() -> str:
+    return env("THREADS_REDIRECT_URI", "https://localhost/")
+
+
 def authorize_url() -> str:
-    if not (settings.threads_app_id and settings.threads_app_secret):
-        raise ThreadsError("Не заданы THREADS_APP_ID и THREADS_APP_SECRET")
+    problems = [p for p in (env_problem("THREADS_APP_ID"), env_problem("THREADS_APP_SECRET")) if p]
+    if problems:
+        raise ThreadsError("Threads не настроен:\n" + "\n".join(problems))
     return "https://threads.com/oauth/authorize?" + urlencode({
-        "client_id": settings.threads_app_id, "redirect_uri": settings.threads_redirect_uri,
+        "client_id": app_id(), "redirect_uri": redirect_uri(),
         "scope": SCOPES, "response_type": "code"})
 
 
@@ -62,13 +75,13 @@ def connect(code_or_url: str) -> str:
     """Обменять код авторизации на долгоживущий токен, сохранить его. Возвращает @username."""
     code = extract_code(code_or_url)
     r = httpx.post(f"{GRAPH}/oauth/access_token", timeout=60, data={
-        "client_id": settings.threads_app_id, "client_secret": settings.threads_app_secret,
-        "grant_type": "authorization_code", "redirect_uri": settings.threads_redirect_uri, "code": code})
+        "client_id": app_id(), "client_secret": app_secret(),
+        "grant_type": "authorization_code", "redirect_uri": redirect_uri(), "code": code})
     short = r.json()
     if "access_token" not in short:
         raise ThreadsError(f"Код не принят: {short.get('error', short)}")
     r = httpx.get(f"{GRAPH}/access_token", timeout=60, params={
-        "grant_type": "th_exchange_token", "client_secret": settings.threads_app_secret,
+        "grant_type": "th_exchange_token", "client_secret": app_secret(),
         "access_token": short["access_token"]})
     long = r.json()
     if "access_token" not in long:

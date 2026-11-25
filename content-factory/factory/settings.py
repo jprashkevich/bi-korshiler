@@ -12,6 +12,24 @@ PHOTOS_DIR = Path(os.getenv("PHOTOS_DIR", ROOT.parent / "images"))
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", ROOT / "output"))
 
 
+def env(name: str, default: str = "") -> str:
+    """Значение переменной окружения в момент вызова, без лишних пробелов по краям."""
+    return (os.environ.get(name) or default).strip()
+
+
+def env_problem(name: str) -> str:
+    """Почему переменная не видна процессу: опечатка или пробелы в имени, пустое значение."""
+    if os.environ.get(name, "").strip():
+        return ""
+    lookalikes = [k for k in os.environ
+                  if k != name and k.strip().upper().replace("-", "_").replace(" ", "_") == name]
+    if lookalikes:
+        return f"{name}: найдена переменная с похожим именем {lookalikes[0]!r} — уберите пробелы или исправьте регистр"
+    if name in os.environ:
+        return f"{name}: переменная есть, но значение пустое"
+    return f"{name}: переменная не видна сервису"
+
+
 def _list(name: str) -> list[int]:
     return [int(x) for x in os.getenv(name, "").replace(" ", "").split(",") if x]
 
