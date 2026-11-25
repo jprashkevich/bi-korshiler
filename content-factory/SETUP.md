@@ -125,6 +125,19 @@ ID группы и участников бот покажет сам после 
 5. Бот ответит: «Threads подключён: @...». С этого момента «Одобрить» публикует тред автоматически,
    а токен продлевается сам раз в 30 дней.
 
+### 6.5. Если вход через ссылку не работает: токен из Graph API Explorer
+
+1. Откройте developers.facebook.com/tools/explorer.
+2. Справа выберите своё приложение `BIG Life Content Factory` и переключите хост на **threads.net** (Threads).
+3. Отметьте разрешения `threads_basic`, `threads_content_publish`, `threads_manage_replies` → **Generate Threads Access Token**.
+   Войдите как BIG Life и разрешите доступ.
+4. Скопируйте токен (начинается с `TH`) и вставьте в Render → Environment как `THREADS_ACCESS_TOKEN` → **Save Changes**.
+5. После перезапуска бот сам обменяет токен на долгоживущий и напишет в группу «Threads подключён: @...».
+   Сделайте это в течение часа после генерации токена.
+
+Если Threads вообще не пускает в аккаунт в браузере, войдите сначала на instagram.com как BIG Life,
+затем откройте threads.com и выберите «Продолжить с Instagram».
+
 ## Шаг 7. Контент-план в Google Sheets (необязательно, 20 минут)
 
 1. Откройте console.cloud.google.com и создайте проект `biglife-content`.

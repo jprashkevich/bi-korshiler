@@ -32,11 +32,36 @@ class ThreadsError(RuntimeError):
 
 
 def token() -> str:
-    return db.kv_get("threads_token") or settings.threads_token
+    return db.kv_get("threads_token") or env("THREADS_ACCESS_TOKEN")
 
 
 def user_id() -> str:
-    return db.kv_get("threads_user_id") or settings.threads_user_id
+    return db.kv_get("threads_user_id") or env("THREADS_USER_ID")
+
+
+def connect_from_env() -> str | None:
+    """Альтернатива /threads: токен из Graph API Explorer в переменной THREADS_ACCESS_TOKEN.
+    Короткий токен (1 час) обменивается на долгоживущий (60 дней), id профиля определяется сам.
+    Возвращает @username или None, если подключать нечего."""
+    raw = env("THREADS_ACCESS_TOKEN")
+    if not raw or db.kv_get("threads_env_token_used") == raw[-12:]:
+        return None
+    access = raw
+    if app_secret():
+        long = httpx.get(f"{GRAPH}/access_token", timeout=60, params={
+            "grant_type": "th_exchange_token", "client_secret": app_secret(), "access_token": raw}).json()
+        if "access_token" in long:
+            access = long["access_token"]
+        else:   # токен уже долгоживущий или обмен недоступен — пробуем как есть
+            log.info("Обмен токена Threads не выполнен: %s", long.get("error", long))
+    me = httpx.get(f"{BASE}/me", timeout=60, params={"fields": "id,username", "access_token": access}).json()
+    if "id" not in me:
+        raise ThreadsError(f"Токен из THREADS_ACCESS_TOKEN не подошёл: {me.get('error', me)}")
+    db.kv_set("threads_token", access)
+    db.kv_set("threads_user_id", str(me["id"]))
+    db.kv_set("threads_token_refreshed", datetime.now(timezone.utc).isoformat())
+    db.kv_set("threads_env_token_used", raw[-12:])
+    return me.get("username", me["id"])
 
 
 def enabled() -> bool:

@@ -177,6 +177,14 @@ def run_forever() -> None:
     db.init()
     if not settings.approver_ids:
         log.warning("TELEGRAM_APPROVER_IDS не задан: одобрять посты может любой участник группы")
+    try:
+        username = threads.connect_from_env()
+        if username and settings.telegram_chat_id:
+            telegram.send_message(settings.telegram_chat_id, f"Threads подключён: @{e(str(username))}.")
+    except Exception as exc:
+        log.exception("Threads из переменной окружения")
+        if settings.telegram_chat_id:
+            telegram.send_message(settings.telegram_chat_id, f"Threads не подключился: {e(str(exc))[:400]}")
     offset = int(db.kv_get("tg_offset", "0")) or None
     while True:
         try:
