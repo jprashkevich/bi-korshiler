@@ -2,212 +2,268 @@
 <html lang="ru"><head><meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
 <style>
-/* Токены из дизайн-системы BIG Life (tokens/colors.css, typography.css). */
+/* Карусель BIG Life, ревизия 2 (25.11):
+   зоны «шапка / контент / подвал», шкала из 6 размеров, ритм фонов «светлый ↔ цвет», navy только на краях. */
 @font-face{font-family:"TT Firs Neue";src:url("{{ assets }}/TT_Firs_Neue_Trial_Var_Roman.ttf") format("truetype-variations");font-weight:100 900}
-:root{--navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;--body:#2b3350;--muted:#808aa3;--subtle:#f5f7fb;
---display:"TT Firs Neue","Montserrat",sans-serif;--text:"Montserrat",sans-serif;--accent:var(--{{ accent }})}
-*{box-sizing:border-box}body{margin:0;background:#dfe6f4;font-family:var(--text)}
-.f{width:1080px;height:1350px;position:relative;overflow:hidden;padding:90px;display:flex;flex-direction:column}
-.navy{background:var(--navy);color:#fff}.light{background:var(--subtle);color:var(--navy)}.acc{background:var(--accent);color:#fff}
-.glow{position:absolute;width:760px;height:760px;border-radius:50%;right:-240px;top:-260px;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 60%,transparent),transparent 62%)}
-.glow.b{left:-300px;right:auto;top:auto;bottom:-320px;background:radial-gradient(circle,rgba(166,229,236,.3),transparent 62%)}
-.z{position:relative;z-index:2}
-.top{display:flex;justify-content:space-between;align-items:center}
-.logo{height:44px;filter:brightness(0) invert(1)}
-.eyebrow{font-size:22px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
-.pill{display:inline-block;font-size:22px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:12px 22px;border-radius:999px;background:var(--accent);color:#fff}
-h1{overflow-wrap:normal;font-family:var(--display);font-weight:800;font-size:100px;line-height:.98;letter-spacing:-.02em;margin:28px 0 0}
-h2{font-family:var(--display);font-weight:800;font-size:66px;line-height:1.02;letter-spacing:-.02em;margin:0 0 26px}
-p{font-size:30px;line-height:1.5;margin:0}
-.num{font-family:var(--display);font-size:64px;font-weight:800;color:var(--accent);line-height:1}
-.head{display:flex;align-items:baseline;gap:20px;margin-bottom:12px}
-.photo{flex:1;border-radius:28px;overflow:hidden;margin-top:44px;min-height:0}
-.photo img{width:100%;height:100%;object-fit:cover;display:block}
-.page{position:absolute;right:90px;bottom:64px;font-size:22px;font-weight:700;opacity:.55;z-index:3}
-.big{font-family:var(--display);font-weight:800;letter-spacing:-.03em;line-height:.95;margin:26px 0 40px}
-.card{background:#fff;border-radius:28px;padding:30px 36px;font-size:34px;font-weight:600;color:var(--navy);box-shadow:0 8px 24px rgba(40,52,138,.08);margin-bottom:22px}
-.card small{display:block;font-size:22px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.step{display:flex;gap:26px;align-items:flex-start;margin-bottom:30px}
-.step b{flex:0 0 64px;height:64px;border-radius:50%;background:#fff;color:var(--accent);font-family:var(--display);font-size:32px;display:flex;align-items:center;justify-content:center}
-.step span{font-size:34px;font-weight:600;line-height:1.35;padding-top:8px}
-.btn{display:inline-block;font-size:28px;font-weight:800;padding:22px 42px;border-radius:999px;background:var(--sky);color:#fff}
-.src{font-size:20px;line-height:1.45;opacity:.6;margin-top:30px}
-.ill{border-radius:28px;overflow:hidden;background:#fff}
-.ill img{width:100%;height:100%;object-fit:cover;display:block}
-.cover-ill{position:absolute;right:-50px;bottom:-90px;width:470px;height:627px;transform:rotate(-4deg);border-radius:36px;box-shadow:0 30px 60px rgba(0,0,0,.35);z-index:1;overflow:hidden;border:10px solid #fff}
-.cover-ill img{width:100%;height:100%;object-fit:cover}
-/* Коллаж: фото в духе вырезки из журнала — ч/б с цветным тоном, растр, скотч, наклейка с подписью */
-.collage{position:relative;width:620px;flex:1 1 0;min-height:440px;max-height:700px;margin:10px auto 0}
-.namecard{display:inline-flex;flex-direction:column;align-self:flex-start;background:var(--navy);color:#fff;border-radius:22px;padding:26px 34px;margin:30px 0 46px;transform:rotate(-1.5deg);box-shadow:0 16px 40px rgba(40,52,138,.25)}
-.namecard b{font-family:var(--display);font-size:52px;line-height:1.05}
-.namecard span{font-size:26px;font-weight:600;opacity:.85;margin-top:8px;max-width:30ch}
+:root{
+  --navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;
+  --ink:#2b3350;--muted:#808aa3;--light:#f5f7fb;--line:#e3e8f1;
+  --accent:var(--{{ accent }});--accent2:var(--{{ accent2 }});
+  --display:"TT Firs Neue","Montserrat",sans-serif;--text:"Montserrat",sans-serif;
+  /* шкала: обложка 100, вывод 84, заголовок 64, цифра 220, текст 34, метка 24, мелкий 20 */
+  --fs-cover:100px;--fs-h1:84px;--fs-h2:64px;--fs-stat:220px;--fs-body:34px;--fs-label:24px;--fs-small:20px;
+  --pad:90px;--r:28px
+}
+*{box-sizing:border-box}body{margin:0;background:#cfd6e6;font-family:var(--text)}
+.f{width:1080px;height:1350px;position:relative;overflow:hidden;padding:84px var(--pad) 0;display:flex;flex-direction:column}
+.bg-navy{background:var(--navy);color:#fff}.bg-light{background:var(--light);color:var(--navy)}
+.bg-accent{background:var(--accent);color:#fff}.bg-accent2{background:var(--accent2);color:#fff}
+.glow{position:absolute;width:760px;height:760px;border-radius:50%;right:-260px;top:-300px;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 55%,transparent),transparent 62%);pointer-events:none}
+
+/* шапка: одна система навигации — «01 · ЭТИКЕТКА» */
+.hd{display:flex;align-items:center;gap:16px;min-height:52px;flex:0 0 auto;position:relative;z-index:2}
+.tag{display:inline-flex;align-items:center;gap:12px;font-size:var(--fs-label);font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:12px 22px;border-radius:999px}
+.bg-light .tag{background:#fff;color:var(--navy);box-shadow:0 4px 14px rgba(40,52,138,.08)}
+.bg-light .tag b{color:var(--accent)}
+.bg-accent .tag,.bg-accent2 .tag,.bg-navy .tag{background:rgba(255,255,255,.18);color:#fff}
+.logo{height:40px}
+.bg-navy .logo,.bg-accent .logo,.bg-accent2 .logo{filter:brightness(0) invert(1)}
+
+/* контент: всё между шапкой и подвалом; текстовые слайды центрируются по вертикали */
+.ct{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;padding:40px 0 36px;position:relative;z-index:1}
+.ct.mid{justify-content:center}
+h1,h2,.big{font-family:var(--display);font-weight:800;letter-spacing:-.02em;margin:0}
+h1{font-size:var(--fs-cover);line-height:.98}
+h2{font-size:var(--fs-h2);line-height:1.04}
+.big{font-size:var(--fs-h1);line-height:1.0}
+.statnum{font-family:var(--display);font-weight:800;font-size:var(--fs-stat);line-height:.9;letter-spacing:-.03em}
+p{font-size:var(--fs-body);line-height:1.45;margin:28px 0 0;max-width:30ch}
+.bg-light p{color:var(--ink)}
+.bg-accent p,.bg-accent2 p,.bg-navy p{color:rgba(255,255,255,.92)}
+
+/* подвал: логотип + прогресс карусели */
+.ft{flex:0 0 96px;display:flex;align-items:center;justify-content:space-between;border-top:2px solid rgba(128,138,163,.18);position:relative;z-index:2}
+.bg-accent .ft,.bg-accent2 .ft,.bg-navy .ft{border-top-color:rgba(255,255,255,.22)}
+.prog{display:flex;gap:8px}
+.prog i{display:block;width:22px;height:6px;border-radius:3px;background:currentColor;opacity:.22}
+.prog i.on{opacity:1;width:44px}
+
+/* медиа: единое скругление и тень, высота — сколько останется */
+.media{flex:1 1 0;min-height:380px;border-radius:var(--r);overflow:hidden;margin-top:40px;position:relative;box-shadow:0 14px 40px rgba(40,52,138,.14)}
+.media img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block}
+.ill{background:#fff}
+.citytag{position:absolute;left:24px;top:24px;z-index:2;display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--navy);font-size:var(--fs-label);font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:12px 22px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.citytag i{width:12px;height:12px;border-radius:50%;background:var(--accent);display:inline-block}
+
+/* обложка: текст сверху, картинка снизу на половину */
+.cover .ct{padding-bottom:30px}
+.cover .pill{align-self:flex-start;font-size:var(--fs-label);font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:12px 22px;border-radius:999px;background:var(--accent);color:#fff;margin-bottom:28px}
+.cover .rub{font-size:var(--fs-label);font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-left:auto}
+.cover-ill{height:600px;flex:0 0 auto;margin:0 calc(-1 * var(--pad));border-radius:36px 36px 0 0;overflow:hidden;position:relative}
+.cover-ill img{width:100%;height:100%;object-fit:cover;object-position:50% 45%;display:block}
+.cover .cities{margin-top:22px;font-size:var(--fs-label);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.swipe{font-size:26px;font-weight:700;color:rgba(255,255,255,.85)}
+
+/* списки и шаги */
+.card{background:#fff;border-radius:22px;padding:26px 32px;font-size:var(--fs-body);font-weight:600;color:var(--navy);box-shadow:0 8px 24px rgba(40,52,138,.07);margin-top:18px;line-height:1.3}
+.card small{display:block;font-size:var(--fs-small);font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.steps{margin-top:36px}
+.step{display:flex;gap:24px;align-items:flex-start;margin-top:26px}
+.step b{flex:0 0 60px;height:60px;border-radius:50%;background:#fff;color:var(--accent);font-family:var(--display);font-size:30px;display:flex;align-items:center;justify-content:center}
+.bg-accent2 .step b{color:var(--accent2)}
+.step span{font-size:var(--fs-body);font-weight:600;line-height:1.3;padding-top:8px}
+
+/* человек: коллаж с фото или карточка с именем */
+.collage{position:relative;width:600px;flex:1 1 0;min-height:420px;max-height:640px;margin:36px auto 0}
 .collage .paper{position:absolute;inset:0;background:var(--accent);transform:rotate(5deg);border-radius:6px;opacity:.9}
-.collage .frame{position:absolute;inset:18px 24px 30px 18px;background:#fff;padding:18px;transform:rotate(-3deg);box-shadow:0 18px 40px rgba(20,26,46,.25)}
+.collage .frame{position:absolute;inset:18px 24px 30px 18px;background:#fff;padding:16px;transform:rotate(-3deg);box-shadow:0 18px 40px rgba(20,26,46,.25)}
 .collage .photo-in{position:relative;width:100%;height:100%;overflow:hidden;background:#ccc}
 .collage .photo-in img{width:100%;height:100%;object-fit:cover;object-position:50% 18%;filter:grayscale(1) contrast(1.15) brightness(1.05);display:block}
 .collage .photo-in::after{content:"";position:absolute;inset:0;background:#7fb8ff;mix-blend-mode:multiply;opacity:.55}
 .collage .photo-in::before{content:"";position:absolute;inset:0;z-index:2;opacity:.18;mix-blend-mode:multiply;background-image:radial-gradient(#000 1.2px,transparent 1.6px);background-size:7px 7px}
-.collage .tape{position:absolute;width:190px;height:50px;background:rgba(255,246,214,.82);top:6px;left:-40px;transform:rotate(-38deg);z-index:3;box-shadow:0 2px 6px rgba(0,0,0,.12)}
-.collage .tag{position:absolute;left:-10px;bottom:-24px;z-index:4;background:var(--navy);color:#fff;padding:18px 26px;border-radius:14px;transform:rotate(-2deg);max-width:560px}
-.collage .tag b{display:block;font-family:var(--display);font-size:38px;line-height:1.05}
-.collage .tag span{font-size:22px;font-weight:600;opacity:.85}
-.collage .mono{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:220px;font-weight:800;color:#fff;background:var(--navy)}
-.credit{font-size:16px;opacity:.55;margin-top:44px}
-.bgphoto{position:absolute;inset:0;z-index:0}
-.bgphoto img{width:100%;height:100%;object-fit:cover}
-.bgphoto::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,52,138,.55) 0%,rgba(40,52,138,.15) 30%,rgba(40,52,138,.55) 60%,rgba(28,36,100,.95) 100%)}
-.evphoto{flex:1 1 0;min-height:480px;max-height:860px;border-radius:28px;overflow:hidden;margin:0 0 40px;box-shadow:0 14px 40px rgba(40,52,138,.18)}
-.evphoto{position:relative}
-.evphoto img{width:100%;height:100%;object-fit:cover;display:block}
-.citytag{position:absolute;left:28px;top:28px;z-index:2;display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--navy);font-size:24px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:12px 22px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
-.citytag i{width:12px;height:12px;border-radius:50%;background:var(--accent);display:inline-block}
-.cities{margin-top:26px;font-size:26px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.9)}
+.collage .tape{position:absolute;width:190px;height:50px;background:rgba(255,246,214,.82);top:6px;left:-40px;transform:rotate(-38deg);z-index:3}
+.collage .who{position:absolute;left:-14px;bottom:-22px;z-index:4;background:var(--navy);color:#fff;padding:16px 24px;border-radius:14px;transform:rotate(-2deg);max-width:560px}
+.collage .who b{display:block;font-family:var(--display);font-size:36px;line-height:1.05}
+.collage .who span{font-size:var(--fs-small);font-weight:600;opacity:.85}
+.namecard{display:inline-flex;flex-direction:column;align-self:flex-start;background:var(--navy);color:#fff;border-radius:22px;padding:26px 34px;margin-bottom:40px;transform:rotate(-1.5deg);box-shadow:0 16px 40px rgba(40,52,138,.25)}
+.namecard b{font-family:var(--display);font-size:52px;line-height:1.05}
+.namecard span{font-size:var(--fs-small);font-weight:600;opacity:.85;margin-top:8px;max-width:34ch}
+.credit{font-size:var(--fs-small);opacity:.55;margin-top:18px}
+
+/* вывод на светлом фоне (когда подряд нельзя ставить цветной) */
+.bar{width:120px;height:10px;border-radius:5px;background:var(--accent);margin-bottom:36px}
+.btn{display:inline-block;align-self:flex-start;font-size:30px;font-weight:800;padding:22px 42px;border-radius:999px;background:var(--sky);color:#fff;margin-top:48px}
 </style></head><body>
 {% set total = slides|length %}
-{% for s in slides %}{% set n = loop.index %}
+{% macro tagline(s, n) -%}<span class="tag"><b>{{ '%02d' % (n - 1) }}</b>{% if s.eyebrow %}· {{ s.eyebrow }}{% endif %}</span>{%- endmacro %}
+{% macro footer(n) -%}
+<div class="ft"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life">
+  <div class="prog">{% for k in range(total) %}<i{% if k + 1 == n %} class="on"{% endif %}></i>{% endfor %}</div></div>
+{%- endmacro %}
+{% for s in slides %}{% set n = loop.index %}{% set bg = bgs[loop.index0] %}
+
 {% if s.type == 'cover' %}
-<section class="f navy" id="s{{ n }}" style="justify-content:space-between">
-  {% if dphotos.get(s.photo_ref) %}<div class="bgphoto"><img src="{{ dphotos[s.photo_ref] }}" alt=""></div>
-  {% else %}<div class="glow"></div><div class="glow b"></div>{% endif %}
-  {% if ills.get(s.illustration_id) %}<div class="cover-ill"><img src="{{ ills[s.illustration_id] }}" alt=""></div>{% endif %}
-  <div class="z top"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"><span class="eyebrow" style="color:var(--accent)">{{ rubric_title }}</span></div>
-  <div class="z">
-    {% if s.eyebrow and s.eyebrow|lower|replace('\u00a0', ' ') != rubric_title|lower %}<span class="pill">{{ s.eyebrow }}</span>{% endif %}
-    <h1 style="font-size:{{ 112 if s.title|length < 45 else (100 if s.title|length < 70 else 84) }}px{% if ills.get(s.illustration_id) %};max-width:10ch;font-size:{{ 96 if s.title|length < 45 else 84 }}px{% endif %}">{{ s.title }}</h1>
-    {% if s.text %}<p style="margin-top:30px;opacity:.85;max-width:28ch">{{ s.text }}</p>{% endif %}
+{% set cimg = dphotos.get(s.photo_ref) or ills.get(s.illustration_id) %}
+<section class="f bg-navy cover" id="s{{ n }}">
+  {% if not cimg %}<div class="glow"></div>{% endif %}
+  <div class="hd"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"><span class="rub">{{ rubric_title }}</span></div>
+  <div class="ct{% if not cimg %} mid{% endif %}">
+    {% if s.eyebrow and s.eyebrow|lower|replace(' ', ' ') != rubric_title|lower %}<span class="pill">{{ s.eyebrow }}</span>{% endif %}
+    <h1{% if cimg %} style="font-size:88px"{% endif %}>{{ s.title }}</h1>
     {% if cities %}<div class="cities">{{ cities|join(' · ') }}</div>{% endif %}
+    {% if not cimg %}<div class="swipe" style="margin-top:48px">Листайте →</div>{% endif %}
   </div>
-  <div class="z" style="font-size:28px;font-weight:700;opacity:.85">Листайте →</div>
+  {% if cimg %}<div class="cover-ill{% if ills.get(s.illustration_id) and not dphotos.get(s.photo_ref) %} ill{% endif %}"><img src="{{ cimg }}" alt=""></div>{% endif %}
 </section>
-{% elif s.type == 'insight' %}
-<section class="f light" id="s{{ n }}">
-  <div class="head"><span class="num">{{ '%02d' % (n - 1) }}</span><span class="eyebrow" style="color:var(--muted)">{{ s.eyebrow }}</span></div>
-  <h2>{{ s.title }}</h2>
-  {% if s.text %}<p style="color:var(--body);max-width:31ch">{{ s.text }}</p>{% endif %}
-  {% if ills.get(s.illustration_id) %}<div class="photo ill"><img src="{{ ills[s.illustration_id] }}" alt=""></div>
-  {% elif photo %}<div class="photo"><img src="{{ photo }}" alt=""></div>{% endif %}
-  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
-</section>
-{% elif s.type == 'person' %}{% set pic = pictures.get(s.person, {}) %}{% set ref = people.get(s.person, {}) %}
-{% if pic.uri %}
-<section class="f light" id="s{{ n }}">
-  <div class="head"><span class="num">{{ '%02d' % (n - 1) }}</span><span class="eyebrow" style="color:var(--muted)">{{ s.eyebrow }}</span></div>
-  <div class="collage">
-    <div class="paper"></div>
-    <div class="frame"><div class="tape"></div><div class="photo-in"><img src="{{ pic.uri }}" alt=""></div></div>
-    <div class="tag"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
-  </div>
-  <h2 style="margin-top:64px;font-size:56px">{{ s.title }}</h2>
-  {% if s.text %}<p style="color:var(--body);max-width:32ch;font-size:28px">{{ s.text }}</p>{% endif %}
-  <div class="credit">{{ pic.credit }}</div>
-  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
-</section>
-{% else %}{# свободного фото нет — карточка без коллажа, а не заглушка с буквой #}
-<section class="f light" id="s{{ n }}" style="justify-content:center">
-  <div class="head"><span class="num">{{ '%02d' % (n - 1) }}</span><span class="eyebrow" style="color:var(--muted)">{{ s.eyebrow }}</span></div>
-  <div class="namecard"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
-  <h2 style="font-size:76px">{{ s.title }}</h2>
-  {% if s.text %}<p style="color:var(--body);max-width:30ch;font-size:32px">{{ s.text }}</p>{% endif %}
-  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
-</section>
-{% endif %}
-{% elif s.type == 'event' %}
-<section class="f light" id="s{{ n }}">
-  {% if dphotos.get(s.photo_ref) %}<div class="evphoto"><img src="{{ dphotos[s.photo_ref] }}" alt="">
-    {% if photo_city.get(s.photo_ref) %}<span class="citytag"><i></i>{{ photo_city[s.photo_ref] }}</span>{% endif %}</div>{% endif %}
-  <span class="eyebrow" style="color:var(--accent);margin-bottom:16px">{{ s.eyebrow }}</span>
-  <h2 style="font-size:58px">{{ s.title }}</h2>
-  {% if s.text %}<p style="color:var(--body);max-width:32ch;font-size:28px">{{ s.text }}</p>{% endif %}
-  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
-</section>
-{% elif s.type in ('statement', 'stat') %}
-<section class="f acc" id="s{{ n }}" style="justify-content:center">
-  <span class="eyebrow" style="opacity:.9">{{ '%02d' % (n - 1) }} · {{ s.eyebrow }}</span>
-  {% if s.type == 'stat' %}
-  <div class="big" style="font-size:{{ 230 if s.title|length < 8 else (160 if s.title|length < 14 else 110) }}px">{{ s.title }}</div>
-  {% else %}
-  <div class="big" style="font-size:{{ 118 if s.title|length < 50 else (96 if s.title|length < 80 else 80) }}px">{{ s.title }}</div>
-  {% endif %}
-  {% if s.text %}<p style="font-size:36px;font-weight:600;line-height:1.35;max-width:24ch">{{ s.text }}</p>{% endif %}
-  <span class="page">{{ n }}/{{ total }}</span>
-</section>
-{% elif s.type == 'list' %}
-<section class="f light" id="s{{ n }}">
-  <div class="head"><span class="num">{{ '%02d' % (n - 1) }}</span><span class="eyebrow" style="color:var(--muted)">{{ s.eyebrow }}</span></div>
-  <h2 style="margin-bottom:20px">{{ s.title }}</h2>
-  {% if s.text %}<p style="color:var(--body);margin-bottom:40px;max-width:31ch">{{ s.text }}</p>{% endif %}
-  {% for it in s['items'] %}<div class="card">{% if s.item_labels[loop.index0] %}<small>{{ s.item_labels[loop.index0] }}</small>{% endif %}{{ it }}</div>{% endfor %}
-  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
-</section>
-{% elif s.type == 'steps' %}
-<section class="f acc" id="s{{ n }}">
-  <span class="eyebrow" style="opacity:.9">{{ '%02d' % (n - 1) }} · {{ s.eyebrow }}</span>
-  <h2 style="color:#fff;margin-top:24px">{{ s.title }}</h2>
-  {% if s.text %}<p style="font-weight:500;margin-bottom:46px;max-width:31ch">{{ s.text }}</p>{% endif %}
-  {% for it in s['items'] %}<div class="step"><b>{{ loop.index }}</b><span>{{ it }}</span></div>{% endfor %}
-  <span class="page">{{ n }}/{{ total }}</span>
-</section>
-{% elif s.type == 'question' %}
-<section class="f light" id="s{{ n }}" style="justify-content:center">
-  <span class="eyebrow" style="color:var(--muted)">{{ s.eyebrow or 'Вопрос к вам' }}</span>
-  <div class="big" style="color:var(--navy);font-size:{{ 96 if s.title|length < 60 else 78 }}px">{{ s.title }}</div>
-  {% if s.text %}<p style="color:var(--body);max-width:30ch">{{ s.text }}</p>{% endif %}
-  {% for it in s['items'] %}<div class="card" style="margin-top:18px;margin-bottom:0">{{ it }}</div>{% endfor %}
-  <span class="page" style="color:var(--navy)">{{ n }}/{{ total }}</span>
-</section>
-{% else %}
-<section class="f navy" id="s{{ n }}" style="justify-content:space-between">
+
+{% elif s.type == 'cta' %}
+<section class="f bg-navy" id="s{{ n }}">
   <div class="glow"></div>
-  <img class="z logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life" style="align-self:flex-start">
-  <div class="z">
-    <h2 style="font-size:{{ 84 if s.title|length < 70 else 68 }}px;color:#fff">{{ s.title }}</h2>
-    {% if s.text %}<p style="opacity:.85;max-width:27ch">{{ s.text }}</p>{% endif %}
-  </div>
-  <div class="z">
+  <div class="hd"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"></div>
+  <div class="ct mid">
+    <div class="big">{{ s.title }}</div>
+    {% if s.text %}<p>{{ s.text }}</p>{% endif %}
     <span class="btn">{{ s.eyebrow or 'Активности двора в BIG App' }}</span>
   </div>
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'insight' %}
+<section class="f bg-light" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct{% if not (ills.get(s.illustration_id) or photo) %} mid{% endif %}">
+    <h2>{{ s.title }}</h2>
+    {% if s.text %}<p>{{ s.text }}</p>{% endif %}
+    {% if ills.get(s.illustration_id) %}<div class="media ill"><img src="{{ ills[s.illustration_id] }}" alt=""></div>
+    {% elif photo %}<div class="media"><img src="{{ photo }}" alt=""></div>{% endif %}
+  </div>
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'event' %}
+<section class="f bg-light" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct">
+    {% if dphotos.get(s.photo_ref) %}<div class="media" style="margin-top:0;margin-bottom:36px"><img src="{{ dphotos[s.photo_ref] }}" alt="">
+      {% if photo_city.get(s.photo_ref) %}<span class="citytag"><i></i>{{ photo_city[s.photo_ref] }}</span>{% endif %}</div>{% endif %}
+    <h2>{{ s.title }}</h2>
+    {% if s.text %}<p style="margin-top:20px">{{ s.text }}</p>{% endif %}
+  </div>
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'person' %}{% set pic = pictures.get(s.person, {}) %}{% set ref = people.get(s.person, {}) %}
+<section class="f bg-light" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  {% if pic.uri %}
+  <div class="ct">
+    <div class="collage">
+      <div class="paper"></div>
+      <div class="frame"><div class="tape"></div><div class="photo-in"><img src="{{ pic.uri }}" alt=""></div></div>
+      <div class="who"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
+    </div>
+    <h2 style="margin-top:64px">{{ s.title }}</h2>
+    {% if s.text %}<p style="margin-top:20px">{{ s.text }}</p>{% endif %}
+    <div class="credit">{{ pic.credit }}</div>
+  </div>
+  {% else %}{# свободного фото нет — карточка с именем, без заглушки #}
+  <div class="ct mid">
+    <div class="namecard"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
+    <h2>{{ s.title }}</h2>
+    {% if s.text %}<p>{{ s.text }}</p>{% endif %}
+  </div>
+  {% endif %}
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'stat' %}
+<section class="f bg-{{ bg }}" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct mid">
+    {% if bg == 'light' %}<div class="bar"></div>{% endif %}
+    {% set L = s.title|length %}
+    <div class="statnum" style="font-size:{{ 240 if L <= 4 else (190 if L <= 7 else (150 if L <= 10 else 112)) }}px{% if bg == 'light' %};color:var(--accent){% endif %}">{{ s.title }}</div>
+    {% if s.text %}<p style="font-weight:600;font-size:40px;line-height:1.3">{{ s.text }}</p>{% endif %}
+  </div>
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'statement' %}
+<section class="f bg-{{ bg }}" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct mid">
+    {% if bg == 'light' %}<div class="bar"></div>{% endif %}
+    <div class="big">{{ s.title }}</div>
+    {% if s.text %}<p style="font-weight:600">{{ s.text }}</p>{% endif %}
+  </div>
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'steps' %}
+<section class="f bg-{{ bg }}" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct mid">
+    <h2>{{ s.title }}</h2>
+    {% if s.text %}<p>{{ s.text }}</p>{% endif %}
+    <div class="steps">{% for it in s['items'] %}<div class="step"><b{% if bg == 'light' %} style="background:var(--accent);color:#fff"{% endif %}>{{ loop.index }}</b><span>{{ it }}</span></div>{% endfor %}</div>
+  </div>
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'list' %}
+<section class="f bg-light" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct mid">
+    <h2>{{ s.title }}</h2>
+    {% if s.text %}<p>{{ s.text }}</p>{% endif %}
+    <div style="margin-top:22px">{% for it in s['items'] %}<div class="card">{% if s.item_labels[loop.index0] %}<small>{{ s.item_labels[loop.index0] }}</small>{% endif %}{{ it }}</div>{% endfor %}</div>
+  </div>
+  {{ footer(n) }}
+</section>
+
+{% else %}{# question #}
+<section class="f bg-{{ bg }}" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct mid">
+    <h2 style="font-size:76px">{{ s.title }}</h2>
+    {% if s.text %}<p>{{ s.text }}</p>{% endif %}
+    <div style="margin-top:22px">{% for it in s['items'] %}<div class="card">{{ it }}</div>{% endfor %}</div>
+  </div>
+  {{ footer(n) }}
 </section>
 {% endif %}
 {% endfor %}
-
 <script>
-// Автоподгонка: уменьшаем заголовки, пока они не влезут по ширине (длинные слова) и слайд не перестанет переполняться.
+// Автоподгонка: заголовки уменьшаются, пока не влезут, но не ниже минимума шкалы.
+// Если и на минимуме не влезает — это сигнал сократить текст, а не мельчить: пишем в отчёт.
 (function () {
   function wide(el) { return el.scrollWidth > el.clientWidth + 2; }
   function over(sec) {
-    const r = sec.getBoundingClientRect(), cs = getComputedStyle(sec);
-    const top = r.top + parseFloat(cs.paddingTop) - 2, bottom = r.bottom - parseFloat(cs.paddingBottom) + 2;
-    for (const c of sec.children) {
-      if (getComputedStyle(c).position === 'absolute') continue;
-      const b = c.getBoundingClientRect();
-      if (b.height && (b.bottom > bottom || b.top < top)) return true;
-    }
-    return false;
+    const ct = sec.querySelector('.ct'); if (!ct) return false;
+    const b = ct.getBoundingClientRect();
+    return [...ct.children].some(c => {
+      if (getComputedStyle(c).position === 'absolute') return false;
+      const r = c.getBoundingClientRect();
+      return r.height && (r.bottom > b.bottom + 2 || r.top < b.top - 2);
+    });
   }
+  const MIN = {H1: 64, H2: 52};
   window.layoutIssues = [];
   window.fitAll = function (selector) {
     document.querySelectorAll(selector).forEach((sec, idx) => {
-      const heads = [...sec.querySelectorAll('h1,h2,.big,.title,.stat')];
-      // не меньше 45% исходного размера: если и так не влезает, дело не в заголовке
-      const floor = new Map(heads.map(h => [h, parseFloat(getComputedStyle(h).fontSize) * 0.45]));
+      const heads = [...sec.querySelectorAll('h1,h2,.big,.statnum')];
+      const floor = new Map(heads.map(h => [h, Math.max(MIN[h.tagName] || 56, parseFloat(getComputedStyle(h).fontSize) * 0.6)]));
       for (let guard = 0; guard < 40 && heads.length; guard++) {
         const w = heads.filter(wide);
         if (!w.length && !over(sec)) break;
-        const targets = (w.length ? w : heads).filter(h => parseFloat(getComputedStyle(h).fontSize) * 0.93 >= floor.get(h));
+        const targets = (w.length ? w : heads).filter(h => parseFloat(getComputedStyle(h).fontSize) * 0.94 >= floor.get(h));
         if (!targets.length) break;
-        targets.forEach(h => {
-          h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * 0.93) + 'px';
-        });
+        targets.forEach(h => { h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * 0.94) + 'px'; });
       }
-      // отчёт для согласующего: что не влезло или стало слишком мелким
-      if (heads.some(wide) || over(sec)) window.layoutIssues.push((idx + 1) + ': текст не помещается');
-      heads.forEach(h => {
-        const now = parseFloat(getComputedStyle(h).fontSize), was = floor.get(h) / 0.45;
-        if (now < was * 0.62) window.layoutIssues.push((idx + 1) + ': заголовок уменьшен до ' + Math.round(now) + ' px');
-      });
+      if (heads.some(wide) || over(sec)) window.layoutIssues.push((idx + 1) + ': текст не помещается, нужно сократить');
     });
   };
 })();
+document.fonts.ready.then(() => { fitAll('section.f'); document.body.dataset.fitted = '1'; });
 </script>
-<script>document.fonts.ready.then(() => { fitAll('section.f'); document.body.dataset.fitted = '1'; });</script>
 </body></html>

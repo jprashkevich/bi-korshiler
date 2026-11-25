@@ -311,3 +311,11 @@ def test_event_slide_shows_city_and_cover_lists_cities(tmp_path):
     html = render_html(pkg, "Жизнь дворов", drive_photos={"p1": str(photo)}, photo_city={"p1": "Астана"},
                        cities=["Астана", "Шымкент"])
     assert 'class="citytag"' in html and "Астана · Шымкент" in html
+
+
+def test_background_rhythm():
+    from types import SimpleNamespace as N
+    from factory.render import backgrounds
+    kinds = ["cover", "insight", "statement", "stat", "steps", "list", "stat", "cta"]
+    assert backgrounds([N(type=k) for k in kinds]) == \
+        ["navy", "light", "accent", "light", "accent2", "light", "accent", "navy"]

@@ -42,9 +42,9 @@ class Slide(BaseModel):
         "list — заголовок и 2–4 карточки (например фразы или факты); steps — заголовок и 3–4 шага; "
         "question — вопрос аудитории; cta — финальный слайд с призывом (последний слайд)"))
     eyebrow: str = Field(description="Короткая надпись над заголовком, 1–4 слова, без точки", max_length=40)
-    title: str = Field(description="Заголовок слайда. Для stat — сама цифра (например «52 000» или «в 2 раза»)", max_length=110)
-    text: str = Field(description="Основной текст слайда, до 260 символов; пусто, если не нужен", max_length=300)
-    items: list[str] = Field(description="Для list и steps: 2–4 пункта до 70 символов; иначе пустой список")
+    title: str = Field(description="Заголовок слайда до 50 символов (обложка до 70). Для stat — сама цифра (например «52 000» или «в 2 раза»)", max_length=110)
+    text: str = Field(description="Текст слайда до 160 символов: одна-две короткие фразы; пусто, если не нужен. Детали — в подпись к посту", max_length=300)
+    items: list[str] = Field(description="Для list и steps: 3–4 пункта до 50 символов; иначе пустой список")
     item_labels: list[str] = Field(description="Для list: короткие подписи к пунктам (например «У подъезда»); иначе пустой список")
     illustration_id: str = Field(description="id иллюстрации из каталога для cover или insight, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")

@@ -63,10 +63,29 @@ def picture_uris(pictures: dict | None) -> dict[str, dict]:
     return out
 
 
+COLORED = {"statement", "stat", "steps"}          # типы, которые просят цветной фон
+SECOND_ACCENT = {"sky": "green", "green": "sky", "orange": "periwinkle", "periwinkle": "orange"}
+
+
+def backgrounds(slides) -> list[str]:
+    """Ритм фонов: обложка и финал — navy; внутри цветной слайд никогда не идёт сразу за цветным,
+    а цветные чередуют два акцента поста. Цветной тип после цветного рисуется светлым вариантом."""
+    out, prev_colored, flip = [], False, False
+    for sl in slides:
+        if sl.type in ("cover", "cta"):
+            out.append("navy"); prev_colored = False
+        elif sl.type in COLORED and not prev_colored:
+            out.append("accent2" if flip else "accent"); flip = not flip; prev_colored = True
+        else:
+            out.append("light"); prev_colored = False
+    return out
+
+
 def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = None,
                 drive_photos: dict | None = None, photo_city: dict | None = None,
                 cities: list | None = None) -> str:
     return _env.get_template("carousel.html.j2").render(
+        bgs=backgrounds(pkg.slides), accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"),
         photo_city=photo_city or {}, cities=cities or [],
         dphotos={k: Path(v).resolve().as_uri() for k, v in (drive_photos or {}).items()},
         ills=illustrations(),
