@@ -159,10 +159,14 @@ window.seek(0);
   window.fitAll = function (selector) {
     document.querySelectorAll(selector).forEach(sec => {
       const heads = [...sec.querySelectorAll('h1,h2,.big,.title,.stat')];
+      // не меньше 45% исходного размера: если и так не влезает, дело не в заголовке
+      const floor = new Map(heads.map(h => [h, parseFloat(getComputedStyle(h).fontSize) * 0.45]));
       for (let guard = 0; guard < 40 && heads.length; guard++) {
         const w = heads.filter(wide);
         if (!w.length && !over(sec)) break;
-        (w.length ? w : heads).forEach(h => {
+        const targets = (w.length ? w : heads).filter(h => parseFloat(getComputedStyle(h).fontSize) * 0.93 >= floor.get(h));
+        if (!targets.length) break;
+        targets.forEach(h => {
           h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * 0.93) + 'px';
         });
       }

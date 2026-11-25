@@ -110,6 +110,29 @@ def on_message(msg: dict) -> None:
     if text.startswith("/id"):
         telegram.send_message(chat, f"chat_id: <code>{chat}</code>\nваш user_id: <code>{msg['from']['id']}</code>")
         return
+    if text.startswith("/city") and not text.startswith("/cities") and allowed(msg["from"]["id"]):
+        from .cities import set_city
+        body = text.split(maxsplit=1)[1] if " " in text else ""
+        if "=" not in body:
+            telegram.send_message(chat, "Формат: <code>/city Название ЖК = Город</code>")
+            return
+        cx, city = (x.strip() for x in body.split("=", 1))
+        set_city(cx, city)
+        telegram.send_message(chat, f"Запомнил: {e(cx)} — {e(city)}.")
+        return
+    if text.startswith("/cities") and allowed(msg["from"]["id"]):
+        from . import drive
+        try:
+            evs = drive.recent_events(days=30, include_used=True)
+        except Exception as exc:
+            telegram.send_message(chat, f"Не удалось прочитать Drive: {e(str(exc))[:200]}")
+            return
+        unknown = sorted({ev.complex for ev in evs if not ev.city})
+        known = sorted({(ev.city, ev.complex) for ev in evs if ev.city})
+        lines = [f"<b>Без города ({len(unknown)}):</b>"] + [f"• {e(x)}" for x in unknown[:60]]
+        lines += ["", f"<b>С городом:</b> {len(known)} ЖК. Задать: <code>/city ЖК = Город</code>"]
+        telegram.send_message(chat, "\n".join(lines))
+        return
     if text.startswith("/status") and allowed(msg["from"]["id"]):
         telegram.send_message(chat, status_report())
         return

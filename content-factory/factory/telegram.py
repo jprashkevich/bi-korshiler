@@ -33,9 +33,20 @@ def _call(method: str, http_timeout: float = 60, files=None, **params):
 
 
 def send_album(chat_id: str, paths: list[Path], caption: str = "") -> list[int]:
-    """Слайды карусели одним альбомом (до 10 файлов)."""
+    """Слайды карусели альбомами: Telegram принимает до 10 файлов в альбоме, остальное — следующим."""
+    ids: list[int] = []
+    for start in range(0, len(paths), 10):
+        ids += _send_album_part(chat_id, paths[start:start + 10], caption if start == 0 else "")
+    return ids
+
+
+def _send_album_part(chat_id: str, paths: list[Path], caption: str = "") -> list[int]:
+    if len(paths) == 1:                       # альбом из одного файла Telegram не принимает
+        result = _call("sendPhoto", http_timeout=120, files={"photo": (paths[0].name, paths[0].read_bytes(), "image/png")},
+                       chat_id=chat_id, caption=caption[:CAPTION_LIMIT] or None)
+        return [result["message_id"]]
     media, files = [], {}
-    for i, p in enumerate(paths[:10]):
+    for i, p in enumerate(paths):
         key = f"f{i}"
         files[key] = (p.name, p.read_bytes(), "image/png")
         item = {"type": "photo", "media": f"attach://{key}"}

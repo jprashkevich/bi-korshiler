@@ -53,8 +53,12 @@ p{font-size:30px;line-height:1.5;margin:0}
 .bgphoto{position:absolute;inset:0;z-index:0}
 .bgphoto img{width:100%;height:100%;object-fit:cover}
 .bgphoto::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,52,138,.55) 0%,rgba(40,52,138,.15) 30%,rgba(40,52,138,.55) 60%,rgba(28,36,100,.95) 100%)}
-.evphoto{height:860px;border-radius:28px;overflow:hidden;margin:-10px -10px 44px;box-shadow:0 14px 40px rgba(40,52,138,.18);flex:0 0 auto}
+.evphoto{flex:1 1 0;min-height:480px;max-height:860px;border-radius:28px;overflow:hidden;margin:0 0 40px;box-shadow:0 14px 40px rgba(40,52,138,.18)}
+.evphoto{position:relative}
 .evphoto img{width:100%;height:100%;object-fit:cover;display:block}
+.citytag{position:absolute;left:28px;top:28px;z-index:2;display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--navy);font-size:24px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:12px 22px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.citytag i{width:12px;height:12px;border-radius:50%;background:var(--accent);display:inline-block}
+.cities{margin-top:26px;font-size:26px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.9)}
 </style></head><body>
 {% set total = slides|length %}
 {% for s in slides %}{% set n = loop.index %}
@@ -68,6 +72,7 @@ p{font-size:30px;line-height:1.5;margin:0}
     {% if s.eyebrow and s.eyebrow|lower|replace('\u00a0', ' ') != rubric_title|lower %}<span class="pill">{{ s.eyebrow }}</span>{% endif %}
     <h1 style="font-size:{{ 112 if s.title|length < 45 else (100 if s.title|length < 70 else 84) }}px{% if ills.get(s.illustration_id) %};max-width:10ch;font-size:{{ 96 if s.title|length < 45 else 84 }}px{% endif %}">{{ s.title }}</h1>
     {% if s.text %}<p style="margin-top:30px;opacity:.85;max-width:28ch">{{ s.text }}</p>{% endif %}
+    {% if cities %}<div class="cities">{{ cities|join(' · ') }}</div>{% endif %}
   </div>
   <div class="z" style="font-size:28px;font-weight:700;opacity:.85">Листайте →</div>
 </section>
@@ -97,7 +102,8 @@ p{font-size:30px;line-height:1.5;margin:0}
 </section>
 {% elif s.type == 'event' %}
 <section class="f light" id="s{{ n }}">
-  {% if dphotos.get(s.photo_ref) %}<div class="evphoto"><img src="{{ dphotos[s.photo_ref] }}" alt=""></div>{% endif %}
+  {% if dphotos.get(s.photo_ref) %}<div class="evphoto"><img src="{{ dphotos[s.photo_ref] }}" alt="">
+    {% if photo_city.get(s.photo_ref) %}<span class="citytag"><i></i>{{ photo_city[s.photo_ref] }}</span>{% endif %}</div>{% endif %}
   <span class="eyebrow" style="color:var(--accent);margin-bottom:16px">{{ s.eyebrow }}</span>
   <h2 style="font-size:58px">{{ s.title }}</h2>
   {% if s.text %}<p style="color:var(--body);max-width:32ch;font-size:28px">{{ s.text }}</p>{% endif %}
@@ -170,10 +176,14 @@ p{font-size:30px;line-height:1.5;margin:0}
   window.fitAll = function (selector) {
     document.querySelectorAll(selector).forEach(sec => {
       const heads = [...sec.querySelectorAll('h1,h2,.big,.title,.stat')];
+      // не меньше 45% исходного размера: если и так не влезает, дело не в заголовке
+      const floor = new Map(heads.map(h => [h, parseFloat(getComputedStyle(h).fontSize) * 0.45]));
       for (let guard = 0; guard < 40 && heads.length; guard++) {
         const w = heads.filter(wide);
         if (!w.length && !over(sec)) break;
-        (w.length ? w : heads).forEach(h => {
+        const targets = (w.length ? w : heads).filter(h => parseFloat(getComputedStyle(h).fontSize) * 0.93 >= floor.get(h));
+        if (!targets.length) break;
+        targets.forEach(h => {
           h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * 0.93) + 'px';
         });
       }

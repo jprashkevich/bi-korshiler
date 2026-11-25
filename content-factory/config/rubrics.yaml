@@ -34,8 +34,8 @@ rubrics:
     source: drive           # этап 2: отчёты о соседских активностях из Google Drive
     fallback: science
     format: carousel
-    slides: 6
-    brief: Подборка или обзор по отчётам о проведённых соседских активностях BIG Life, с реальными фото.
+    slides: 12
+    brief: Фото-дайджест по отчётам о проведённых соседских активностях BIG Life в разных городах, с реальными фото.
   question:
     title: Вопрос недели
     source: rss

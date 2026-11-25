@@ -194,9 +194,9 @@ def test_drive_recent_events_parses_structure(monkeypatch):
 
 def test_pick_events_prefers_variety():
     from factory.drive import Event, pick_events
-    evs = [Event("1", "A", "Йога", "2026-11-25"), Event("2", "A", "Йога", "2026-11-24"),
-           Event("3", "B", "Танцы", "2026-11-24"), Event("4", "C", "Йога", "2026-11-23")]
-    assert [e.folder_id for e in pick_events(evs, limit=3)] == ["1", "3", "2"]
+    evs = [Event("1", "A", "Йога", "2026-11-25", city="Астана"), Event("2", "A", "Йога", "2026-11-24", city="Астана"),
+           Event("3", "B", "Танцы", "2026-11-24", city="Астана"), Event("4", "C", "Йога", "2026-11-23", city="Шымкент")]
+    assert [e.folder_id for e in pick_events(evs, limit=3)] == ["1", "4", "3"]   # сначала разные города
 
 
 def test_strict_schema_keeps_fields_named_title():
@@ -270,3 +270,44 @@ def test_drive_uses_report_json(monkeypatch):
     ev = drive.recent_events(today=date(2026, 11, 25))[0]
     assert [p["name"] for p in ev.photos] == ["b.jpg", "a.jpg"]       # лучшие первыми, афиша убрана
     assert ev.report["participants"] == "12"
+
+
+
+def test_city_resolution_order():
+    from factory import cities, db
+    db.init()
+    assert cities.city_for("Nova City 14", "Community 2 Управление") == "Астана"
+    assert cities.city_for("4YOU Shymkent", "Community 1 Управление") == "Шымкент"   # слово в названии важнее группы
+    assert cities.city_for("Batysmura Business", "Community Запад") == ""
+    cities.set_city("ЖК Батысмұра Бизнес", "Атырау")
+    assert cities.city_for("Батысмұра Бизнес", "Community Запад") == "Атырау"        # «ЖК» и регистр не важны
+
+
+def test_album_is_split_by_ten(monkeypatch, tmp_path):
+    from factory import telegram
+    calls = []
+    monkeypatch.setattr(telegram, "_call", lambda method, **kw: calls.append((method, len(kw.get("files") or {})))
+                        or ([{"message_id": 1}] * len(kw.get("files") or {}) if method == "sendMediaGroup" else {"message_id": 1}))
+    paths = []
+    for i in range(12):
+        p = tmp_path / f"s{i}.png"; p.write_bytes(b"x"); paths.append(p)
+    telegram.send_album("-1", paths)
+    assert calls == [("sendMediaGroup", 10), ("sendMediaGroup", 2)]
+    calls.clear()
+    telegram.send_album("-1", paths[:11])
+    assert calls == [("sendMediaGroup", 10), ("sendPhoto", 1)]
+
+
+def test_event_slide_shows_city_and_cover_lists_cities(tmp_path):
+    from factory.models import PostPackage
+    from factory.render import render_html
+    photo = tmp_path / "e.jpg"; photo.write_bytes(b"x")
+    E = lambda **k: {"type": "event", "eyebrow": "", "title": "T", "text": "", "items": [], "item_labels": [],
+                     "illustration_id": "", "person": "", "photo_ref": "", **k}
+    pkg = PostPackage(headline="x", accent="orange", photo_id="", people=[], slides=[
+        E(type="cover", photo_ref="p1"), E(photo_ref="p1"), E(type="cta")],
+        caption_ru="x", hashtags=[], summary_kz="x", summary_uz="x", alt_text="x", source_line="x",
+        threads=["x"], fact_check=[])
+    html = render_html(pkg, "Жизнь дворов", drive_photos={"p1": str(photo)}, photo_city={"p1": "Астана"},
+                       cities=["Астана", "Шымкент"])
+    assert 'class="citytag"' in html and "Астана · Шымкент" in html

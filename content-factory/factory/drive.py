@@ -36,11 +36,13 @@ class Event:
     photos: list[dict] = field(default_factory=list)   # [{"id", "name"}]
     videos: int = 0
     report: dict = field(default_factory=dict)         # report.json от tunely: описание, участники, лучшие кадры
+    city: str = ""
 
     @property
     def label(self) -> str:
         d = date.fromisoformat(self.day)
-        return f"{d.day:02d}.{d.month:02d} · {self.complex} · {self.activity}"
+        where = f"{self.city}, {self.complex}" if self.city else self.complex
+        return f"{d.day:02d}.{d.month:02d} · {where} · {self.activity}"
 
 
 def root_id() -> str:
@@ -88,11 +90,12 @@ def _children(folder_id: str, folders_only: bool = False) -> list[dict]:
     return _list(q)
 
 
-def recent_events(days: int = 8, today: date | None = None) -> list[Event]:
+def recent_events(days: int = 8, today: date | None = None, include_used: bool = False) -> list[Event]:
     """Мероприятия за последние `days` дней, ещё не использованные в постах, с хотя бы одним фото."""
+    from .cities import city_for
     today = today or date.today()
     since = today - timedelta(days=days)
-    used = set(json.loads(db.kv_get("drive_used_events", "[]")))
+    used = set() if include_used else set(json.loads(db.kv_get("drive_used_events", "[]")))
     months = {f"{d.year}-{d.month:02d}" for d in (today, since)}
     events: list[Event] = []
     for month in _children(root_id(), folders_only=True):
@@ -124,9 +127,10 @@ def recent_events(days: int = 8, today: date | None = None) -> list[Event]:
                 rank = {n: i for i, n in enumerate(report.get("photos_best") or [])}
                 photos.sort(key=lambda p: (rank.get(p["name"], 99), p["name"]))  # лучшие по оценке ИИ — первыми
                 if photos:
-                    events.append(Event(ev["id"], complex_["name"].strip(), m.group(3).strip(), d.isoformat(),
+                    cx = complex_["name"].strip()
+                    events.append(Event(ev["id"], cx, m.group(3).strip(), d.isoformat(),
                                         photos[:4], sum(f["mimeType"].startswith("video/") for f in files),
-                                        report))
+                                        report, city_for(cx, report.get("group", ""))))
     events.sort(key=lambda e: e.day, reverse=True)
     return events
 
@@ -138,19 +142,25 @@ def read_json(file_id: str) -> dict:
     return r.json()
 
 
-def pick_events(events: list[Event], limit: int = 5) -> list[Event]:
-    """Разнообразие: сначала разные ЖК и разные активности, потом остальные."""
-    chosen, seen_c, seen_a = [], set(), set()
-    # мероприятия с описанием из отчёта — в приоритете: по ним текст получается точнее
+def pick_events(events: list[Event], limit: int = 10) -> list[Event]:
+    """Разнообразие: сначала по одному мероприятию из каждого города, потом разные ЖК и активности,
+    потом остальные. Мероприятия с описанием из отчёта — в приоритете на каждом шаге."""
     events = sorted(events, key=lambda e: (not (e.report or {}).get("description"),))
+    chosen: list[Event] = []
+    seen_city, seen_c, seen_a = set(), set(), set()
+
+    def take(e: Event) -> None:
+        chosen.append(e); seen_city.add(e.city); seen_c.add(e.complex); seen_a.add(e.activity)
+
     for e in events:
-        if e.complex not in seen_c and e.activity not in seen_a:
-            chosen.append(e); seen_c.add(e.complex); seen_a.add(e.activity)
+        if e.city and e.city not in seen_city:
+            take(e)
     for e in events:
-        if len(chosen) >= limit:
-            break
+        if e not in chosen and e.complex not in seen_c and e.activity not in seen_a:
+            take(e)
+    for e in events:
         if e not in chosen:
-            chosen.append(e)
+            take(e)
     return chosen[:limit]
 
 

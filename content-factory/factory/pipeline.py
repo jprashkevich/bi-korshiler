@@ -68,8 +68,14 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
         events = json.loads(db.kv_get(f"post_events:{post_id}", "[]"))
         pkg, issues = proofread(writer.write_courtyard(events, feedback=feedback, previous=previous))
         photos = {ph["id"]: str(drive.download(ph["id"])) for ev in events for ph in ev["photos"]}
-        files = render.render(pkg, rubric["title"], name, drive_photos=photos)
-        data = {**pkg.model_dump(), "format": "carousel", "pictures": {}, "events": [e["label"] for e in events]}
+        photo_city = {ph["id"]: ev.get("city", "") for ev in events for ph in ev["photos"]}
+        used_ids = {sl.photo_ref for sl in pkg.slides if sl.type == "event"}
+        cities = list(dict.fromkeys(ev.get("city") for ev in events if ev.get("city")
+                                    and any(ph["id"] in used_ids for ph in ev["photos"])))
+        files = render.render(pkg, rubric["title"], name, drive_photos=photos,
+                              photo_city=photo_city, cities=cities)
+        data = {**pkg.model_dump(), "format": "carousel", "pictures": {}, "events": [e["label"] for e in events],
+                "no_city": sorted({e["complex"] for e in events if not e.get("city")})}
     elif rubric.get("format") == "reels" and tts.enabled():
         pkg, issues = proofread(writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous))
         pictures = find_pictures(pkg, pkg.scenes)
@@ -167,6 +173,10 @@ def deliver(post_id: int) -> None:
     if post["package"].get("edit_issues"):
         details += ("\n\n<b>Вычитка: остались замечания</b>\n"
                     + "\n".join(f"• {e(x)}" for x in post["package"]["edit_issues"][:5]))
+    if post["package"].get("no_city"):
+        details += ("\n\n<b>Город не определён для ЖК:</b> " + e(", ".join(post["package"]["no_city"]))
+                    + "\nЗадайте командой, например: <code>/city " + e(post["package"]["no_city"][0]) + " = Атырау</code>, "
+                      "затем «Переделать».")
     if post["package"].get("events"):
         details += ("\n\n<b>Мероприятия из фотоотчётов:</b>\n" + "\n".join(f"• {e(x)}" for x in post["package"]["events"])
                     + "\nНа фото жители дворов: перед публикацией убедитесь, что у BIG Life есть согласие "
