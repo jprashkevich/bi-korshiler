@@ -1,0 +1,42 @@
+# Render Blueprint для контент-завода BIG Life (код в папке content-factory/).
+# Один фоновый воркер: Telegram-бот + ежедневная подготовка постов. Плюс база Postgres.
+services:
+  - type: worker
+    name: biglife-content-factory
+    runtime: docker
+    plan: standard            # 2 ГБ памяти: нужен для Chromium (рендер слайдов)
+    dockerfilePath: ./content-factory/Dockerfile
+    dockerContext: .
+    buildFilter:
+      paths:
+        - content-factory/**
+        - images/**
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: biglife-factory-db
+          property: connectionString
+      - key: FACTORY_TZ
+        value: Asia/Almaty
+      - key: DAILY_RUN_HOUR
+        value: "6"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TELEGRAM_APPROVER_IDS
+        sync: false
+      - key: THREADS_USER_ID
+        sync: false
+      - key: THREADS_ACCESS_TOKEN
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: GOOGLE_SHEET_ID
+        sync: false
+
+databases:
+  - name: biglife-factory-db
+    plan: basic-256mb

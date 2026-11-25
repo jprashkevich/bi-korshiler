@@ -1,0 +1,57 @@
+"""Точка входа: python -m factory <команда>."""
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+from pathlib import Path
+
+from . import db
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    p = argparse.ArgumentParser(prog="factory", description="Контент-завод BIG Life")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("worker", help="Telegram-бот + ежедневный запуск (основной процесс на сервере)")
+    sub.add_parser("ingest", help="Собрать RSS")
+    sub.add_parser("score", help="Оценить новые материалы")
+    sub.add_parser("daily", help="Подготовить и отправить посты на сегодня")
+    top = sub.add_parser("top", help="Показать лучшие темы после скоринга")
+    top.add_argument("-n", type=int, default=15)
+    r = sub.add_parser("render", help="Отрендерить карусель из JSON-пакета (без вызова Claude)")
+    r.add_argument("package", type=Path)
+    r.add_argument("--rubric", default="Наука о соседстве")
+    args = p.parse_args()
+
+    db.init()
+    if args.cmd == "worker":
+        from .bot import run_forever
+        run_forever()
+    elif args.cmd == "ingest":
+        from .ingest import run
+        print(run())
+    elif args.cmd == "score":
+        from .score import run
+        print(run())
+    elif args.cmd == "daily":
+        from .pipeline import run_daily
+        print(run_daily())
+    elif args.cmd == "top":
+        from sqlalchemy import select
+        with db.engine.begin() as c:
+            rows = c.execute(select(db.items).where(db.items.c.score.is_not(None))
+                             .order_by(db.items.c.score.desc()).limit(args.n)).mappings().all()
+        for row in rows:
+            sd = row["score_data"] or {}
+            print(f"{row['score']:>5} [{sd.get('best_rubric')}] {row['title'][:90]}\n      {sd.get('hook')}")
+    elif args.cmd == "render":
+        from .models import PostPackage
+        from .render import render
+        pkg = PostPackage.model_validate(json.loads(args.package.read_text(encoding="utf-8")))
+        for f in render(pkg, args.rubric, args.package.stem):
+            print(f)
+
+
+if __name__ == "__main__":
+    main()

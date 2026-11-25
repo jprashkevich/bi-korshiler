@@ -1,0 +1,135 @@
+# RSS-ленты контент-завода BIG Life.
+# kind: popular — научпоп и медиа (проще упаковывать), journal — научные журналы.
+# enabled: false — лента отключена (причина в note).
+feeds:
+- name: Urban Asia Blog
+  url: https://urbanasia.blog/feed/
+  kind: journal
+  enabled: false
+  note: нет новых записей больше 10 месяцев
+- name: Families, Systems, & Health
+  url: https://content.apa.org/journals/fsh.rss
+  kind: journal
+- name: Journal of Family Psychology
+  url: https://content.apa.org/journals/fam.rss
+  kind: journal
+- name: 'Psychology Today: The Latest'
+  url: https://www.psychologytoday.com/us/front/feed
+  kind: popular
+- name: 'Behavior Analysis: Research and Practice'
+  url: https://content.apa.org/journals/bar.rss
+  kind: journal
+- name: Self and Identity
+  url: https://www.tandfonline.com/feed/rss/psai20
+  kind: journal
+- name: News from APA
+  url: https://www.apa.org/news/apa/rss.xml
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: Постнаука
+  url: https://postnauka.org/feed
+  kind: popular
+- name: Anxiety, Stress, & Coping
+  url: https://www.tandfonline.com/feed/rss/gasc20
+  kind: journal
+- name: Behavioral Neuroscience
+  url: https://content.apa.org/journals/bne.rss
+  kind: journal
+- name: Nature Neuroscience
+  url: https://www.nature.com/neuro.rss
+  kind: journal
+- name: Blue Zones
+  url: https://www.bluezones.com/feed/
+  kind: popular
+- name: INTA
+  url: https://inta-aivn.org/en/feed/
+  kind: popular
+- name: Advances in Mental Health
+  url: https://www.tandfonline.com/feed/rss/ramh20
+  kind: journal
+- name: Motivation Science
+  url: https://content.apa.org/journals/mot.rss
+  kind: journal
+- name: Behavioural and Cognitive Psychotherapy
+  url: https://www.cambridge.org/core/rss/product/id/0791B9E2ACA02CF9865BE73FAD2CE3EA
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: Новости онлайн-проекта www.psychologies.ru
+  url: https://www.psychologies.ru/news/rss/
+  kind: popular
+- name: TreeHugger | sustainability advice, clarity, and inspiration
+  url: https://feeds-api.dotdashmeredith.com/v1/rss/google/c9053935-d1d7-49c7-b54c-11e651b69e28
+  kind: journal
+  enabled: false
+  note: нет новых записей больше 10 месяцев
+- name: CoDesign
+  url: https://www.tandfonline.com/feed/rss/ncdn20
+  kind: journal
+  enabled: false
+  note: нет новых записей больше 10 месяцев
+- name: Aging & Mental Health
+  url: https://www.tandfonline.com/feed/rss/camh20
+  kind: journal
+- name: Behavioural Public Policy
+  url: https://www.cambridge.org/core/rss/product/id/E1EF0B344C8E8750A474259A311582EF
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: Judgment and Decision Making
+  url: https://www.cambridge.org/core/rss/product/id/FDD872CC2D357744AF3372313641EB91
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: Psychological Medicine
+  url: https://www.cambridge.org/core/rss/product/id/2E4A9A64B37548F25362F3235C223463
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: Peter Attia MD
+  url: https://peterattiamd.com/feed/
+  kind: popular
+- name: PositivePsychology.com Blog - Helping You Help Others
+  url: https://positivepsychology.com/blog/feed/
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: Activities, Adaptation & Aging
+  url: https://www.tandfonline.com/feed/rss/waaa20
+  kind: journal
+  enabled: false
+  note: нет новых записей больше 10 месяцев
+- name: Aging, Neuropsychology, and Cognition
+  url: https://www.tandfonline.com/feed/rss/nanc20
+  kind: journal
+- name: Journal of the International Neuropsychological Society
+  url: https://www.cambridge.org/core/rss/product/id/8F4085388196AD659737B4882E7A1D36
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: The Astana Times
+  url: https://astanatimes.com/feed/
+  kind: popular
+- name: 'PNAS: Psychological and Cognitive Sciences'
+  url: https://www.pnas.org/action/showFeed?type=searchTopic&taxonomyCode=topic&tagCodeOr=psych-soc&tagCodeOr=psych-bio
+  kind: journal
+- name: News Archive - IJURR
+  url: https://www.ijurr.org/feed/?post_type=news
+  kind: journal
+- name: Ness Labs
+  url: https://nesslabs.com/feed
+  kind: popular
+- name: Ageing & Society
+  url: https://www.cambridge.org/core/rss/product/id/8C0B631C753A542B1F9D926BD195DB86
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
+- name: Strong Towns
+  url: https://www.strongtowns.org/journal/rss.xml
+  kind: popular
+- name: Health & wellbeing | The Guardian
+  url: https://www.theguardian.com/lifeandstyle/health-and-wellbeing/rss
+  kind: journal
+  enabled: false
+  note: 403 от защиты сайта при проверке 2026-11-25
