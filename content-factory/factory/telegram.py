@@ -22,7 +22,10 @@ def _call(method: str, http_timeout: float = 60, files=None, **params):
     url = f"https://api.telegram.org/bot{settings.telegram_token}/{method}"
     data = {k: (json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v)
             for k, v in params.items() if v is not None}
-    resp = httpx.post(url, data=data, files=files, timeout=http_timeout)
+    try:
+        resp = httpx.post(url, data=data, files=files, timeout=http_timeout)
+    except httpx.HTTPError as exc:   # текст ошибки httpx содержит URL с токеном — не пробрасываем его
+        raise TelegramError(f"{method}: сетевая ошибка {type(exc).__name__}") from None
     body = resp.json()
     if not body.get("ok"):
         raise TelegramError(f"{method}: {body.get('description')}")

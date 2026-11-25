@@ -11,6 +11,9 @@ from . import db
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # httpx пишет полный URL запроса, а в URL Telegram Bot API есть токен бота — такие строки в логи не пускаем
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     p = argparse.ArgumentParser(prog="factory", description="Контент-завод BIG Life")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("worker", help="Telegram-бот + ежедневный запуск (основной процесс на сервере)")
