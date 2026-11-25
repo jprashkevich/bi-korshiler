@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import update
 
-from . import db, drive, ingest, people, reels, render, score, sheets, telegram, threads, tts, writer
+from . import db, drive, editor, ingest, people, reels, render, score, sheets, telegram, threads, tts, writer
 from .models import PostPackage, ReelPackage
 from .settings import chat_id, settings
 
@@ -66,22 +66,30 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
     name = f"{post['slot_date']}-post{post_id}"
     if rubric.get("source") == "drive":
         events = json.loads(db.kv_get(f"post_events:{post_id}", "[]"))
-        pkg = writer.write_courtyard(events, feedback=feedback, previous=previous)
+        pkg, issues = proofread(writer.write_courtyard(events, feedback=feedback, previous=previous))
         photos = {ph["id"]: str(drive.download(ph["id"])) for ev in events for ph in ev["photos"]}
         files = render.render(pkg, rubric["title"], name, drive_photos=photos)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": {}, "events": [e["label"] for e in events]}
     elif rubric.get("format") == "reels" and tts.enabled():
-        pkg = writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous)
+        pkg, issues = proofread(writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous))
         pictures = find_pictures(pkg, pkg.scenes)
         files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
         data = {**pkg.model_dump(), "format": "reels", "pictures": pictures}
     else:
-        pkg = writer.write(post["rubric"], item, feedback=feedback, previous=previous)
+        pkg, issues = proofread(writer.write(post["rubric"], item, feedback=feedback, previous=previous))
         pictures = find_pictures(pkg, pkg.slides)
         files = render.render(pkg, rubric["title"], name, pictures=pictures)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": pictures}
+    data["edit_issues"] = issues
     db.update_post(post_id, package=data, files=[str(f) for f in files], status="generated")
     deliver(post_id)
+
+
+def proofread(pkg):
+    """Вычитка по тону бренда и правилам humanizer-ru (можно выключить EDITOR_ENABLED=0)."""
+    if not settings.editor_enabled:
+        return pkg, []
+    return editor.edit(pkg)
 
 
 def find_pictures(pkg, frames) -> dict:
@@ -156,6 +164,9 @@ def deliver(post_id: int) -> None:
                + extra +
                f"<b>Threads ({threads_note}):</b>\n{thread_text}\n\n"
                f"<b>Проверка фактов:</b>\n{facts}")
+    if post["package"].get("edit_issues"):
+        details += ("\n\n<b>Вычитка: остались замечания</b>\n"
+                    + "\n".join(f"• {e(x)}" for x in post["package"]["edit_issues"][:5]))
     if post["package"].get("events"):
         details += ("\n\n<b>Мероприятия из фотоотчётов:</b>\n" + "\n".join(f"• {e(x)}" for x in post["package"]["events"])
                     + "\nНа фото жители дворов: перед публикацией убедитесь, что у BIG Life есть согласие "

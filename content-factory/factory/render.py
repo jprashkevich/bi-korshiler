@@ -25,7 +25,7 @@ def photo_path(photo_id: str) -> str:
     return ""
 
 
-_SHORT = re.compile(r"(?<![\w-])([А-Яа-яЁёA-Za-z]{1,2}|—)\s+", re.U)
+_SHORT = re.compile(r"(?<![\w-])([А-Яа-яЁёA-Za-z]{1,2})\s+", re.U)
 
 
 def typograf(text: str) -> str:
@@ -92,6 +92,7 @@ def render(pkg: PostPackage, rubric_title: str, name: str, pictures: dict | None
         page = browser.new_page(viewport={"width": 1080, "height": 1350}, device_scale_factor=1)
         page.goto(html_path.resolve().as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
+        page.wait_for_function("document.body.dataset.fitted === '1'", timeout=15000)
         for i in range(1, len(pkg.slides) + 1):
             path = out_dir / f"slide-{i:02d}.png"
             page.locator(f"#s{i}").screenshot(path=str(path))

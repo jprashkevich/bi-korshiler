@@ -47,6 +47,8 @@ class Settings:
     scorer_model: str = os.getenv("SCORER_MODEL", "claude-opus-5-5")
     writer_effort: str = os.getenv("WRITER_EFFORT", "high")
     scorer_effort: str = os.getenv("SCORER_EFFORT", "low")
+    editor_effort: str = os.getenv("EDITOR_EFFORT", "medium")
+    editor_enabled: bool = os.getenv("EDITOR_ENABLED", "1") != "0"
 
     # Telegram
     telegram_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")

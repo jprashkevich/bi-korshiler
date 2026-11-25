@@ -40,7 +40,8 @@ def test_normalize_fixes_first_last_and_photo():
 
 def test_typograf():
     from factory.render import typograf
-    assert typograf("Барьер — в ожидании") == "Барьер — в ожидании"
+    # тире прилипает к предыдущему слову, но после тире строку можно перенести
+    assert typograf("Барьер — в ожидании") == "Барьер\u00a0— в\u00a0ожидании"
 
 
 def test_render_html_contains_all_slides():
@@ -48,7 +49,8 @@ def test_render_html_contains_all_slides():
     html = render_html(sample(), "Наука о соседстве")
     for i in range(1, 7):
         assert f'id="s{i}"' in html
-    assert "gal-14.jpg" in html and "Источник:" in html
+    assert "gal-14.jpg" in html
+    assert "Источник:" not in html            # источник только в подписи, не на слайдах
 
 
 def test_feeds_and_rubrics_config():
@@ -142,6 +144,15 @@ def test_carousel_html_has_illustration_and_person_collage(tmp_path):
     assert 'class="collage"' in html and "Дэн Бюттнер" in html and "CC BY-SA 2.0" in html
 
 
+def test_cover_pill_hidden_when_equal_to_rubric():
+    from factory.render import render_html
+    pkg = sample()
+    pkg.slides[0].eyebrow = "Наука о соседстве"
+    assert 'class="pill">Наука' not in render_html(pkg, "Наука о соседстве")
+    pkg.slides[0].eyebrow = "Исследование"
+    assert 'class="pill">Исследование' in render_html(pkg, "Наука о соседстве")
+
+
 def test_person_slide_without_photo_shows_initial():
     from factory.render import render_html
     html = render_html(sample(), "Наука о соседстве", {})
@@ -197,3 +208,42 @@ def test_strict_schema_keeps_fields_named_title():
     scene = strict_schema(ReelPackage)["properties"]["scenes"]["items"]
     assert "title" in scene["properties"]
     assert "title" not in slide["properties"]["title"]   # а служебный title внутри описания поля убран
+
+
+
+def test_editor_violations_and_dash_fix():
+    from factory import editor
+    pkg = sample()
+    pkg.caption_ru = "Стоит отметить, что соседство является не просто привычкой, а навыком — и это важно."
+    found = " ".join(editor.violations(pkg))
+    for name in ("длинное тире", "стоит отметить", "является", "не просто"):
+        assert name in found
+    fixed = editor._fix_dashes(pkg)
+    assert "—" not in fixed.caption_ru and fixed.slides[0].illustration_id == pkg.slides[0].illustration_id
+
+
+def test_editor_merge_keeps_structure():
+    from factory import editor
+    orig = sample()
+    edited = sample()
+    edited.slides[1].title = "Новый заголовок"
+    edited.slides[1].type = "stat"            # смену типа слайда редактором игнорируем
+    edited.slides[1].photo_ref = "hack"
+    edited.slides[3].items = ["только один"]  # другое число пунктов — не берём
+    merged = editor._merge(orig, edited)
+    assert merged.slides[1].title == "Новый заголовок"
+    assert merged.slides[1].type == orig.slides[1].type and merged.slides[1].photo_ref == ""
+    assert merged.slides[3].items == orig.slides[3].items
+
+
+def test_editor_runs_with_mocked_llm(monkeypatch):
+    from factory import editor, llm
+    pkg = sample()
+    pkg.caption_ru = "Данный пост является важным."
+    def fake_ask(cls, **kw):
+        out = pkg.model_copy(deep=True)
+        out.caption_ru = "Этот пост про соседей."
+        return out
+    monkeypatch.setattr(llm, "ask", fake_ask)
+    res, issues = editor.edit(pkg)
+    assert res.caption_ru == "Этот пост про соседей." and not issues

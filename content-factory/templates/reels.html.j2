@@ -142,4 +142,42 @@ window.seek = function (t) {
 };
 window.seek(0);
 </script>
+<script>
+// Автоподгонка: уменьшаем заголовки, пока они не влезут по ширине (длинные слова) и слайд не перестанет переполняться.
+(function () {
+  function wide(el) { return el.scrollWidth > el.clientWidth + 2; }
+  function over(sec) {
+    const r = sec.getBoundingClientRect(), cs = getComputedStyle(sec);
+    const top = r.top + parseFloat(cs.paddingTop) - 2, bottom = r.bottom - parseFloat(cs.paddingBottom) + 2;
+    for (const c of sec.children) {
+      if (getComputedStyle(c).position === 'absolute') continue;
+      const b = c.getBoundingClientRect();
+      if (b.height && (b.bottom > bottom || b.top < top)) return true;
+    }
+    return false;
+  }
+  window.fitAll = function (selector) {
+    document.querySelectorAll(selector).forEach(sec => {
+      const heads = [...sec.querySelectorAll('h1,h2,.big,.title,.stat')];
+      for (let guard = 0; guard < 40 && heads.length; guard++) {
+        const w = heads.filter(wide);
+        if (!w.length && !over(sec)) break;
+        (w.length ? w : heads).forEach(h => {
+          h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * 0.93) + 'px';
+        });
+      }
+    });
+  };
+})();
+</script>
+<script>
+document.fonts.ready.then(() => {
+  document.querySelectorAll('.scene').forEach(s => { s.dataset.op = s.style.opacity; s.style.opacity = 1; s.style.transform = 'none'; });
+  document.querySelectorAll('.w').forEach(w => { w.style.transform = 'none'; });
+  document.querySelectorAll('[data-anim], [data-part]').forEach(x => { x.style.transform = 'none'; });
+  fitAll('.scene');
+  window.seek(0);
+  document.body.dataset.fitted = '1';
+});
+</script>
 </body></html>

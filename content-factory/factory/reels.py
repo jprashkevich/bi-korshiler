@@ -120,6 +120,7 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
             p = b.new_page(viewport={"width": 1080, "height": 1920})
             p.goto(page_path.resolve().as_uri(), wait_until="networkidle")
             p.evaluate("document.fonts.ready")
+            p.wait_for_function("document.body.dataset.fitted === '1'", timeout=15000)
             for i in range(frames):
                 p.evaluate(f"seek({i / FPS:.4f})")
                 proc.stdin.write(p.screenshot(type="jpeg", quality=92))

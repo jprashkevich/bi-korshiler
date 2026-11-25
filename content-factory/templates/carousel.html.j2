@@ -16,7 +16,7 @@
 .logo{height:44px;filter:brightness(0) invert(1)}
 .eyebrow{font-size:22px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
 .pill{display:inline-block;font-size:22px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:12px 22px;border-radius:999px;background:var(--accent);color:#fff}
-h1{font-family:var(--display);font-weight:800;font-size:100px;line-height:.98;letter-spacing:-.02em;margin:28px 0 0}
+h1{overflow-wrap:normal;font-family:var(--display);font-weight:800;font-size:100px;line-height:.98;letter-spacing:-.02em;margin:28px 0 0}
 h2{font-family:var(--display);font-weight:800;font-size:66px;line-height:1.02;letter-spacing:-.02em;margin:0 0 26px}
 p{font-size:30px;line-height:1.5;margin:0}
 .num{font-family:var(--display);font-size:64px;font-weight:800;color:var(--accent);line-height:1}
@@ -65,7 +65,7 @@ p{font-size:30px;line-height:1.5;margin:0}
   {% if ills.get(s.illustration_id) %}<div class="cover-ill"><img src="{{ ills[s.illustration_id] }}" alt=""></div>{% endif %}
   <div class="z top"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"><span class="eyebrow" style="color:var(--accent)">{{ rubric_title }}</span></div>
   <div class="z">
-    {% if s.eyebrow %}<span class="pill">{{ s.eyebrow }}</span>{% endif %}
+    {% if s.eyebrow and s.eyebrow|lower|replace('\u00a0', ' ') != rubric_title|lower %}<span class="pill">{{ s.eyebrow }}</span>{% endif %}
     <h1 style="font-size:{{ 112 if s.title|length < 45 else (100 if s.title|length < 70 else 84) }}px{% if ills.get(s.illustration_id) %};max-width:10ch;font-size:{{ 96 if s.title|length < 45 else 84 }}px{% endif %}">{{ s.title }}</h1>
     {% if s.text %}<p style="margin-top:30px;opacity:.85;max-width:28ch">{{ s.text }}</p>{% endif %}
   </div>
@@ -147,10 +147,39 @@ p{font-size:30px;line-height:1.5;margin:0}
     {% if s.text %}<p style="opacity:.85;max-width:27ch">{{ s.text }}</p>{% endif %}
   </div>
   <div class="z">
-    <span class="btn">{{ s.eyebrow or 'Активности двора — в BIG App' }}</span>
-    <div class="src">Источник: {{ source_line }}</div>
+    <span class="btn">{{ s.eyebrow or 'Активности двора в BIG App' }}</span>
   </div>
 </section>
 {% endif %}
 {% endfor %}
+
+<script>
+// Автоподгонка: уменьшаем заголовки, пока они не влезут по ширине (длинные слова) и слайд не перестанет переполняться.
+(function () {
+  function wide(el) { return el.scrollWidth > el.clientWidth + 2; }
+  function over(sec) {
+    const r = sec.getBoundingClientRect(), cs = getComputedStyle(sec);
+    const top = r.top + parseFloat(cs.paddingTop) - 2, bottom = r.bottom - parseFloat(cs.paddingBottom) + 2;
+    for (const c of sec.children) {
+      if (getComputedStyle(c).position === 'absolute') continue;
+      const b = c.getBoundingClientRect();
+      if (b.height && (b.bottom > bottom || b.top < top)) return true;
+    }
+    return false;
+  }
+  window.fitAll = function (selector) {
+    document.querySelectorAll(selector).forEach(sec => {
+      const heads = [...sec.querySelectorAll('h1,h2,.big,.title,.stat')];
+      for (let guard = 0; guard < 40 && heads.length; guard++) {
+        const w = heads.filter(wide);
+        if (!w.length && !over(sec)) break;
+        (w.length ? w : heads).forEach(h => {
+          h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * 0.93) + 'px';
+        });
+      }
+    });
+  };
+})();
+</script>
+<script>document.fonts.ready.then(() => { fitAll('section.f'); document.body.dataset.fitted = '1'; });</script>
 </body></html>
