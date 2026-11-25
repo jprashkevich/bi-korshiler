@@ -247,3 +247,26 @@ def test_editor_runs_with_mocked_llm(monkeypatch):
     monkeypatch.setattr(llm, "ask", fake_ask)
     res, issues = editor.edit(pkg)
     assert res.caption_ru == "Этот пост про соседей." and not issues
+
+
+def test_drive_uses_report_json(monkeypatch):
+    from datetime import date
+    from factory import db, drive
+    db.init()
+    db.kv_set("drive_used_events", "[]")
+    tree = {
+        "root": [{"id": "m11", "name": "2026-11", "mimeType": drive.FOLDER}],
+        "m11": [{"id": "zk1", "name": "Urban Hills", "mimeType": drive.FOLDER}],
+        "zk1": [{"id": "ev1", "name": "24.11 · Точки Опоры · vTSZ", "mimeType": drive.FOLDER}],
+        "ev1": [{"id": "p1", "name": "a.jpg", "mimeType": "image/jpeg"}, {"id": "p2", "name": "b.jpg", "mimeType": "image/jpeg"},
+                {"id": "p3", "name": "c.jpg", "mimeType": "image/jpeg"},
+                {"id": "rj", "name": "report.json", "mimeType": "application/json"}],
+    }
+    monkeypatch.setattr(drive, "root_id", lambda: "root")
+    monkeypatch.setattr(drive, "_children", lambda fid, folders_only=False: [
+        f for f in tree.get(fid, []) if not folders_only or f["mimeType"] == drive.FOLDER])
+    monkeypatch.setattr(drive, "read_json", lambda fid: {"description": "Зарядка во дворе", "participants": "12",
+                                                         "photos_best": ["b.jpg", "a.jpg"], "photos_not_event": ["c.jpg"]})
+    ev = drive.recent_events(today=date(2026, 11, 25))[0]
+    assert [p["name"] for p in ev.photos] == ["b.jpg", "a.jpg"]       # лучшие первыми, афиша убрана
+    assert ev.report["participants"] == "12"

@@ -35,6 +35,7 @@ class Event:
     day: str               # ISO-дата
     photos: list[dict] = field(default_factory=list)   # [{"id", "name"}]
     videos: int = 0
+    report: dict = field(default_factory=dict)         # report.json от tunely: описание, участники, лучшие кадры
 
     @property
     def label(self) -> str:
@@ -110,18 +111,38 @@ def recent_events(days: int = 8, today: date | None = None) -> list[Event]:
                 if not since <= d <= today:
                     continue
                 files = _children(ev["id"])
+                report = {}
+                rj = next((f for f in files if f["name"] == "report.json"), None)
+                if rj:
+                    try:
+                        report = read_json(rj["id"])
+                    except Exception as exc:
+                        log.info("report.json %s не прочитан: %s", ev["name"], exc)
                 photos = [{"id": f["id"], "name": f["name"]} for f in files if f["mimeType"].startswith("image/")]
+                bad = set(report.get("photos_not_event") or [])
+                photos = [p for p in photos if p["name"] not in bad]          # афиши и скриншоты не берём
+                rank = {n: i for i, n in enumerate(report.get("photos_best") or [])}
+                photos.sort(key=lambda p: (rank.get(p["name"], 99), p["name"]))  # лучшие по оценке ИИ — первыми
                 if photos:
                     events.append(Event(ev["id"], complex_["name"].strip(), m.group(3).strip(), d.isoformat(),
-                                        sorted(photos, key=lambda p: p["name"])[:4],
-                                        sum(f["mimeType"].startswith("video/") for f in files)))
+                                        photos[:4], sum(f["mimeType"].startswith("video/") for f in files),
+                                        report))
     events.sort(key=lambda e: e.day, reverse=True)
     return events
+
+
+def read_json(file_id: str) -> dict:
+    r = httpx.get(f"{API}/{file_id}", params={"alt": "media", "supportsAllDrives": "true"},
+                  headers={"Authorization": f"Bearer {_access_token()}"}, timeout=60)
+    r.raise_for_status()
+    return r.json()
 
 
 def pick_events(events: list[Event], limit: int = 5) -> list[Event]:
     """Разнообразие: сначала разные ЖК и разные активности, потом остальные."""
     chosen, seen_c, seen_a = [], set(), set()
+    # мероприятия с описанием из отчёта — в приоритете: по ним текст получается точнее
+    events = sorted(events, key=lambda e: (not (e.report or {}).get("description"),))
     for e in events:
         if e.complex not in seen_c and e.activity not in seen_a:
             chosen.append(e); seen_c.add(e.complex); seen_a.add(e.activity)
