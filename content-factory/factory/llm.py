@@ -38,7 +38,13 @@ def strict_schema(model: type[BaseModel]) -> dict:
         if isinstance(node, dict):
             if "$ref" in node:
                 return walk(copy.deepcopy(defs[node["$ref"].split("/")[-1]]))
-            node = {k: walk(v) for k, v in node.items() if k not in _UNSUPPORTED}
+            out = {}
+            for k, v in node.items():
+                if k == "properties":   # имена полей (в т.ч. поле «title») не трогаем
+                    out[k] = {name: walk(sub) for name, sub in v.items()}
+                elif k not in _UNSUPPORTED:
+                    out[k] = walk(v)
+            node = out
             if node.get("type") == "object":
                 node["additionalProperties"] = False
                 node["required"] = list(node.get("properties", {}))

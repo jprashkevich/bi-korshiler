@@ -12,7 +12,7 @@ from sqlalchemy import update
 
 from . import db, drive, ingest, people, reels, render, score, sheets, telegram, threads, tts, writer
 from .models import PostPackage, ReelPackage
-from .settings import settings
+from .settings import chat_id, settings
 
 log = logging.getLogger(__name__)
 MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа",
@@ -126,7 +126,7 @@ def deliver(post_id: int) -> None:
     d = date.fromisoformat(post["slot_date"])
     when = f"{d.day} {MONTHS[d.month - 1]}, {cfg['slot_times'][post['slot']]}"
     e = html.escape
-    chat = settings.telegram_chat_id
+    chat = chat_id()
 
     if is_reel:
         video, cover = (Path(f) for f in post["files"])
@@ -195,14 +195,14 @@ def run_daily(day: date | None = None) -> list[int]:
             except Exception as exc:
                 log.exception("Google Drive")
                 events = []
-                telegram.send_message(settings.telegram_chat_id,
+                telegram.send_message(chat_id(),
                                       f"Не удалось прочитать фотоотчёты из Drive: {html.escape(str(exc))[:300]}. "
                                       "Проверьте, что папка открыта сервисному аккаунту.")
             if len(events) < 2:          # мало свежих мероприятий — ставим запасную рубрику
                 rubric_key, events = writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key].get("fallback", "science"), None
         item = choose_item(rubric_key)
         if item is None and writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key]["source"] == "rss":
-            telegram.send_message(settings.telegram_chat_id,
+            telegram.send_message(chat_id(),
                                   f"Для рубрики «{html.escape(rubric_key)}» на {day} нет подходящих материалов.")
             continue
         mark_used(item)
@@ -217,6 +217,6 @@ def run_daily(day: date | None = None) -> list[int]:
         except Exception as exc:
             log.exception("Пост %s не собран", post_id)
             db.update_post(post_id, status="failed")
-            telegram.send_message(settings.telegram_chat_id,
+            telegram.send_message(chat_id(),
                                   f"Пост #{post_id} не удалось собрать: {html.escape(str(exc))[:500]}")
     return created

@@ -186,3 +186,14 @@ def test_pick_events_prefers_variety():
     evs = [Event("1", "A", "Йога", "2026-11-25"), Event("2", "A", "Йога", "2026-11-24"),
            Event("3", "B", "Танцы", "2026-11-24"), Event("4", "C", "Йога", "2026-11-23")]
     assert [e.folder_id for e in pick_events(evs, limit=3)] == ["1", "3", "2"]
+
+
+def test_strict_schema_keeps_fields_named_title():
+    """Регрессия: поле «title» слайда не должно пропадать вместе с ключевым словом JSON Schema title."""
+    from factory.llm import strict_schema
+    from factory.models import PostPackage, ReelPackage
+    slide = strict_schema(PostPackage)["properties"]["slides"]["items"]
+    assert "title" in slide["properties"] and "title" in slide["required"]
+    scene = strict_schema(ReelPackage)["properties"]["scenes"]["items"]
+    assert "title" in scene["properties"]
+    assert "title" not in slide["properties"]["title"]   # а служебный title внутри описания поля убран

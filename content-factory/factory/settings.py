@@ -73,3 +73,9 @@ class Settings:
 
 
 settings = Settings()
+
+
+def chat_id() -> str:
+    """ID группы для постов: группа, из которой последний раз запускали /run, иначе TELEGRAM_CHAT_ID."""
+    from . import db
+    return db.kv_get("chat_id") or settings.telegram_chat_id

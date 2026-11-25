@@ -8,7 +8,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from . import db, pipeline, sheets, telegram, threads
-from .settings import env_problem, settings
+from .settings import chat_id, env_problem, settings
 
 log = logging.getLogger(__name__)
 e = html.escape
@@ -127,6 +127,9 @@ def on_message(msg: dict) -> None:
         db.kv_set(f"threads_prompt:{chat}:{prompt}", "1")
         return
     if text.startswith("/run") and allowed(msg["from"]["id"]):
+        if msg["chat"].get("type") in ("group", "supergroup") and str(chat) != chat_id():
+            db.kv_set("chat_id", str(chat))   # запоминаем группу, где работает согласование
+            telegram.send_message(chat, f"Запомнил эту группу для постов (id <code>{chat}</code>).")
         telegram.send_message(chat, "Запускаю сбор материалов и подготовку постов на сегодня.")
         pipeline.run_daily()
         return
@@ -182,7 +185,7 @@ def status_report() -> str:
 def maybe_run_daily() -> None:
     now = datetime.now(ZoneInfo(settings.timezone))
     key = now.date().isoformat()
-    if not settings.telegram_chat_id:
+    if not chat_id():
         return                            # группа ещё не настроена — посты некуда отправлять
     if now.hour < settings.daily_run_hour or db.kv_get("last_daily") == key:
         return
@@ -193,7 +196,7 @@ def maybe_run_daily() -> None:
         pipeline.run_daily(now.date())
     except Exception as exc:
         log.exception("Ежедневный запуск")
-        telegram.send_message(settings.telegram_chat_id, f"Ежедневный запуск упал: {e(str(exc))[:500]}")
+        telegram.send_message(chat_id(), f"Ежедневный запуск упал: {e(str(exc))[:500]}")
 
 
 def run_forever() -> None:
@@ -202,12 +205,12 @@ def run_forever() -> None:
         log.warning("TELEGRAM_APPROVER_IDS не задан: одобрять посты может любой участник группы")
     try:
         username = threads.connect_from_env()
-        if username and settings.telegram_chat_id:
-            telegram.send_message(settings.telegram_chat_id, f"Threads подключён: @{e(str(username))}.")
+        if username and chat_id():
+            telegram.send_message(chat_id(), f"Threads подключён: @{e(str(username))}.")
     except Exception as exc:
         log.exception("Threads из переменной окружения")
-        if settings.telegram_chat_id:
-            telegram.send_message(settings.telegram_chat_id, f"Threads не подключился: {e(str(exc))[:400]}")
+        if chat_id():
+            telegram.send_message(chat_id(), f"Threads не подключился: {e(str(exc))[:400]}")
     offset = int(db.kv_get("tg_offset", "0")) or None
     while True:
         try:
