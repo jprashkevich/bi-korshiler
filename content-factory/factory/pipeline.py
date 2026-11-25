@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import json
+from pathlib import Path
 import logging
 import zipfile
 from datetime import date, datetime
@@ -87,6 +88,8 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
         files = render.render(pkg, rubric["title"], name, pictures=pictures)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": pictures}
     data["edit_issues"] = issues
+    li = Path(files[0]).parent / "layout_issues.json" if files else None
+    data["layout_issues"] = json.loads(li.read_text(encoding="utf-8")) if li and li.exists() else []
     db.update_post(post_id, package=data, files=[str(f) for f in files], status="generated")
     deliver(post_id)
 
@@ -173,6 +176,10 @@ def deliver(post_id: int) -> None:
     if post["package"].get("edit_issues"):
         details += ("\n\n<b>Вычитка: остались замечания</b>\n"
                     + "\n".join(f"• {e(x)}" for x in post["package"]["edit_issues"][:5]))
+    if post["package"].get("layout_issues"):
+        details += ("\n\n<b>Вёрстка: проверьте слайды</b>\n"
+                    + "\n".join(f"• слайд {e(x)}" for x in post["package"]["layout_issues"][:6])
+                    + "\nМожно нажать «Переделать» с просьбой сократить текст.")
     if post["package"].get("no_city"):
         details += ("\n\n<b>Город не определён для ЖК:</b> " + e(", ".join(post["package"]["no_city"]))
                     + "\nЗадайте командой, например: <code>/city " + e(post["package"]["no_city"][0]) + " = Атырау</code>, "

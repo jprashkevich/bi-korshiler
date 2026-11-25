@@ -96,6 +96,8 @@ def render(pkg: PostPackage, rubric_title: str, name: str, pictures: dict | None
         page.goto(html_path.resolve().as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
         page.wait_for_function("document.body.dataset.fitted === '1'", timeout=15000)
+        issues = page.evaluate("window.layoutIssues || []")
+        (out_dir / "layout_issues.json").write_text(__import__("json").dumps(issues, ensure_ascii=False), encoding="utf-8")
         for i in range(1, len(pkg.slides) + 1):
             path = out_dir / f"slide-{i:02d}.png"
             page.locator(f"#s{i}").screenshot(path=str(path))

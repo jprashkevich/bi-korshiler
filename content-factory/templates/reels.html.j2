@@ -161,8 +161,9 @@ window.seek(0);
     }
     return false;
   }
+  window.layoutIssues = [];
   window.fitAll = function (selector) {
-    document.querySelectorAll(selector).forEach(sec => {
+    document.querySelectorAll(selector).forEach((sec, idx) => {
       const heads = [...sec.querySelectorAll('h1,h2,.big,.title,.stat')];
       // не меньше 45% исходного размера: если и так не влезает, дело не в заголовке
       const floor = new Map(heads.map(h => [h, parseFloat(getComputedStyle(h).fontSize) * 0.45]));
@@ -175,6 +176,12 @@ window.seek(0);
           h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * 0.93) + 'px';
         });
       }
+      // отчёт для согласующего: что не влезло или стало слишком мелким
+      if (heads.some(wide) || over(sec)) window.layoutIssues.push((idx + 1) + ': текст не помещается');
+      heads.forEach(h => {
+        const now = parseFloat(getComputedStyle(h).fontSize), was = floor.get(h) / 0.45;
+        if (now < was * 0.62) window.layoutIssues.push((idx + 1) + ': заголовок уменьшен до ' + Math.round(now) + ' px');
+      });
     });
   };
 })();
