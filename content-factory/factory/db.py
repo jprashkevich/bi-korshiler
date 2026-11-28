@@ -65,6 +65,20 @@ media_parts = Table(
     Column("data", LargeBinary, nullable=False),
 )
 
+usage = Table(                      # расход API по запросам: что, для какого поста, сколько стоило
+    "usage", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("at", DateTime(timezone=True), nullable=False, index=True),
+    Column("post_id", Integer, index=True),
+    Column("purpose", String(60)),
+    Column("model", String(60)),
+    Column("input_tokens", Integer),
+    Column("output_tokens", Integer),
+    Column("cache_write", Integer),
+    Column("cache_read", Integer),
+    Column("usd", Float),
+)
+
 kv = Table(
     "kv", metadata,
     Column("key", String(100), primary_key=True),

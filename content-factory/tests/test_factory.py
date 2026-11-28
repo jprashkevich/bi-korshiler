@@ -66,7 +66,7 @@ def test_feeds_and_rubrics_config():
     from factory.writer import load_yaml
     assert len(load_feeds()) >= 20
     cfg = load_yaml("rubrics.yaml")
-    assert sum(len(v) for v in cfg["schedule"].values()) == 21      # 2 карусели + Reels в день
+    assert sum(len(v) for v in cfg["schedule"].values()) == 17      # 2 карусели в день + Reels пн, ср, пт
     assert len(cfg["slot_times"]) == 3
     for slots in cfg["schedule"].values():
         for key in slots:
@@ -517,7 +517,8 @@ def test_reel_plan_rotates_experiment_and_viz_in_templates():
     from datetime import date, timedelta
     from factory import insights, render, writer
     from factory.models import PostPackage
-    plans = [writer.reel_plan(date(2026, 12, 1) + timedelta(days=i), {"score_data": {"has_number": True}}) for i in range(7)]
+    days = [date(2026, 11, 30) + timedelta(days=i) for i in range(21)]
+    plans = [writer.reel_plan(d, {"score_data": {"has_number": True}}) for d in days if d.isoweekday() in (1, 3, 5)]
     assert {p["voice_mode"] for p in plans} == {"voice", "music"}
     assert {p["length"] for p in plans} == {"short", "mid", "long"}
     assert {p["viz"] for p in plans} == set(writer.VIZ_KINDS)
@@ -651,3 +652,17 @@ def test_chapters_need_numbers_from_source():
                                     mk("37%", [37], [2010, 2018]), mk("41%", [41])], src)
     assert [c.big for c in kept] == ["37%", "8 175", "37%"]
     assert director.valid_chapters([mk("37%", [37])], "Зрение и настроение связаны.") == []
+
+
+def test_usage_is_recorded_and_summed():
+    """Учёт расхода API: каждый запрос пишет токены и стоимость, недельная сводка складывает по постам."""
+    from datetime import date
+    from types import SimpleNamespace
+    from factory import db, insights, llm
+    db.init()
+    u = SimpleNamespace(input_tokens=1000, output_tokens=2000, cache_creation_input_tokens=0, cache_read_input_tokens=30000)
+    assert abs(llm.cost("claude-opus-5-5", u) - (1000 * 4 + 30000 * 0.2 + 2000 * 20) / 1e6) < 1e-9
+    llm.CURRENT_POST = None
+    llm._record("claude-opus-5-5", "ScoreBatch", u)
+    text = insights.spend(date.today(), date.today())
+    assert "Расход API за неделю: $0.05" in text and "отбор тем" in text

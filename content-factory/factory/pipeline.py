@@ -102,6 +102,8 @@ def create_post(rubric_key: str, slot_date: date, slot: int, item: dict | None) 
 
 def generate(post_id: int, feedback: list[str] | None = None) -> None:
     """Сгенерировать (или переделать) пакет поста и отправить его в Telegram."""
+    from . import llm
+    llm.CURRENT_POST = post_id          # учёт расхода API по постам
     post = db.get_post(post_id)
     item = db.get_item(post["item_id"])
     previous = post["package"] if feedback else None
@@ -164,7 +166,9 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
 
 
 def revisualize(post_id: int) -> None:
-    """Тот же текст и голос, новый визуальный ряд (формат 4) и повторная отправка в Telegram."""
+    """Тот же текст и голос, новый визуальный ряд и повторная отправка в Telegram."""
+    from . import llm
+    llm.CURRENT_POST = post_id
     post = db.get_post(post_id)
     rubric = writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]
     pkg = ReelPackage.model_validate(post["package"])

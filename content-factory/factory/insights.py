@@ -140,7 +140,18 @@ def learnings(rows: list[dict], titles: dict[str, str]) -> str:
 
 
 def report(today: date) -> str:
-    """Отчёт за прошлую неделю (пн–вс). Сохраняет уроки для скоринга и автора."""
+    """Отчёт за прошлую неделю (пн–вс) и в конце — расход API за ту же неделю."""
+    start = today - timedelta(days=today.weekday() + 7)
+    text = _report(today)
+    try:
+        return text + "\n\n" + spend(start, start + timedelta(days=6))
+    except Exception as exc:          # расход — дополнение, отчёт об охватах важнее
+        log.info("Расход API в отчёт не попал: %s", exc)
+        return text
+
+
+def _report(today: date) -> str:
+    """Отчёт об охватах за прошлую неделю (пн–вс). Сохраняет уроки для скоринга и автора."""
     from html import escape as e
     from .writer import load_yaml
     titles = {k: v["title"] for k, v in load_yaml("rubrics.yaml")["rubrics"].items()}
@@ -180,3 +191,34 @@ def report(today: date) -> str:
         db.kv_set("learnings", text)
         lines.append("\nЗавод учтёт это при выборе тем и хуков на этой неделе.")
     return "\n".join(lines)
+
+
+def spend(start: date, end: date) -> str:
+    """Расход API за период: всего, по форматам и самый дорогой пост (решение владельца 28.11)."""
+    from html import escape as e
+    from sqlalchemy import func, select
+    from datetime import datetime, time, timezone
+    a = datetime.combine(start, time.min, tzinfo=timezone.utc)
+    b = datetime.combine(end + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    with db.engine.begin() as c:
+        rows = c.execute(select(db.usage.c.post_id, func.sum(db.usage.c.usd), func.sum(db.usage.c.cache_read),
+                                func.sum(db.usage.c.input_tokens + db.usage.c.cache_read + db.usage.c.cache_write))
+                         .where(db.usage.c.at >= a, db.usage.c.at < b).group_by(db.usage.c.post_id)).all()
+    if not rows:
+        return "Расход API: за неделю записей нет."
+    total = sum(r[1] or 0 for r in rows)
+    read = sum(r[2] or 0 for r in rows)
+    inp = sum(r[3] or 0 for r in rows) or 1
+    by_fmt: dict[str, float] = {}
+    top = None
+    for pid, usd, _, _ in rows:
+        post = db.get_post(pid) if pid else None
+        kind = "отбор тем и прочее" if not post else ("Reels" if (post.get("package") or {}).get("format") == "reels" else "карусели")
+        by_fmt[kind] = by_fmt.get(kind, 0) + (usd or 0)
+        if post and (top is None or (usd or 0) > top[1]):
+            top = (pid, usd or 0, (post.get("package") or {}).get("headline", ""))
+    parts = ", ".join(f"{k} ${v:.2f}" for k, v in sorted(by_fmt.items(), key=lambda x: -x[1]))
+    line = f"Расход API за неделю: ${total:.2f} ({parts}); из кэша прочитано {100 * read / inp:.0f}% входных токенов."
+    if top:
+        line += f"\nДороже всего: пост #{top[0]} — ${top[1]:.2f} ({e(top[2][:60])})."
+    return line

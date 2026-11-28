@@ -294,7 +294,11 @@ def reel_format_for(day, item: dict | None) -> str:
 def reel_plan(day, item: dict | None) -> dict:
     """План ролика на день. Голос и длина — A/B-эксперимент: варианты чередуются по дням,
     победителя видно в еженедельном отчёте (insights: разбивка Reels по вариантам)."""
-    n = day.toordinal()
+    # номер ролика по счёту, а не номер дня: при Reels через день по номеру дня голос и длина
+    # совпадали бы всю неделю, и A/B-сравнение не набиралось бы
+    days = sorted(d for d, slots in load_yaml("rubrics.yaml")["schedule"].items() if "reel" in slots) or [day.isoweekday()]
+    pos = days.index(day.isoweekday()) if day.isoweekday() in days else 0
+    n = (day.toordinal() // 7) * len(days) + pos
     return {"reel_format": reel_format_for(day, item),
             "voice_mode": "voice" if n % 2 == 0 else "music",
             "length": ["mid", "short", "long"][(n // 2) % 3],
