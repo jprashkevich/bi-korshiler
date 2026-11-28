@@ -135,7 +135,7 @@ class ReelPackage(BaseModel):
     cover_title: str = Field(description="Текст обложки Reels, до 40 символов, интрига", max_length=50)
     people: list[PersonRef] = Field(description="Исследователи и организации, названные в источнике (0–3). Только реально упомянутые")
     scenes: list[Scene]
-    caption_ru: str = Field(description="Подпись к Reels на русском: хук в первой строке, 2–4 коротких абзаца, призыв сохранить/отправить соседу, без эмодзи и хэштегов", max_length=1500)
+    caption_ru: str = Field(description="Подпись к Reels на русском: хук в первой строке, 2–4 коротких абзаца, призыв сохранить/отправить соседу, без эмодзи и хэштегов", max_length=2200)
     hashtags: list[str] = Field(description="5–8 хэштегов без символа #")
     summary_kz: str = Field(description="Краткое содержание на казахском, 2–3 предложения", max_length=500)
     summary_uz: str = Field(description="Краткое содержание на узбекском (латиница), 2–3 предложения", max_length=500)

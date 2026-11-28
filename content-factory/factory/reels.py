@@ -200,8 +200,10 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
             p.evaluate("document.fonts.ready")
             p.wait_for_function("document.body.dataset.fitted === '1'", timeout=15000)
             issues = p.evaluate("window.layoutIssues || []")
-            if total > 42:
-                issues.append(f"ролик {total:.0f} с, дольше 40: можно попросить сократить озвучку")
+            target = {"short": 22, "mid": 35, "long": 52}.get(getattr(pkg, "length", "mid"), 40)
+            if total > target:
+                issues.append(f"ролик {total:.0f} с при цели до {target} с ({getattr(pkg, 'length', 'mid')}): "
+                              "можно нажать «Переделать» с просьбой сократить")
             (out_dir / "layout_issues.json").write_text(json.dumps(issues, ensure_ascii=False), encoding="utf-8")
             for i in range(frames):
                 p.evaluate(f"seek({i / FPS:.4f})")
