@@ -26,6 +26,8 @@ def main() -> None:
     redo = sub.add_parser("redo", help="Пересобрать пост по id с комментарием и отправить в Telegram")
     redo.add_argument("post_id", type=int)
     redo.add_argument("comment", nargs="*")
+    show = sub.add_parser("show", help="Напечатать пакет поста (тексты) в лог")
+    show.add_argument("post_id", type=int)
     top = sub.add_parser("top", help="Показать лучшие темы после скоринга")
     top.add_argument("-n", type=int, default=15)
     r = sub.add_parser("render", help="Отрендерить карусель из JSON-пакета (без вызова Claude)")
@@ -60,6 +62,15 @@ def main() -> None:
         db.update_post(args.post_id, feedback=feedback, status="generating")
         pipeline.generate(args.post_id, feedback=feedback)
         print("redone", args.post_id)
+    elif args.cmd == "show":
+        post = db.get_post(args.post_id)
+        pkg = post["package"] or {}
+        for k in ("headline", "reel_format", "voice_mode", "length", "cover_title"):
+            print(k, ":", pkg.get(k))
+        for i, sc in enumerate(pkg.get("scenes") or pkg.get("slides") or []):
+            print(f"[{i}] {sc.get('type')} | {sc.get('title')} | {sc.get('text')} | voice: {sc.get('voice', '')} | viz: {(sc.get('viz') or {}).get('kind')}")
+        print("caption:", (pkg.get("caption_ru") or "").replace("\n", " / ")[:1500])
+        print("edit_issues:", pkg.get("edit_issues"))
     elif args.cmd == "top":
         from sqlalchemy import select
         with db.engine.begin() as c:
