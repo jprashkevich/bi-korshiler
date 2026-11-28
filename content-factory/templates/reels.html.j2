@@ -57,6 +57,37 @@
 #sub.hidden{display:none}
 #endtag{position:absolute;left:50%;transform:translateX(-50%);top:1520px;z-index:27;font-weight:800;font-size:28px;color:var(--navy);opacity:0;
   background:#fff;padding:12px 26px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(40,52,138,.12)}
+/* иллюстрации фраз: 2–3 картинки на фразу, ~1,5 с каждая (владелец, 28.11). Слой над кадрами сцен.
+   split — сцена с дата-артом: картинки в верхнем окне, метафора продолжает расти внизу */
+.seg{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;opacity:0}
+.seg.split{top:150px;height:760px;border-radius:0 0 36px 36px;box-shadow:0 18px 40px rgba(40,30,20,.18)}
+.seg.full{background:#1c2036}
+.seg.full .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.92)}
+.seg.full .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,24,60,.5) 0,rgba(20,24,60,0) 30%,rgba(20,24,60,0) 62%,rgba(20,24,60,.35) 100%)}
+.seg.paper{background:var(--cream)}
+.seg .inner{position:absolute;left:0;top:250px;width:1080px;height:1060px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform-origin:540px 530px}
+.seg.split .inner{top:-150px;transform:scale(.62)}
+.seg.under-hook .inner{top:560px;transform:scale(.72)}
+.pcard{position:relative;background:#fff;padding:18px;box-shadow:0 18px 40px rgba(60,40,20,.2)}
+.pcard img{display:block;width:100%;height:100%;object-fit:cover}
+.pcard.ill img{object-fit:contain;background:#fff}
+.pcard.bw img{object-position:50% 18%;filter:grayscale(1) contrast(1.1)}
+.seg .cap{margin-top:46px;max-width:900px;text-align:center;font-family:var(--display);font-weight:800;font-size:64px;line-height:1.02;color:var(--navy)}
+.seg .cap small{display:block;font-family:Montserrat;font-weight:700;font-size:32px;line-height:1.3;color:var(--ink);opacity:.75;margin-top:14px}
+.seg.map svg{width:940px;height:731px}
+.seg.map .hit{transform-box:fill-box;transform-origin:center}
+.seg .tagname{position:static;display:inline-block;margin-top:34px}
+.seg .tagrole{position:static;display:inline-block;margin-top:14px}
+.jcover{width:640px;height:860px;background:var(--navy);color:#fff;padding:46px 44px;position:relative;box-shadow:0 22px 50px rgba(20,20,60,.3);display:flex;flex-direction:column}
+.jcover .mast{font-family:var(--display);font-weight:800;font-size:84px;line-height:.92;letter-spacing:-.02em;border-bottom:4px solid rgba(255,255,255,.85);padding-bottom:24px}
+.jcover .kick{margin-top:26px;font-weight:800;font-size:26px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.jcover .head{margin-top:auto;font-family:var(--display);font-weight:700;font-size:50px;line-height:1.08}
+.jcover .bar{position:absolute;right:44px;top:46px;width:70px;height:70px;border-radius:50%;background:var(--accent)}
+.article{width:860px;height:980px;overflow:hidden;background:#fff;padding:0;box-shadow:0 22px 50px rgba(20,20,60,.25)}
+.article img{width:100%;height:auto;object-fit:initial}
+.segnum{font-family:var(--display);font-weight:800;color:var(--navy);letter-spacing:-.03em;line-height:.9;font-size:260px}
+.segquote{max-width:900px;font-family:var(--display);font-weight:700;font-size:70px;line-height:1.12;color:var(--navy);text-align:left}
+.segquote:before{content:"«";display:block;font-size:200px;line-height:.6;color:var(--accent)}
 </style></head><body>
 <div id="stage">
   <img id="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life">
@@ -97,6 +128,26 @@
   <div class="shot dataart" id="run{{ loop.index0 }}"><div class="scene"><canvas></canvas></div></div>
   {% endif %}
   {% endfor %}
+  <div id="broll" style="position:absolute;inset:0;z-index:20">
+  {% for g in broll %}
+  <div class="seg {{ 'full' if g.type == 'full' else 'paper' }}{% if g.type == 'map' %} map{% endif %}{% if g.split %} split{% elif g.scene == 0 and g.type != 'full' %} under-hook{% endif %}" id="seg{{ loop.index0 }}">
+    {% if g.type == 'full' %}
+      {% if g.uri.endswith('.webm') or g.uri.endswith('.mp4') %}<video class="bg vid" src="{{ g.uri }}" muted preload="auto" playsinline></video>{% else %}<img class="bg" src="{{ g.uri }}" alt="">{% endif %}<div class="shade"></div>
+    {% else %}<div class="inner">
+      {% if g.type == 'card' %}<div class="pcard ill" style="width:820px;height:820px"><img src="{{ g.uri }}" alt=""><div class="tape"></div></div>
+      {% elif g.type == 'map' %}{{ g.svg | safe }}
+      {% elif g.type == 'person' %}<div class="pcard bw" style="width:600px;height:720px"><img src="{{ g.uri }}" alt=""><div class="tape"></div></div><span class="tagname">{{ g.name }}</span>{% if g.role %}<span class="tagrole">{{ g.role }}</span>{% endif %}
+      {% elif g.type == 'namecard' %}<div class="cap" style="font-size:96px">{{ g.name }}{% if g.role %}<small>{{ g.role }}</small>{% endif %}</div>
+      {% elif g.type == 'journal' %}<div class="jcover"><span class="bar"></span><div class="mast">{{ g.name }}</div><div class="kick">{{ g.detail or 'исследование' }}</div><div class="head">{{ g.caption }}</div></div>
+      {% elif g.type == 'article' %}<div class="pcard article"><img src="{{ g.uri }}" alt=""><div class="tape"></div></div>
+      {% elif g.type == 'number' %}<div class="segnum" data-count="{{ g.text }}"><span class="v">{{ g.text }}</span></div>
+      {% elif g.type == 'quote' %}<div class="segquote">{{ g.text }}</div>
+      {% endif %}
+      {% if g.caption and g.type not in ('journal', 'namecard') %}<div class="cap">{{ g.caption }}{% if g.detail and g.type != 'person' %}<small>{{ g.detail }}</small>{% endif %}</div>{% endif %}
+    </div>{% endif %}
+  </div>
+  {% endfor %}
+  </div>
   <div id="hook" class="{% if runs[0].shot == 'photo' %}on-photo{% endif %}" style="font-size:{{ 112 if hook.title|length <= 28 else (96 if hook.title|length <= 44 else 84) }}px">{% for w in hook.title.split(' ') %}<span class="w{% if hook.highlight and hook.highlight|lower in w|lower %} hl{% endif %}">{{ w }}</span>{{ ' ' }}{% endfor %}</div>
   <div id="sub"><span></span></div>
   <div id="endtag">BIG Life · соседство в цифрах</div>
@@ -108,6 +159,7 @@ const TL = {{ timeline | tojson }};
 const SUBS = {{ subtitles | tojson }};
 const RUNS = {{ runs_js | tojson }};    // [{shot, start, end, scenes:[{i, start, end, viz, focus}]}]
 const HOOK_END = {{ hook_end }}, TOTAL = {{ total }};
+const SEGS = {{ broll_js | tojson }};    // иллюстрации фраз [{type, start, end, split}]
 const ease = x => 1 - Math.pow(1 - Math.min(Math.max(x, 0), 1), 3);
 const inout = x => { x = Math.min(Math.max(x, 0), 1); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
 const esc = s => s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'})[c]);
@@ -117,6 +169,60 @@ function vizAt(run, t) {        // состояние фигуры внутри 
   let cur = null, prev = null, start = run.start;
   run.scenes.forEach(s => { if (s.viz && t >= s.start) { if (cur && cur.kind === s.viz.kind) prev = cur; else prev = null; cur = s.viz; start = s.start; } });
   return {cur, prev, lt: t - start};
+}
+
+function splitAt(t) {             // насколько метафора сейчас уступает верх экрана иллюстрациям (0…1)
+  let v = 0;
+  SEGS.forEach((g, k) => {
+    if (!g.split) return;
+    const prevSplit = k > 0 && SEGS[k - 1].split && Math.abs(SEGS[k - 1].end - g.start) < 0.05;
+    const nextSplit = k < SEGS.length - 1 && SEGS[k + 1].split && Math.abs(SEGS[k + 1].start - g.end) < 0.05;
+    const a = prevSplit ? 1 : ease((t - g.start + 0.15) / 0.4), b = nextSplit ? 1 : 1 - ease((t - g.end) / 0.4);
+    if (t >= g.start - 0.15 && t < g.end + 0.4) v = Math.max(v, Math.min(a, b));
+  });
+  return v;
+}
+
+function seekSegs(t, waits) {
+  let onPhoto = null;
+  SEGS.forEach((g, k) => {
+    const el = document.getElementById('seg' + k);
+    const next = SEGS[k + 1], chained = next && Math.abs(next.start - g.end) < 0.05;
+    // следующая картинка ложится поверх, поэтому текущая уходит, только когда за ней пусто
+    const lt = t - g.start, fin = ease(lt / 0.2), fout = chained ? (t < next.start + 0.2 ? 1 : 0) : 1 - ease((t - g.end) / 0.25);
+    const vis = t >= g.start - 0.01 && t < g.end + 0.25 ? Math.min(fin, fout) : 0;
+    el.style.opacity = vis;
+    el.style.zIndex = k + 1;            // внутри #broll: слой ниже логотипа, хука и субтитров
+    if (!vis) return;
+    if (t >= g.start && t < g.end) onPhoto = g.type === 'full' && !g.split;
+    const punch = 1 - ease(lt / 0.3);
+    if (g.type === 'full') {
+      const m = el.querySelector('.bg');
+      m.style.transform = `scale(${1.14 - 0.08 * inout(lt / 2) + 0.04 * punch}) translateX(${(k % 2 ? -1 : 1) * 14 * inout(lt / 2)}px)`;
+      if (m.tagName === 'VIDEO' && m.duration) {
+        const want = Math.min(lt, m.duration - 0.05);
+        if (Math.abs(m.currentTime - want) > 0.001) {
+          waits.push(new Promise(res => m.addEventListener('seeked', res, {once: true})));
+          m.currentTime = want;
+        }
+      }
+    } else {
+      const inner = el.querySelector('.inner');
+      const base = g.split ? 0.62 : (el.classList.contains('under-hook') ? 0.72 : 1);
+      inner.style.transform = `translateY(${(1 - fin) * 50}px) scale(${base * (1.06 - 0.06 * ease(lt / 0.35))}) rotate(${(k % 2 ? -1 : 1) * 1.2 * (1 - inout(lt / 1.2))}deg)`;
+      const hit = el.querySelector('.hit');
+      if (hit) hit.style.transform = `scale(${0.85 + 0.15 * ease((lt - 0.15) / 0.5)})`;
+      const num = el.querySelector('.segnum');
+      if (num) {
+        const raw = num.dataset.count, mm = raw.match(/\d[\d\s ]*(?:[.,]\d+)?/);
+        if (mm) { const val = parseFloat(mm[0].replace(/[\s ]/g, '').replace(',', '.')), dec = (mm[0].split(/[.,]/)[1] || '').length;
+          let cur = (val * ease(lt / 0.9)).toFixed(dec).replace('.', ',');
+          if (cur.length > 4) cur = cur.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+          num.querySelector('.v').textContent = raw.replace(mm[0], cur); }
+      }
+    }
+  });
+  return onPhoto;
 }
 
 window.seek = function (t) {
@@ -187,13 +293,17 @@ window.seek = function (t) {
       const v = vizAt(r, t);
       if (v.cur) window.drawViz(el.querySelector('canvas'), v.cur, v.prev, v.lt);
       el.style.transform = `scale(${1.03 - 0.03 * ease(lt / 1.5) + 0.03 * punch})`;
+      const sp = splitAt(t);
+      el.querySelector('.scene').style.transform = `translateY(${340 * sp}px) scale(${1 - 0.58 * sp})`;
     }
   });
   // рукописные пометки маркером: прорисовываются линией в свой момент
   document.querySelectorAll('[data-pen]').forEach(sv => {
     sv.firstElementChild.style.strokeDashoffset = 100 * (1 - ease((t - parseFloat(sv.dataset.pen)) / 0.6));
   });
+  const onPhoto = seekSegs(t, waits);
   const hk = document.getElementById('hook');
+  if (onPhoto !== null) hk.classList.toggle('on-photo', onPhoto);
   hk.style.opacity = Math.min(ease(t / 0.25), 1 - ease((t - HOOK_END) / 0.35));
   hk.querySelectorAll('.w').forEach((w, k) => { const p = ease((t - 0.03 * k) / 0.2); w.style.opacity = p; w.style.transform = `translateY(${(1 - p) * 30}px)`; });
   const sub = SUBS.find(s => t >= s.start && t < s.end), box = document.getElementById('sub');

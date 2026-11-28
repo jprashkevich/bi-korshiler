@@ -559,3 +559,24 @@ def test_choppy_voice_is_flagged():
         s.voice = ("Учёные двадцать лет опрашивали жителей одного района и заметили, что одиноких выдаёт "
                    "не возраст, а то, знают ли они по имени хотя бы одного соседа.")
     assert editor.choppy(pkg) == ""
+
+
+def test_broll_map_and_segments():
+    """Карта страны рисуется из Natural Earth; иллюстрации делят время сцены, а сцены с дата-артом идут окном сверху."""
+    from factory import broll, reels
+    from factory.models import ReelPackage
+    svg = broll.map_svg("Japan")
+    assert svg and 'class="hit"' in svg and broll.map_svg("Нарния") is None
+    base = {"eyebrow": "", "title": "", "text": "", "illustration_id": "", "person": "", "voice": "фраза"}
+    pkg = ReelPackage.model_validate({
+        "headline": "t", "accent": "orange", "cover_title": "t", "people": [], "caption_ru": "c", "hashtags": ["a"],
+        "summary_kz": "k", "summary_uz": "u", "source_line": "s", "threads": ["x"], "fact_check": ["f"],
+        "scenes": [{**base, "type": "hook"}, {**base, "type": "stat", "viz": {"kind": "dots", "total": 10, "highlight": 3}}]})
+    tl = [{"start": 0.0, "end": 4.5}, {"start": 4.5, "end": 6.0}]
+    subs = [{"start": 1.6}, {"start": 3.1}]
+    rows = [[{"type": "map"}, {"type": "number"}, {"type": "quote"}], [{"type": "full"}, {"type": "card"}]]
+    segs = reels.broll_segments(pkg, tl, subs, rows)
+    first = [g for g in segs if g["scene"] == 0]
+    assert len(first) == 3 and first[1]["start"] == 1.6 and first[2]["start"] == 3.1   # границы — по фразам голоса
+    assert all(g["split"] for g in segs if g["scene"] == 1)
+    assert all(g["end"] - g["start"] >= 1.0 for g in segs)

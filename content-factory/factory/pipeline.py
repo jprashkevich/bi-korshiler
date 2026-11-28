@@ -145,7 +145,7 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
                     db.update_post(post_id, item_id=other["id"])
         pkg, issues = proofread(draft)
         pictures = find_pictures(pkg, pkg.scenes)
-        files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
+        files = reels.render_video(pkg, rubric["title"], name, pictures=pictures, item=item)
         data = {**pkg.model_dump(), "format": "reels", "pictures": pictures,
                 "review": review.model_dump() if review else None}
     else:
@@ -168,10 +168,11 @@ def revisualize(post_id: int) -> None:
     post = db.get_post(post_id)
     rubric = writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]
     pkg = ReelPackage.model_validate(post["package"])
-    pkg = writer.plan_visuals(pkg, db.get_item(post["item_id"]))
+    item = db.get_item(post["item_id"]) if post.get("item_id") else None
+    pkg = writer.plan_visuals(pkg, item)
     pictures = find_pictures(pkg, pkg.scenes)
     name = f"{post['slot_date']}-post{post_id}"
-    files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
+    files = reels.render_video(pkg, rubric["title"], name, pictures=pictures, item=item)
     data = {**post["package"], **pkg.model_dump(), "format": "reels", "pictures": pictures}
     li = Path(files[0]).parent / "layout_issues.json"
     data["layout_issues"] = json.loads(li.read_text(encoding="utf-8")) if li.exists() else []
@@ -189,6 +190,8 @@ def proofread(pkg):
 def find_pictures(pkg, frames) -> dict:
     """Фото из Википедии для людей и организаций, которые стоят на слайдах/сценах person."""
     wanted = {f.person for f in frames if f.type == "person" and f.person}
+    # исследователи из иллюстраций фраз Reels (kind=person) — тоже нужны их фото
+    wanted |= {v.query for f in frames for v in getattr(f, "visuals", []) if v.kind == "person"}
     out = {}
     for ref in pkg.people:
         if ref.name_en not in wanted:

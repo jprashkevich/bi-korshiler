@@ -201,11 +201,10 @@ def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None, subs: li
     photos, ills, pics = reels_photos(), illustrations(), picture_uris(pictures)
     people = {p.name_en: p for p in pkg.people}
     accent = ACCENT_HEX.get(pkg.accent, "#ff954c")
-    spare_photo = next(iter(photos.values()), "")
     shots = []
     for s in pkg.scenes:
         shot = s.shot
-        if shot == "photo" and not (photos.get(s.photo_id) or spare_photo):
+        if shot == "photo" and not photos.get(s.photo_id):
             shot = "collage"
         if shot == "dataart" and s.viz.kind == "none" and not (shots and shots[-1] == "dataart"):
             shot = "collage"
@@ -221,13 +220,10 @@ def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None, subs: li
         run = {"shot": r["shot"], "start": tl[idx[0]]["start"], "end": tl[idx[-1]]["end"], "scenes": []}
         if r["shot"] == "photo":
             # несколько снимков на отрезок: кадр меняется на каждой фразе голоса (владелец: «медленный монтаж»)
-            chosen = [photos[pkg.scenes[i].photo_id] for i in idx if photos.get(pkg.scenes[i].photo_id)]
-            for u in photos.values():
-                if len(chosen) >= 3:
-                    break
-                if u not in chosen:
-                    chosen.append(u)
-            run["photos"] = chosen[:3] or [spare_photo]
+            # только снимки, которые сценарий назвал сам: «добивка» случайными фото из каталога поставила
+            # волонтёра-мужчину в историю про бабушку. Смену кадра на каждой фразе теперь дают иллюстрации фраз.
+            chosen = list(dict.fromkeys(photos[pkg.scenes[i].photo_id] for i in idx if photos.get(pkg.scenes[i].photo_id)))
+            run["photos"] = chosen[:3]
             if clips and not out:          # живые планы из отчётов BIG Life — в первый фото-отрезок (хук)
                 run["photos"] = [Path(c["path"]).resolve().as_uri() for c in clips] + run["photos"][:1]
         if r["shot"] == "collage":
@@ -303,6 +299,37 @@ def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None, subs: li
     return out
 
 
+MIN_SEG = 1.0      # иллюстрация фразы держится не меньше секунды, иначе глаз не успевает её прочитать
+
+
+def broll_segments(pkg: ReelPackage, tl: list[dict], subs: list[dict], resolved: list[list[dict]]) -> list[dict]:
+    """Раскладывает 2–3 иллюстрации каждой сцены по её времени: ~1,5 с на картинку, границы — по началу фраз
+    голоса, если они рядом. В сценах с дата-артом иллюстрации идут в верхнем окне, а метафора продолжает
+    расти внизу: владелец просил не резать инфографику на куски."""
+    out = []
+    for i, (s, row) in enumerate(zip(pkg.scenes, resolved)):
+        if not row:
+            continue
+        a, b = tl[i]["start"], tl[i]["end"]
+        if i == 0:
+            a = max(a, 0.0)
+        n = max(1, min(len(row), int((b - a) // MIN_SEG)))
+        row = row[:n]
+        beats = [x["start"] for x in subs if a + 0.3 < x["start"] < b - 0.3]
+        cuts = [a]
+        for k in range(1, n):
+            want = a + (b - a) * k / n
+            near = min(beats, key=lambda x: abs(x - want), default=None)
+            cut = near if near is not None and abs(near - want) < 0.45 and near - cuts[-1] >= MIN_SEG else want
+            cuts.append(round(cut, 2))
+        cuts.append(b)
+        split = s.viz.kind != "none"
+        for k, v in enumerate(row):
+            out.append({**v, "start": round(cuts[k], 2), "end": round(cuts[k + 1], 2), "scene": i,
+                        "split": split, "k": len(out)})
+    return out
+
+
 def _launch(pw):
     return pw.chromium.launch(**({"executable_path": settings.chromium_path} if settings.chromium_path else {}))
 
@@ -366,7 +393,7 @@ def silent_timeline(pkg: ReelPackage, out: Path) -> tuple[list[dict], list[dict]
 
 
 def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict | None = None,
-                 speech_fn=None, music_fn=None) -> list[Path]:
+                 speech_fn=None, music_fn=None, item: dict | None = None) -> list[Path]:
     """Возвращает [mp4, обложка.png]. speech_fn подменяется в тестах."""
     out_dir = OUTPUT_DIR / name
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -403,13 +430,21 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
         except Exception as exc:          # видео — усиление, без него ролик всё равно собирается
             log.warning("Видео из отчётов не подобраны: %s", exc)
     runs = build_runs(pkg, tl, pictures, subs, clips)
+    broll = []
+    if any(s.visuals for s in pkg.scenes):
+        try:
+            from .broll import resolve
+            broll = broll_segments(pkg, tl, subs, resolve(pkg, item, pictures, clips))
+        except Exception as exc:          # иллюстрации — усиление: без них остаётся прежний кадр сцены
+            log.warning("Иллюстрации фраз не собраны: %s", exc)
     runs_js = [{k: v for k, v in r.items() if k in ("shot", "start", "end", "scenes", "zoomout", "zoomout_s", "zoomout_y")}
                for r in runs]
     html = _env.get_template("reels.html.j2").render(
         accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"),
         scenes=scenes, hook=scenes[0], hook_end=tl[0]["end"],
         accent=pkg.accent, rubric_title=rubric_title, timeline=tl, subtitles=subs,
-        runs=runs, runs_js=runs_js,
+        runs=runs, runs_js=runs_js, broll=broll,
+        broll_js=[{k: v[k] for k in ("type", "start", "end", "split", "text") if k in v} for v in broll],
         viz_js=(TEMPLATES_DIR / "viz.js").read_text(encoding="utf-8"),
         total=total, assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
     page_path = out_dir / "reel.html"
