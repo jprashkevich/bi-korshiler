@@ -189,7 +189,7 @@ def test_drive_recent_events_parses_structure(monkeypatch):
     ev = events[0]
     assert ev.complex == "Urban Hills" and ev.activity == "Точки Опоры" and ev.day == "2026-11-24"
     assert [p["id"] for p in ev.photos] == ["p0", "p1"] and ev.videos == 1
-    assert ev.label == "24.11 · Urban Hills · Точки Опоры"
+    assert ev.city == "Шымкент" and ev.label == "24.11 · Шымкент, Urban Hills · Точки Опоры"
 
 
 def test_pick_events_prefers_variety():
