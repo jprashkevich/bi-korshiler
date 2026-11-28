@@ -99,6 +99,13 @@ def kv_set(key: str, value: str) -> None:
             c.execute(kv.insert().values(key=key, value=value))
 
 
+def kv_cas(key: str, old: str, new: str) -> bool:
+    """Записать, только если значение всё ещё old. Во время деплоя старый и новый процесс минуту работают
+    вместе: без этого оба взяли бы один пост из очереди и опубликовали его дважды."""
+    with engine.begin() as c:
+        return c.execute(update(kv).where(kv.c.key == key, kv.c.value == old).values(value=new)).rowcount == 1
+
+
 def get_post(post_id: int) -> dict | None:
     with engine.begin() as c:
         row = c.execute(select(posts).where(posts.c.id == post_id)).mappings().first()

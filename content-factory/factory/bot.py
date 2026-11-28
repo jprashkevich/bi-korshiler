@@ -5,7 +5,7 @@ import html
 import logging
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from . import db, instagram, pipeline, sheets, telegram, threads
@@ -144,7 +144,8 @@ def publish_due() -> None:
         if not post or post["status"] != "approved":
             instagram.set_state(post_id, state="cancelled")
             continue
-        instagram.set_state(post_id, state="publishing")
+        if not instagram.claim(post_id):           # его уже публикует другой процесс (перекрытие при деплое)
+            continue
         chat = chat_id()
         try:
             res = instagram.publish(post)
@@ -162,11 +163,21 @@ def publish_due() -> None:
                               reply_to=post["tg_message_id"])
 
 
-def recover_interrupted() -> None:
-    """Публикация прервалась перезапуском (деплой). Повторять вслепую нельзя — пост мог уже выйти."""
+STUCK_AFTER = timedelta(minutes=20)    # дольше публикация не идёт: ожидание обработки видео в Instagram — до 10 мин
+
+
+def recover_interrupted(now: datetime | None = None) -> None:
+    """Публикация прервалась перезапуском (деплой). Повторять вслепую нельзя — пост мог уже выйти.
+    Только зависшие дольше STUCK_AFTER: при деплое старый процесс ещё может дописывать публикацию,
+    и новый не должен объявлять её прерванной."""
+    now = now or datetime.now(timezone.utc)
     for post_id, st in instagram.all_states().items():
-        if st.get("state") == "publishing":
-            instagram.set_state(post_id, state="failed", error="прервано перезапуском")
+        if st.get("state") != "publishing":
+            continue
+        since = st.get("claimed_at")
+        if since and now - datetime.fromisoformat(since) < STUCK_AFTER:
+            continue
+        if instagram.transition(post_id, "publishing", state="failed", error="прервано перезапуском"):
             telegram.send_message(
                 chat_id(), f"Публикация поста #{post_id} в Instagram прервалась перезапуском сервиса. "
                            "Проверьте ленту: если поста там нет, нажмите «Повторить».",
@@ -180,6 +191,7 @@ def publisher_loop() -> None:
         try:
             if instagram.enabled():
                 publish_due()
+                recover_interrupted()
         except Exception:
             log.exception("Очередь Instagram")
         time.sleep(30)

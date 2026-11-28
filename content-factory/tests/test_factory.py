@@ -580,3 +580,23 @@ def test_broll_map_and_segments():
     assert len(first) == 3 and first[1]["start"] == 1.6 and first[2]["start"] == 3.1   # границы — по фразам голоса
     assert all(g["split"] for g in segs if g["scene"] == 1)
     assert all(g["end"] - g["start"] >= 1.0 for g in segs)
+
+
+def test_instagram_claim_is_exclusive(monkeypatch):
+    """При деплое старый и новый процесс минуту работают вместе: взять пост из очереди может только один,
+    а свежую публикацию соседа новый процесс не объявляет прерванной."""
+    from datetime import datetime, timedelta, timezone
+    from factory import bot, db, instagram
+    db.init()
+    instagram.queue(9001, datetime.now(timezone.utc))
+    assert instagram.claim(9001) is True
+    assert instagram.claim(9001) is False
+    sent = []
+    monkeypatch.setattr(bot.telegram, "send_message", lambda *a, **k: sent.append(a))
+    monkeypatch.setattr(bot, "chat_id", lambda: 1)
+    bot.recover_interrupted()
+    assert instagram.state(9001)["state"] == "publishing" and not sent
+    bot.recover_interrupted(now=datetime.now(timezone.utc) + timedelta(minutes=30))
+    assert instagram.state(9001)["state"] == "failed" and len(sent) == 1
+    bot.recover_interrupted(now=datetime.now(timezone.utc) + timedelta(minutes=30))
+    assert len(sent) == 1

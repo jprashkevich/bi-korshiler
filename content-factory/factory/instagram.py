@@ -303,6 +303,20 @@ def set_state(post_id: int, **values) -> dict:
     return st
 
 
+def transition(post_id: int, frm: str, **values) -> bool:
+    """Сменить состояние, только если оно всё ещё frm — атомарно для двух процессов сразу."""
+    raw = db.kv_get(f"ig:{post_id}")
+    st = json.loads(raw) if raw else {}
+    if not raw or st.get("state") != frm:
+        return False
+    return db.kv_cas(f"ig:{post_id}", raw, json.dumps({**st, **values}, ensure_ascii=False))
+
+
+def claim(post_id: int) -> bool:
+    """Взять пост из очереди на публикацию; False — его уже взял другой процесс."""
+    return transition(post_id, "queued", state="publishing", claimed_at=datetime.now(timezone.utc).isoformat())
+
+
 def queue(post_id: int, at: datetime) -> None:
     set_state(post_id, state="queued", at=at.astimezone(timezone.utc).isoformat(), error="")
 
