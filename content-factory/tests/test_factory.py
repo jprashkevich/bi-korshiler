@@ -322,3 +322,19 @@ def test_background_rhythm():
     kinds = ["cover", "insight", "statement", "stat", "steps", "list", "stat", "cta"]
     assert backgrounds([N(type=k) for k in kinds]) == \
         ["navy", "light", "accent", "light", "accent2", "light", "accent", "navy"]
+
+
+def test_weekend_ideas_prompt(monkeypatch):
+    from datetime import date
+    from factory import llm, writer, drive, score
+    seen = {}
+    def fake_ask(cls, *, system, user, model, effort, max_tokens=16000):
+        seen["system"], seen["user"] = system, user
+        return sample()
+    monkeypatch.setattr(llm, "ask", fake_ask)
+    monkeypatch.setattr(drive, "enabled", lambda: False)
+    monkeypatch.setattr(score, "pick", lambda *a, **k: None)
+    pkg = writer.write_ideas(date(2026, 12, 11))          # пятница перед Днём Независимости
+    assert "Выходные: 12 декабря–13 декабря" in seen["user"]
+    assert "16 декабря: День Независимости (KZ)" in seen["user"]
+    assert "Идеи на выходные" in seen["system"] and pkg.people == []

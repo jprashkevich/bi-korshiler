@@ -34,7 +34,7 @@ def resolve_rubric(key: str) -> str:
 
 def choose_item(rubric_key: str, exclude_ids: set[int] = frozenset()) -> dict | None:
     r = writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key]
-    if r["source"] in ("brand", "drive"):
+    if r["source"] in ("brand", "drive", "ideas"):
         return None
     item = score.pick(rubric_key, prefer_kind=r.get("prefer_kind"), need_number=rubric_key == "number")
     if item is None and rubric_key == "number":   # нет материала с цифрой — берём лучшую тему для науки
@@ -77,6 +77,11 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
                               photo_city=photo_city, cities=cities)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": {}, "events": [e["label"] for e in events],
                 "no_city": sorted({e["complex"] for e in events if not e.get("city")})}
+    elif rubric.get("source") == "ideas":
+        pkg, issues = proofread(writer.write_ideas(date.fromisoformat(post["slot_date"]),
+                                                   feedback=feedback, previous=previous))
+        files = render.render(pkg, rubric["title"], name)
+        data = {**pkg.model_dump(), "format": "carousel", "pictures": {}}
     elif rubric.get("format") == "reels" and tts.enabled():
         pkg, issues = proofread(writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous))
         pictures = find_pictures(pkg, pkg.scenes)

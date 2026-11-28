@@ -202,3 +202,64 @@ def write_courtyard(events: list[dict], feedback: list[str] | None = None, previ
     pkg.photo_id = ""
     pkg.people = []
     return normalize(pkg)
+
+
+IDEAS_RULES = """
+## Рубрика «Идеи на выходные» (выходит в пятницу утром)
+- Карусель 7–8 слайдов: cover → 5–6 слайдов insight (одна идея на слайд) → cta.
+- Обложка: заголовок с датами («Идеи на выходные 29–30 ноября и неделю»), illustration_id — подходящая по сезону.
+- Слайд идеи: eyebrow — когда («Суббота», «Воскресенье», «В будни», «Каждый вечер»);
+  title — сама идея глаголом («Устройте чаепитие на этаже»); text — как это сделать за 1–2 фразы:
+  с кем, сколько времени, что взять. Для каждой идеи выбери illustration_id из каталога, если подходит.
+- Идеи разные по формату: на улице и дома, для детей и для старших, на 10 минут и на вечер.
+  Учитывай сезон и погоду этого месяца в Казахстане и Узбекистане, а также праздники из календаря.
+- Если даны «что делали соседи на этой неделе» — одну-две идеи можно продолжить от них
+  («во дворах уже катались на коньках — позовите соседей на каток»), без имён жителей.
+- Если дан научный факт из ленты, его можно привести в подписи как «почему это работает», только по источнику.
+- people пустой, слайдов person нет. source_line: «BIG Life» или источник научного факта, если он использован.
+- В подписи — коротко все идеи списком, чтобы их можно было сохранить.
+"""
+
+
+def write_ideas(day, feedback: list[str] | None = None, previous: dict | None = None):
+    """Пятничные идеи на выходные и следующую неделю: сезон, праздники, что делали соседи, практичная наука."""
+    from datetime import timedelta
+    from . import db, drive
+    from .models import PostPackage
+    months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября",
+              "октября", "ноября", "декабря"]
+    sat, sun = day + timedelta(days=(5 - day.weekday()) % 7), day + timedelta(days=(6 - day.weekday()) % 7)
+    week_end = sun + timedelta(days=7)
+    fmt = lambda d: f"{d.day} {months[d.month - 1]}"
+    cal = load_yaml("calendar.yaml").get("dates", {})
+    occasions = []
+    d = day
+    while d <= week_end:
+        if f"{d.month:02d}-{d.day:02d}" in cal:
+            occasions.append(f"{fmt(d)}: {cal[f'{d.month:02d}-{d.day:02d}']}")
+        d += timedelta(days=1)
+    parts = [build_user_prompt("weekend", None, "", feedback or [], previous)
+             .replace("Внешнего источника нет: пост о продукте BIG Life на основе описания бренда. "
+                      "source_line: «BIG Life».", ""),
+             f"Сегодня пятница, {fmt(day)}. Выходные: {fmt(sat)}–{fmt(sun)}. Следующая неделя: до {fmt(week_end)}.",
+             "Поводы в эти даты: " + ("; ".join(occasions) if occasions else "нет")]
+    try:   # что делали соседи — для вдохновения, без имён
+        evs = drive.recent_events(days=10, include_used=True) if drive.enabled() else []
+        acts = sorted({e.activity for e in evs if e.activity})[:25]
+        if acts:
+            parts.append("Что делали соседи во дворах BIG Life за последние 10 дней (названия активностей): "
+                         + ", ".join(acts))
+    except Exception as exc:
+        log.info("Активности из Drive для идей недоступны: %s", exc)
+    try:   # одна свежая практичная научная находка
+        from . import score
+        it = score.pick("practice", prefer_kind="popular")
+        if it:
+            parts.append(f"Научный факт недели (можно использовать в подписи): {it['title']} — "
+                         f"{(it.get('summary') or '')[:500]} (источник: {it['feed']}, {it['url']})")
+    except Exception as exc:
+        log.info("Научный факт для идей недоступен: %s", exc)
+    pkg = llm.ask(PostPackage, system=system_prompt() + IDEAS_RULES, user="\n\n".join(parts),
+                  model=settings.writer_model, effort=settings.writer_effort)
+    pkg.people = []
+    return normalize(pkg)
