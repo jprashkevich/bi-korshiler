@@ -226,7 +226,28 @@ def reel_plan(day, item: dict | None) -> dict:
 
 
 def biglife_numbers() -> str:
-    """Цифры BIG Life для инфографики: из фотоотчётов за 30 дней + то, что владелец внёс в biglife_numbers.yaml."""
+    """Цифры BIG Life для инфографики: из фотоотчётов за 30 дней + то, что владелец внёс в biglife_numbers.yaml.
+    Сводка по Drive считается раз в сутки: чтение отчётов за месяц — сотни запросов и минуты."""
+    from datetime import date as _date
+    from . import db
+    key = f"biglife_numbers:{_date.today().isoformat()}"
+    cached = db.kv_get(key)
+    lines = cached.split("\n") if cached else []
+    if not cached:
+        lines = _drive_numbers()
+        db.kv_set(key, "\n".join(lines))
+    lines = [x for x in lines if x]
+    try:
+        extra = load_yaml("biglife_numbers.yaml") or {}
+        for k, v in (extra.get("numbers") or {}).items():
+            if v not in (None, "", 0):
+                lines.append(f"- {k}: {v}")
+    except FileNotFoundError:
+        pass
+    return "\n".join(lines)
+
+
+def _drive_numbers() -> list[str]:
     lines = []
     try:
         from . import drive
@@ -244,14 +265,7 @@ def biglife_numbers() -> str:
                 lines.append(f"- Участников по отчётам (где указано): {people}")
     except Exception as exc:     # цифры — дополнение, без Drive ролик всё равно собирается
         log.info("Цифры BIG Life из Drive не собраны: %s", exc)
-    try:
-        extra = load_yaml("biglife_numbers.yaml") or {}
-        for k, v in (extra.get("numbers") or {}).items():
-            if v not in (None, "", 0):
-                lines.append(f"- {k}: {v}")
-    except FileNotFoundError:
-        pass
-    return "\n".join(lines)
+    return lines
 
 
 def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = None,
