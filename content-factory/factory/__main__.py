@@ -20,6 +20,9 @@ def main() -> None:
     sub.add_parser("ingest", help="Собрать RSS")
     sub.add_parser("score", help="Оценить новые материалы")
     sub.add_parser("daily", help="Подготовить и отправить посты на сегодня")
+    one = sub.add_parser("post", help="Собрать и отправить в Telegram один пост рубрики на сегодня")
+    one.add_argument("rubric")
+    one.add_argument("--slot", type=int, default=0)
     top = sub.add_parser("top", help="Показать лучшие темы после скоринга")
     top.add_argument("-n", type=int, default=15)
     r = sub.add_parser("render", help="Отрендерить карусель из JSON-пакета (без вызова Claude)")
@@ -40,6 +43,13 @@ def main() -> None:
     elif args.cmd == "daily":
         from .pipeline import run_daily
         print(run_daily())
+    elif args.cmd == "post":
+        from . import pipeline
+        item = pipeline.choose_item(args.rubric)
+        pipeline.mark_used(item)
+        pid = pipeline.create_post(args.rubric, pipeline.today(), args.slot, item)
+        pipeline.generate(pid)
+        print("post", pid)
     elif args.cmd == "top":
         from sqlalchemy import select
         with db.engine.begin() as c:
