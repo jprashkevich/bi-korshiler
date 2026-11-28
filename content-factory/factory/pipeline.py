@@ -200,8 +200,8 @@ def deliver(post_id: int) -> None:
         details += ("\n\n<b>Вычитка: остались замечания</b>\n"
                     + "\n".join(f"• {e(x)}" for x in post["package"]["edit_issues"][:5]))
     if post["package"].get("layout_issues"):
-        details += ("\n\n<b>Вёрстка: проверьте слайды</b>\n"
-                    + "\n".join(f"• слайд {e(x)}" for x in post["package"]["layout_issues"][:6])
+        details += ("\n\n<b>Вёрстка: проверьте " + ("ролик" if is_reel else "слайды") + "</b>\n"
+                    + "\n".join(f"• {'' if is_reel else 'слайд '}{e(x)}" for x in post["package"]["layout_issues"][:6])
                     + "\nМожно нажать «Переделать» с просьбой сократить текст.")
     if post["package"].get("no_city"):
         details += ("\n\n<b>Город не определён для ЖК:</b> " + e(", ".join(post["package"]["no_city"]))

@@ -107,7 +107,8 @@ def normalize(pkg: PostPackage) -> PostPackage:
 
 REEL_RULES = """
 ## Как устроен сценарий Reels «Цифра дня»
-- 5–6 сцен, общая озвучка 70–110 слов (25–40 секунд). Это голос живого человека из команды BIG Life:
+- 5–6 сцен, общая озвучка 60–85 слов: ролик должен уложиться в 25–40 секунд, длиннее досматривают хуже.
+  В каждой сцене одно-два коротких предложения, не больше 18 слов на сцену. Это голос живого человека из команды BIG Life:
   разговорно, тепло, короткими фразами, как будто рассказываешь соседу.
 - Сцена 1 — hook: интрига за первые 2 секунды (вопрос или неожиданное утверждение).
 - Одна сцена stat с главной цифрой из источника. Цифру не придумывать; если в источнике нет цифры,
@@ -120,6 +121,13 @@ REEL_RULES = """
 """
 
 
+MAX_REEL_WORDS = 90      # ~2,3 слова в секунду у русской озвучки → 40 секунд с паузой в конце
+
+
+def voice_words(pkg) -> int:
+    return sum(len(sc.voice.split()) for sc in pkg.scenes)
+
+
 def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = None,
                previous: dict | None = None):
     from .models import ReelPackage
@@ -128,6 +136,13 @@ def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = 
     user = user.replace("Формат: карусель", "Формат: Reels-ролик, а не карусель (количество слайдов игнорируй)", 1)
     pkg = llm.ask(ReelPackage, system=system_prompt() + REEL_RULES, user=user,
                   model=settings.writer_model, effort=settings.writer_effort)
+    words = voice_words(pkg)
+    if words > MAX_REEL_WORDS:   # озвучка дороже текста: сокращаем до синтеза, а не после
+        user += (f"\n\n## Сократи\nВ прошлой версии озвучка была {words} слов, это больше 40 секунд. "
+                 f"Сделай не больше {MAX_REEL_WORDS - 10} слов на весь ролик и не больше 6 сцен, смысл и факты сохрани.")
+        pkg = llm.ask(ReelPackage, system=system_prompt() + REEL_RULES, user=user,
+                      model=settings.writer_model, effort=settings.writer_effort)
+    pkg.scenes = pkg.scenes[:6]
     if pkg.scenes and pkg.scenes[0].type != "hook":
         pkg.scenes[0].type = "hook"
     pkg.hashtags = [h.lstrip("#").replace(" ", "") for h in pkg.hashtags][:8]

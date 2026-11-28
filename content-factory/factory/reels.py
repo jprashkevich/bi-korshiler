@@ -1,6 +1,7 @@
 """Сборка Reels: озвучка → таймлайн сцен и субтитров → кадры из HTML (Chromium) → MP4 (ffmpeg)."""
 from __future__ import annotations
 
+import json
 import logging
 import re
 import subprocess
@@ -64,13 +65,33 @@ def timeline(pkg: ReelPackage, speech: tts.Speech) -> tuple[list[dict], list[dic
     return tl, subs, total
 
 
+# Ритм фонов как у каруселей: края navy, выводы и цифры — цветные (два акцента по очереди),
+# цветная сцена никогда не идёт сразу за цветной, остальное — светлый фон.
+COLORED = {"stat", "insight"}
+
+
+def scene_backgrounds(scenes) -> list[str]:
+    out, prev_colored, flip = [], False, False
+    for i, sc in enumerate(scenes):
+        if sc.type in ("hook", "cta") or i == 0:
+            out.append("navy"); prev_colored = False
+        elif sc.type in COLORED and not prev_colored:
+            out.append("accent2" if flip else "accent"); flip = not flip; prev_colored = True
+        else:
+            out.append("light"); prev_colored = False
+    return out
+
+
 def _launch(pw):
     return pw.chromium.launch(**({"executable_path": settings.chromium_path} if settings.chromium_path else {}))
 
 
 def render_cover(pkg: ReelPackage, rubric_title: str, out: Path) -> Path:
+    from .render import illustrations
+    ills = illustrations()
+    image = next((ills[s.illustration_id] for s in pkg.scenes if ills.get(s.illustration_id)), "")
     html = _env.get_template("reels_cover.html.j2").render(
-        title=typograf(pkg.cover_title), accent=pkg.accent, rubric_title=rubric_title,
+        title=typograf(pkg.cover_title), accent=pkg.accent, rubric_title=rubric_title, image=image,
         assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
     page_path = out.with_suffix(".html")
     page_path.write_text(html, encoding="utf-8")
@@ -97,8 +118,9 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
         d = s.model_dump()
         d["title"], d["text"], d["eyebrow"] = typograf(d["title"]), typograf(d["text"]), d["eyebrow"]
         scenes.append(d)
-    from .render import illustrations, picture_uris
+    from .render import SECOND_ACCENT, illustrations, picture_uris
     html = _env.get_template("reels.html.j2").render(
+        bgs=scene_backgrounds(pkg.scenes), accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"),
         ills=illustrations(), pictures=picture_uris(pictures),
         people={p.name_en: p.model_dump() for p in pkg.people},
         scenes=scenes, accent=pkg.accent, rubric_title=rubric_title, timeline=tl, subtitles=subs,
@@ -121,6 +143,10 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
             p.goto(page_path.resolve().as_uri(), wait_until="networkidle")
             p.evaluate("document.fonts.ready")
             p.wait_for_function("document.body.dataset.fitted === '1'", timeout=15000)
+            issues = p.evaluate("window.layoutIssues || []")
+            if total > 42:
+                issues.append(f"ролик {total:.0f} с, дольше 40: можно попросить сократить озвучку")
+            (out_dir / "layout_issues.json").write_text(json.dumps(issues, ensure_ascii=False), encoding="utf-8")
             for i in range(frames):
                 p.evaluate(f"seek({i / FPS:.4f})")
                 proc.stdin.write(p.screenshot(type="jpeg", quality=92))

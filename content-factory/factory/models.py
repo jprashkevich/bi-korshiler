@@ -77,9 +77,9 @@ class Scene(BaseModel):
         "person — коллаж с фото исследователя или организации из people; "
         "insight — главный вывод; question — вопрос аудитории; cta — финальная сцена с призывом"))
     eyebrow: str = Field(description="Короткая надпись над текстом, 1–3 слова", max_length=30)
-    title: str = Field(description="Крупный текст на экране, до 45 символов. Не повторяет озвучку слово в слово", max_length=60)
-    text: str = Field(description="Вторая строка на экране, до 80 символов, или пусто", max_length=100)
-    voice: str = Field(description="Что говорит голос в этой сцене: 1–2 коротких разговорных предложения на русском", max_length=260)
+    title: str = Field(description="Крупный текст на экране, до 40 символов. Не повторяет озвучку слово в слово", max_length=60)
+    text: str = Field(description="Вторая строка на экране, до 70 символов, или пусто. В сценах с иллюстрацией или фото — пусто", max_length=100)
+    voice: str = Field(description="Что говорит голос в этой сцене: 1–2 коротких разговорных предложения на русском, до 18 слов", max_length=260)
     illustration_id: str = Field(description="id иллюстрации из каталога для hook, insight или cta, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
 

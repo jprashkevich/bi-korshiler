@@ -5,19 +5,23 @@
 @font-face{font-family:"TT Firs Neue";src:url("{{ assets }}/TT_Firs_Neue_Trial_Var_Roman.ttf") format("truetype-variations");font-weight:100 900}
 :root{--navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;--accent:var(--{{ accent }})}
 *{box-sizing:border-box}body{margin:0}
-#cover{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--navy);color:#fff;font-family:"Montserrat",sans-serif;
- padding:150px 90px 0;display:flex;flex-direction:column}
+/* Обложка по системе каруселей: текст сверху, картинка снизу. В сетке профиля обложка обрезается
+   до 1080×1440 по центру (240–1680 по высоте), поэтому всё важное — в этой зоне. */
+#cover{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--navy);color:#fff;font-family:"Montserrat",sans-serif}
 .glow{position:absolute;width:1100px;height:1100px;border-radius:50%;right:-420px;top:-380px;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 60%,transparent),transparent 62%)}
-.glow.b{left:-520px;right:auto;top:auto;bottom:-460px;background:radial-gradient(circle,rgba(166,229,236,.28),transparent 62%)}
-.top{position:relative;display:flex;justify-content:space-between;align-items:center}
-.logo{height:54px;filter:brightness(0) invert(1)}
-.rubric{font-size:24px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
-/* В сетке профиля обложка обрезается до 1080×1440 по центру — текст держим в этой зоне. */
-.body{position:relative;margin-top:300px}
-.pill{display:inline-block;font-size:26px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:12px 24px;border-radius:999px;background:var(--accent)}
-h1{font-family:"TT Firs Neue","Montserrat",sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.98;margin:34px 0 0;font-size:{{ 128 if title|length < 25 else 108 }}px}
+.zone{position:absolute;left:90px;right:90px;top:300px;bottom:300px;display:flex;flex-direction:column}
+.zone.mid{justify-content:center}
+.hd{display:flex;justify-content:space-between;align-items:center}
+.logo{height:50px;filter:brightness(0) invert(1)}
+.tag{font-size:28px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:14px 26px;border-radius:999px;background:var(--accent)}
+h1{font-family:"TT Firs Neue","Montserrat",sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.98;margin:56px 0 0;font-size:{{ 120 if title|length < 25 else 100 }}px}
+.media{flex:1 1 0;min-height:420px;margin-top:56px;border-radius:36px;overflow:hidden;background:#fff}
+.media img{width:100%;height:100%;object-fit:cover;display:block}
 </style></head><body>
-<div id="cover"><div class="glow"></div><div class="glow b"></div>
-  <div class="top"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt=""><span class="rubric">{{ rubric_title }}</span></div>
-  <div class="body"><h1>{{ title }}</h1></div>
+<div id="cover">{% if not image %}<div class="glow"></div>{% endif %}
+  <div class="zone{% if not image %} mid{% endif %}">
+    <div class="hd"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt=""><span class="tag">{{ rubric_title }}</span></div>
+    <h1>{{ title }}</h1>
+    {% if image %}<div class="media"><img src="{{ image }}" alt=""></div>{% endif %}
+  </div>
 </div></body></html>

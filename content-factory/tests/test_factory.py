@@ -429,3 +429,13 @@ def test_instagram_queue_waits_for_slot(tmp_path, monkeypatch):
     rid, _ = _ig_post(tmp_path, "reels", 2)
     bot.after_approve(db.get_post(rid), 1, 5, "Одобрено.")
     assert instagram.state(rid) == {} and sent[-1][1][0][0]["callback_data"] == f"q:{rid}"
+
+
+def test_reel_backgrounds_and_word_limit():
+    from factory import reels, writer
+    from factory.models import ReelPackage
+    pkg = ReelPackage.model_validate(json.loads((HERE / "fixtures/sample_reel.json").read_text()))
+    bgs = reels.scene_backgrounds(pkg.scenes)
+    assert bgs[0] == "navy" and bgs[-1] == "navy"
+    assert all(not (a.startswith("accent") and b.startswith("accent")) for a, b in zip(bgs, bgs[1:]))
+    assert writer.voice_words(pkg) <= writer.MAX_REEL_WORDS
