@@ -40,6 +40,7 @@
 .tagname{position:absolute;left:0;bottom:-58px;background:var(--accent);color:#fff;font-weight:800;font-size:28px;padding:8px 18px;border-radius:12px;white-space:nowrap}
 .tagrole{position:absolute;left:0;bottom:-104px;background:#fff;color:var(--navy);font-weight:700;font-size:22px;padding:7px 16px;border-radius:12px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.08)}
 .deco{position:absolute;opacity:0}
+.pen path{stroke-dasharray:100;stroke-dashoffset:100}
 /* дата-арт */
 .dataart{background:var(--cream)}
 .dataart .scene{position:absolute;left:40px;right:40px;top:250px;height:1060px;color:var(--navy)}
@@ -77,14 +78,16 @@
       </svg>
       {% for c in r.cards %}
       {% if c.kind == 'note' %}
-      <div class="card note" data-at="{{ c.at }}" style="left:{{ c.x }}px;top:{{ c.y }}px;width:{{ c.w }}px;--rot:{{ c.rot }}deg">{% for line in c.lines %}{% if loop.last and c.lines|length > 2 %}<span class="hand">{{ line }}</span>{% else %}{{ line }}<br>{% endif %}{% endfor %}</div>
+      <div class="card note" data-at="{{ c.at }}" style="left:{{ c.x }}px;top:{{ c.y }}px;width:{{ c.w }}px;--rot:{{ c.rot }}deg">{% for line in c.lines %}{% if loop.last and c.lines|length > 2 %}<span class="hand">{{ line }}</span>{% else %}{{ line }}<br>{% endif %}{% endfor %}
+        {% if c.lines|length > 2 %}<svg class="pen" data-pen="{{ c.at + 0.9 }}" viewBox="0 0 400 40" style="position:absolute;left:40px;bottom:18px;width:{{ c.w - 120 }}px;height:30px"><path d="M4 26 C 80 14, 160 34, 240 20 S 360 12, 396 22" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" pathLength="100"/></svg>{% endif %}</div>
       {% elif c.kind == 'photo' %}
       <div class="card{% if c.person %} person{% endif %}" data-at="{{ c.at }}" style="left:{{ c.x }}px;top:{{ c.y }}px;width:{{ c.w }}px;height:{{ c.h }}px;--rot:{{ c.rot }}deg"><img src="{{ c.uri }}" alt=""><div class="tape"></div>
         {% if c.name %}<span class="tagname">{{ c.name }}</span>{% endif %}{% if c.role %}<span class="tagrole">{{ c.role }}</span>{% endif %}</div>
       {% elif c.kind == 'data' %}
       <div class="card datacard scene" data-at="{{ c.at }}" data-viz='{{ c.viz | tojson }}' style="left:{{ c.x }}px;top:{{ c.y }}px;width:{{ c.w }}px;height:{{ c.h }}px;--rot:{{ c.rot }}deg;color:var(--navy)"><canvas></canvas>{% if c.viz.unit %}<span class="legend">{{ c.viz.unit }}</span>{% endif %}</div>
       {% elif c.kind == 'number' %}
-      <div class="bignum" data-at="{{ c.at }}" data-count="{{ c.text }}" style="left:{{ c.x }}px;top:{{ c.y }}px;font-size:{{ c.size }}px"><span class="v">{{ c.text }}</span>{% if c.caption %}<small>{{ c.caption }}</small>{% endif %}</div>
+      <div class="bignum" data-at="{{ c.at }}" data-count="{{ c.text }}" style="left:{{ c.x }}px;top:{{ c.y }}px;font-size:{{ c.size }}px"><span class="v">{{ c.text }}</span>{% if c.caption %}<small>{{ c.caption }}</small>{% endif %}
+        <svg class="pen" data-pen="{{ c.at + 1.2 }}" viewBox="0 0 400 200" style="position:absolute;left:-40px;top:-30px;width:{{ (c.size * 2.6) | int }}px;height:{{ (c.size * 1.35) | int }}px;overflow:visible"><path d="M210 12 C 90 4, 10 50, 18 110 C 28 180, 300 196, 372 130 C 420 80, 340 10, 190 18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" pathLength="100"/></svg></div>
       {% endif %}
       {% endfor %}
     </div>
@@ -169,6 +172,10 @@ window.seek = function (t) {
       if (v.cur) window.drawViz(el.querySelector('canvas'), v.cur, v.prev, v.lt);
       el.style.transform = `scale(${1.03 - 0.03 * ease(lt / 1.5) + 0.03 * punch})`;
     }
+  });
+  // рукописные пометки маркером: прорисовываются линией в свой момент
+  document.querySelectorAll('[data-pen]').forEach(sv => {
+    sv.firstElementChild.style.strokeDashoffset = 100 * (1 - ease((t - parseFloat(sv.dataset.pen)) / 0.6));
   });
   const hk = document.getElementById('hook');
   hk.style.opacity = Math.min(ease(t / 0.25), 1 - ease((t - HOOK_END) / 0.35));

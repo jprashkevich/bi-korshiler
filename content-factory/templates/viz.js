@@ -346,7 +346,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const pal = palette(canvas.closest('.scene, section') || canvas);
-    const pad = 70;  // поле под легенду и выноски
+    const pad = Math.min(70, H * 0.06);  // поле под легенду и выноски (в карточке — меньше)
     ctx.save(); ctx.translate(0, pad);
     const innerH = H - pad * 2;
     let L = null;

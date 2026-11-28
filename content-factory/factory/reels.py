@@ -137,6 +137,37 @@ def silent_subs(pkg: ReelPackage, tl: list[dict]) -> list[dict]:
     return subs
 
 
+# ---------- звуковые акценты ----------
+# Синтез в ffmpeg, а не генерация: бесплатно, мгновенно и одинаково в каждом ролике (узнаваемый звук бренда).
+SFX = {
+    "paper": "anoisesrc=c=pink:r=44100:a=0.5:d=0.28,highpass=f=1800,afade=t=in:d=0.03,afade=t=out:st=0.08:d=0.2,volume=0.35",
+    "pop": "sine=f=820:r=44100:d=0.12,afade=t=out:st=0.01:d=0.11,volume=0.5",
+    "whoosh": "anoisesrc=c=brown:r=44100:a=0.6:d=0.6,highpass=f=300,lowpass=f=3500,afade=t=in:d=0.3,afade=t=out:st=0.3:d=0.3,volume=0.6",
+}
+
+
+def sfx_files(out_dir: Path) -> dict[str, Path]:
+    out = {}
+    for name, graph in SFX.items():
+        path = out_dir / f"sfx-{name}.wav"
+        if not path.exists():
+            subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "lavfi", "-i", graph, str(path)],
+                           check=True)
+        out[name] = path
+    return out
+
+
+def sfx_events(runs: list[dict]) -> list[tuple[str, float]]:
+    """Когда звучат акценты: карточка на столе — шелест, цифра — щелчок, смена кадра — «вжух»."""
+    ev = []
+    for k, r in enumerate(runs):
+        if k:
+            ev.append(("whoosh", max(r["start"] - 0.25, 0)))
+        for c in r.get("cards", []):
+            ev.append(("pop" if c["kind"] == "number" else "paper", c["at"]))
+    return ev[:40]
+
+
 # ---------- формат 4: фото → стол-коллаж → дата-арт ----------
 
 ACCENT_HEX = {"sky": "#009fe3", "green": "#88c947", "orange": "#ff954c", "periwinkle": "#556bb8"}
@@ -375,14 +406,30 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
         from .music import compose as music_fn
     music = music_fn(getattr(pkg, "music_mood", "warm"), total, out_dir / "music.mp3")
     audio_in = ["-i", str(voice_path)]
+    graph, mix = ["[1:a]apad[v]"], ["[v]"]
     if music:
         # музыка тихо под голосом, плавно появляется и уходит; голос не трогаем
         audio_in += ["-i", str(music)]
-        audio_filter = ["-filter_complex",
-                        f"[1:a]apad[v];[2:a]volume={0.55 if silent else 0.13},afade=t=in:d=0.6,afade=t=out:st={max(total - 1.5, 0):.2f}:d=1.5[m];"
-                        "[v][m]amix=inputs=2:duration=first:normalize=0[a]", "-map", "0:v", "-map", "[a]"]
-    else:
-        audio_filter = ["-af", "apad"]
+        graph.append(f"[2:a]volume={0.55 if silent else 0.13},afade=t=in:d=0.6,"
+                     f"afade=t=out:st={max(total - 1.5, 0):.2f}:d=1.5[m]")
+        mix.append("[m]")
+    # звуковые акценты: каждый звук — один вход, размножаем через asplit и сдвигаем adelay на свой момент
+    events = sfx_events(runs)
+    sfx = sfx_files(out_dir)
+    next_in = 2 + (1 if music else 0)
+    for name in sorted({e[0] for e in events}):
+        times = [at for nm, at in events if nm == name]
+        audio_in += ["-i", str(sfx[name])]
+        labels = [f"{name}{j}" for j in range(len(times))]
+        graph.append(f"[{next_in}:a]asplit={len(times)}" + "".join(f"[{x}]" for x in labels) if len(times) > 1
+                     else f"[{next_in}:a]anull[{labels[0]}]")
+        for x, at in zip(labels, times):
+            ms = int(at * 1000)
+            graph.append(f"[{x}]adelay={ms}|{ms}[d{x}]")
+            mix.append(f"[d{x}]")
+        next_in += 1
+    audio_filter = ["-filter_complex", ";".join(graph) + ";" + "".join(mix)
+                    + f"amix=inputs={len(mix)}:duration=first:normalize=0[a]", "-map", "0:v", "-map", "[a]"]
     cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error",
            "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg", "-i", "-",
            *audio_in, *audio_filter, "-t", f"{total:.2f}",

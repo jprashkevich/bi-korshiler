@@ -71,8 +71,11 @@ def choose_item(rubric_key: str, exclude_ids: set[int] = frozenset()) -> dict | 
     # колонка психолога без данных (как в ролике #19) даёт лишь «условную схему» и пустой ролик
     if rubric_key == "reel":
         # сначала научные журналы с цифрой: новость о вирусном видео с одной цифрой (ролик #20) данных не даёт
-        item = (score.pick("number", need_number=True, only_kind="journal")
-                or score.pick("science", only_kind="journal")
+        # подача tillo держится на истории: сначала материалы с героем и цифрой (популярная наука с открытым
+        # текстом), потом журналы с цифрой; голая аннотация без людей и деталей — последний вариант
+        item = (score.pick("number", need_number=True, need_story=True)
+                or score.pick("science", need_story=True)
+                or score.pick("number", need_number=True, only_kind="journal")
                 or score.pick("number", need_number=True) or score.pick("science"))
     else:
         item = score.pick(rubric_key, prefer_kind=r.get("prefer_kind"), need_number=rubric_key == "number")

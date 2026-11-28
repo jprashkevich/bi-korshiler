@@ -59,7 +59,7 @@ def run(limit: int = 200) -> int:
 
 
 def pick(rubric: str, prefer_kind: str | None = None, need_number: bool = False,
-         only_kind: str | None = None) -> dict | None:
+         only_kind: str | None = None, need_story: bool = False) -> dict | None:
     """Лучший неиспользованный материал для рубрики."""
     since = db.now() - timedelta(days=settings.freshness_days)
     with db.engine.begin() as c:
@@ -77,6 +77,7 @@ def pick(rubric: str, prefer_kind: str | None = None, need_number: bool = False,
 
     candidates = [dict(r) for r in rows
                   if (not need_number or (r["score_data"] or {}).get("has_number"))
-                  and (not only_kind or r["kind"] == only_kind)]
+                  and (not only_kind or r["kind"] == only_kind)
+                  and (not need_story or (r["score_data"] or {}).get("has_story"))]
     candidates = [r for r in candidates if (r["score_data"] or {}).get("relevance", 0) >= 5]
     return max(candidates, key=rank) if candidates else None

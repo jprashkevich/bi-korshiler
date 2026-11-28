@@ -22,6 +22,7 @@ class ItemScore(BaseModel):
     virality: int = Field(ge=0, le=10, description="Удивительность, контринтуитивность, эмоция, желание переслать соседу")
     usefulness: int = Field(ge=0, le=10, description="Можно ли превратить в практический шаг для жителей двора")
     has_number: bool = Field(description="В заголовке или аннотации есть конкретная цифра из исследования")
+    has_story: bool = Field(default=False, description="Есть человеческая история: конкретный герой (учёный, участник, человек), эксперимент с людьми или узнаваемая жизненная ситуация, а не сухой вывод")
     best_rubric: Rubric
     hook: str = Field(description="Идея хука для обложки на русском, до 90 символов")
 

@@ -133,3 +133,31 @@ feeds:
   kind: journal
   enabled: false
   note: 403 от защиты сайта при проверке 2026-11-25
+# Популярная наука с героями, цитатами и открытым полным текстом — материал для Reels в подаче tillo (28.11)
+- name: Greater Good Magazine (Berkeley)
+  url: https://greatergood.berkeley.edu/site/rss/articles
+  kind: popular
+- name: 'ScienceDaily: Social Psychology'
+  url: https://www.sciencedaily.com/rss/mind_brain/social_psychology.xml
+  kind: popular
+- name: 'ScienceDaily: Healthy Aging'
+  url: https://www.sciencedaily.com/rss/health_medicine/healthy_aging.xml
+  kind: popular
+- name: 'ScienceDaily: Relationships'
+  url: https://www.sciencedaily.com/rss/mind_brain/relationships.xml
+  kind: popular
+- name: 'The Conversation: Health'
+  url: https://theconversation.com/global/health/articles.atom
+  kind: popular
+- name: 'Neuroscience News: Psychology'
+  url: https://neurosciencenews.com/neuroscience-topics/psychology/feed/
+  kind: popular
+- name: N+1
+  url: https://nplus1.ru/rss
+  kind: popular
+- name: Naked Science
+  url: https://naked-science.ru/feed
+  kind: popular
+- name: Индикатор
+  url: https://indicator.ru/exports/rss
+  kind: popular
