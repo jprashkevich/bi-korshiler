@@ -493,3 +493,18 @@ def test_weekly_report_scores_and_learnings(tmp_path, monkeypatch):
     text = insights.report(date(2030, 1, 7))       # понедельник → неделя 31.12–06.01
     assert "найдено в Instagram: 4" in text and text.index("Тема 0") < text.index("Тема 2")
     assert "Тема 0" in db.kv_get("learnings") and insights.score({"reach": 100, "saved": 1}) == 3.0
+
+
+def test_lead_slide_and_editorial_policy_in_prompt(monkeypatch):
+    from factory import render, writer, editor
+    from factory.models import PostPackage
+    pkg = json.loads((HERE / "fixtures/sample_package.json").read_text())
+    pkg["slides"].insert(1, dict(pkg["slides"][1], type="lead", text="Лид " * 60, illustration_id="", photo_ref=""))
+    pkg["alt_headlines"] = ["Вариант 1", "Вариант 2"]
+    p = PostPackage.model_validate(pkg)
+    html = render.render_html(p, "Наука о соседстве")
+    assert 'class="lead"' in html and render.backgrounds(p.slides)[1] == "light"
+    monkeypatch.setattr(writer, "lessons_block", lambda: "")
+    prompt = writer.system_prompt()
+    assert "Лид" in prompt and "до 280 символов" in prompt and "лучше короче" not in prompt
+    assert any("общее определение" in v for v in editor.violations(p.model_copy(update={"caption_ru": "Уникальный двор"})))

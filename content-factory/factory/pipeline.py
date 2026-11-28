@@ -183,6 +183,9 @@ def deliver(post_id: int) -> None:
             + (f"Источник: <a href=\"{e(item['url'])}\">{e(item['feed'])}</a>\n" if item else ""))
     caption = (f"{pkg.caption_ru}\n\nИсточник: {pkg.source_line}\n\n"
                + " ".join(f"#{h}" for h in pkg.hashtags))
+    alts = post["package"].get("alt_headlines") or []
+    if alts:
+        head += "Другие варианты заголовка: " + " / ".join(f"«{e(a)}»" for a in alts) + "\n"
     telegram.send_message(chat, head + "\n<b>Подпись (скопировать):</b>\n\n" + e(caption))
 
     thread_text = "\n\n".join(f"{i}/ {e(t)}" for i, t in enumerate(pkg.threads, 1))

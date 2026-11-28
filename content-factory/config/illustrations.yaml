@@ -12,4 +12,5 @@ illustrations:
   - {id: ill-garden,       file: ill-garden.jpg, season: warm,       desc: "Соседи вместе сажают цветы и зелень в грядках во дворе, лейки, дети помогают"}
   - {id: ill-helping,      file: ill-helping.jpg, season: warm,      desc: "Молодой сосед помогает пожилой женщине донести сумки до подъезда, маленькие добрые дела"}
   - {id: ill-common-room,  file: ill-common-room.jpg, season: any,  desc: "Общая комната дома: настольный теннис, шахматы и настольные игры соседей"}
+  - {id: ill-newyear,      file: ill-newyear.jpg, season: winter, desc: "Соседи наряжают новогоднюю ёлку в заснеженном дворе вечером: взрослые на стремянках, дети вешают шары, гирлянды, чай из термоса"}
   # TODO (не загружена из Canva): - {id: ill-kids-workshop, file: ill-kids-workshop.jpg, season: any, desc: "Детский творческий мастер-класс в общей комнате: рисуют и лепят с педагогом и родителями"}

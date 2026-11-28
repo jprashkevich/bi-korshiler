@@ -39,6 +39,8 @@ h2{font-size:var(--fs-h2);line-height:1.04}
 .statnum{font-family:var(--display);font-weight:800;font-size:var(--fs-stat);line-height:.9;letter-spacing:-.03em}
 p{font-size:var(--fs-body);line-height:1.45;margin:28px 0 0;max-width:30ch}
 .bg-light p{color:var(--ink)}
+p.lead{font-size:40px;line-height:1.42;font-weight:500;max-width:34ch}
+.ct.mid p{max-width:36ch}
 .bg-accent p,.bg-accent2 p,.bg-navy p{color:rgba(255,255,255,.92)}
 
 /* подвал: логотип + прогресс карусели */
@@ -124,6 +126,17 @@ p{font-size:var(--fs-body);line-height:1.45;margin:28px 0 0;max-width:30ch}
     <div class="big">{{ s.title }}</div>
     {% if s.text %}<p>{{ s.text }}</p>{% endif %}
     <span class="btn">{{ s.eyebrow or 'Активности двора в BIG App' }}</span>
+  </div>
+  {{ footer(n) }}
+</section>
+
+{% elif s.type == 'lead' %}{# лид: расшифровка заголовка, текст крупнее обычного — его читают целиком #}
+<section class="f bg-light" id="s{{ n }}">
+  <div class="hd">{{ tagline(s, n) }}</div>
+  <div class="ct mid">
+    <div class="bar"></div>
+    {% if s.title %}<h2>{{ s.title }}</h2>{% endif %}
+    {% if s.text %}<p class="lead">{{ s.text }}</p>{% endif %}
   </div>
   {{ footer(n) }}
 </section>

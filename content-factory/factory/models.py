@@ -30,21 +30,21 @@ class ScoreBatch(BaseModel):
     scores: list[ItemScore]
 
 
-SlideType = Literal["cover", "insight", "person", "event", "statement", "stat", "list", "steps", "question", "cta"]
+SlideType = Literal["cover", "lead", "insight", "person", "event", "statement", "stat", "list", "steps", "question", "cta"]
 
 
 class Slide(BaseModel):
     type: SlideType = Field(description=(
-        "cover — обложка с хуком (первый слайд); insight — заголовок, текст и фото или иллюстрация; "
+        "cover — обложка с хуком (первый слайд); lead — второй слайд: лид из 2–3 предложений, расшифровка заголовка; insight — заголовок, текст и фото или иллюстрация; "
         "person — коллаж с фото исследователя или организации из people (заголовок — что он выяснил); "
         "event — мероприятие во дворе с реальным фото из отчёта (только для рубрики «Жизнь дворов»); "
         "statement — крупная фраза-вывод на цветном фоне; stat — одна большая цифра с пояснением; "
         "list — заголовок и 2–4 карточки (например фразы или факты); steps — заголовок и 3–4 шага; "
         "question — вопрос аудитории; cta — финальный слайд с призывом (последний слайд)"))
     eyebrow: str = Field(description="Короткая надпись над заголовком, 1–4 слова, без точки", max_length=40)
-    title: str = Field(description="Заголовок слайда до 50 символов (обложка до 70). Для stat — сама цифра (например «52 000» или «в 2 раза»)", max_length=110)
-    text: str = Field(description="Текст слайда до 160 символов: одна-две короткие фразы; пусто, если не нужен. Детали — в подпись к посту", max_length=300)
-    items: list[str] = Field(description="Для list и steps: 3–4 пункта до 50 символов; иначе пустой список")
+    title: str = Field(description="Заголовок слайда до 60 символов (обложка до 70). Для stat — сама цифра (например «52 000» или «в 2 раза»)", max_length=110)
+    text: str = Field(description="Текст слайда: на слайде без картинки до 280 символов (2–3 коротких предложения, мысль развёрнута до конца), на слайде с фото или иллюстрацией до 160; пусто, если не нужен", max_length=420)
+    items: list[str] = Field(description="Для list и steps: 3–4 пункта до 70 символов; иначе пустой список")
     item_labels: list[str] = Field(description="Для list: короткие подписи к пунктам (например «У подъезда»); иначе пустой список")
     illustration_id: str = Field(description="id иллюстрации из каталога для cover или insight, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
@@ -57,7 +57,8 @@ class PostPackage(BaseModel):
     photo_id: str = Field(description="id фото из каталога для слайда insight, или пустая строка, если фото или иллюстрация не подходят")
     people: list[PersonRef] = Field(description="Исследователи и организации, названные в источнике (0–3). Только реально упомянутые")
     slides: list[Slide]
-    caption_ru: str = Field(description="Подпись к посту на русском: хук в первой строке, 3–5 коротких абзацев, призыв сохранить/отправить соседу, без эмодзи и без хэштегов", max_length=2000)
+    caption_ru: str = Field(description="Подпись к посту на русском — полная версия статьи на 900–1800 символов: лид (первая строка — хук), анализ с деталями из источника, вывод, маленький шаг, призыв сохранить/отправить соседу. Короткие абзацы, без эмодзи и без хэштегов", max_length=2200)
+    alt_headlines: list[str] = Field(default_factory=list, description="Два запасных варианта заголовка обложки, другие по подаче (до 70 символов)")
     hashtags: list[str] = Field(description="5–8 хэштегов без символа #, на русском или латиницей")
     summary_kz: str = Field(description="Краткое содержание на казахском, 2–3 предложения", max_length=500)
     summary_uz: str = Field(description="Краткое содержание на узбекском (латиница), 2–3 предложения", max_length=500)

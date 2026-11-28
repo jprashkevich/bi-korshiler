@@ -34,6 +34,9 @@ BANNED = [
     (r"\bпогрузимся\b", "«погрузимся»"),
     (r"\bоткрыва(ет|ют) новые (горизонты|перспективы)\b", "«новые горизонты»"),
     (r"\bв связи с этим\b", "«в связи с этим»"),
+    # общие определения из редакционной политики: ничего не говорят читателю, значит, можно конкретнее
+    (r"\b(уникальн|культов|знаменит|креативн|элитн|изысканн|невероятн|потрясающ)\w*", "общее определение"),
+    (r"\b(хочется надеяться|как известно|пожалуй)\b", "размытая оговорка"),
 ]
 
 
@@ -105,7 +108,8 @@ def edit(pkg):
     import json
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
     rules = (CONFIG_DIR / "humanizer.md").read_text(encoding="utf-8")
-    system = f"{rules}\n\n## Голос бренда (tone of voice)\n{brand}"
+    editorial = (CONFIG_DIR / "editorial.md").read_text(encoding="utf-8")
+    system = f"{rules}\n\n## Голос бренда (tone of voice)\n{brand}\n\n{editorial}"
     current = pkg
     for attempt in range(2):
         issues = violations(current)
