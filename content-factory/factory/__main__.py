@@ -26,6 +26,8 @@ def main() -> None:
     redo = sub.add_parser("redo", help="Пересобрать пост по id с комментарием и отправить в Telegram")
     redo.add_argument("post_id", type=int)
     redo.add_argument("comment", nargs="*")
+    rv = sub.add_parser("revisual", help="Новый визуальный ряд для готового текста Reels и отправка в Telegram")
+    rv.add_argument("post_id", type=int)
     show = sub.add_parser("show", help="Напечатать пакет поста (тексты) в лог")
     show.add_argument("post_id", type=int)
     top = sub.add_parser("top", help="Показать лучшие темы после скоринга")
@@ -62,6 +64,10 @@ def main() -> None:
         db.update_post(args.post_id, feedback=feedback, status="generating")
         pipeline.generate(args.post_id, feedback=feedback)
         print("redone", args.post_id)
+    elif args.cmd == "revisual":
+        from . import pipeline
+        pipeline.revisualize(args.post_id)
+        print("revisual", args.post_id)
     elif args.cmd == "show":
         post = db.get_post(args.post_id)
         pkg = post["package"] or {}

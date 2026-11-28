@@ -33,7 +33,7 @@ class ScoreBatch(BaseModel):
 SlideType = Literal["cover", "lead", "insight", "person", "event", "statement", "stat", "list", "steps", "question", "cta"]
 
 
-VizKind = Literal["none", "dots", "people", "network", "rings", "donut", "peaks", "house"]
+VizKind = Literal["none", "dots", "people", "network", "dandelion", "rings", "donut", "peaks", "house"]
 VizColor = Literal["accent", "accent2", "white", "muted"]
 
 
@@ -50,6 +50,7 @@ class VizSpec(BaseModel):
         "none — без инфографики; dots — облако точек, 1 точка = группа людей, цветом выделены доли; "
         "people — 50 пиктограмм людей, окрашенных по долям, крупные проценты внизу (для «каждый пятый»); "
         "network — люди и связи между ними, value первой группы = доля одиноких (без линий); "
+        "dandelion — «одуванчик»: от центра (двор, дом) разлетаются точки-люди с линиями-связями, доля без связей выделена; "
         "donut — кольцевая диаграмма: целое на 2–4 части, total — число в центре; "
         "peaks — пики-треугольники с плашками процентов для сравнения 2–5 значений (до/после, группы); "
         "rings — концентрические кольца-шкалы для сравнения 1–3 процентов; "
@@ -122,7 +123,13 @@ class Scene(BaseModel):
     voice: str = Field(description="Что говорит голос в этой сцене: одна короткая живая фраза, 4–12 слов, как в разговоре", max_length=200)
     illustration_id: str = Field(description="id иллюстрации из каталога для hook, insight или cta, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
-    viz: VizSpec = Field(default_factory=VizSpec, description="Инфографика сцены (см. правила). В сцене с viz illustration_id пустой")
+    shot: Literal["photo", "collage", "dataart"] = Field(default="collage", description=(
+        "Кадр: photo — реальное фото во весь кадр с графикой поверх (узлы и связи, выноски, окна); "
+        "collage — стол-коллаж: заметка с фактами, фото на скотче, карточка с данными, цифра, камера переходит "
+        "между карточками; dataart — дата-арт на весь кадр (одуванчик, облако, кольца, пики, дом)"))
+    photo_id: str = Field(default="", description="id реального фото из каталога фото для Reels (для photo — фон кадра, для collage — карточка) или пусто")
+    note: list[str] = Field(default_factory=list, description="Для collage: 2–4 коротких факта на бумажную заметку («Чикаго», «3 000 жителей», «20 лет опросов»), только из источника")
+    viz: VizSpec = Field(default_factory=VizSpec, description="Данные сцены: для photo — графика поверх фото (network, house), для collage — карточка с данными, для dataart — фигура на весь кадр")
 
 
 class ReelPackage(BaseModel):

@@ -155,6 +155,22 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
     deliver(post_id)
 
 
+def revisualize(post_id: int) -> None:
+    """Тот же текст и голос, новый визуальный ряд (формат 4) и повторная отправка в Telegram."""
+    post = db.get_post(post_id)
+    rubric = writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]
+    pkg = ReelPackage.model_validate(post["package"])
+    pkg = writer.plan_visuals(pkg, db.get_item(post["item_id"]))
+    pictures = find_pictures(pkg, pkg.scenes)
+    name = f"{post['slot_date']}-post{post_id}"
+    files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
+    data = {**post["package"], **pkg.model_dump(), "format": "reels", "pictures": pictures}
+    li = Path(files[0]).parent / "layout_issues.json"
+    data["layout_issues"] = json.loads(li.read_text(encoding="utf-8")) if li.exists() else []
+    db.update_post(post_id, package=data, files=[str(f) for f in files], status="generated")
+    deliver(post_id)
+
+
 def proofread(pkg):
     """Вычитка по тону бренда и правилам humanizer-ru (можно выключить EDITOR_ENABLED=0)."""
     if not settings.editor_enabled:

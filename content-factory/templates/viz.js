@@ -292,6 +292,31 @@
     return { pos: [] };
   }
 
+  // ---------- одуванчик: от центра разлетаются люди-семена, у большинства есть нить-связь ----------
+  function drawDandelion(ctx, spec, prev, W, H, pal, lt) {
+    const r = rng(hash('dand' + JSON.stringify(spec.groups || [])));
+    const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.46, n = 220;
+    const share = spec.groups && spec.groups[0] ? spec.groups[0].value / 100 : 0.2;
+    const lone = new Set(); while (lone.size < Math.round(share * n)) lone.add(Math.floor(r() * n));
+    const pos = [];
+    for (let i = 0; i < n; i++) {
+      const a = r() * Math.PI * 2, d = R * (0.18 + 0.82 * Math.pow(r(), 0.7)), s = 4 + r() * 12;
+      const fly = ease((lt - 0.2 - i * 0.004) / 0.9);
+      if (fly <= 0) continue;
+      const x = cx + Math.cos(a) * d * fly, y = cy + Math.sin(a) * d * fly, isL = lone.has(i);
+      if (!isL) { ctx.globalAlpha = 0.28; ctx.strokeStyle = pal.fg; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke(); }
+      const hl = spec.mode === 'highlight' ? (isL ? 1 : 0.25) : 1;
+      ctx.globalAlpha = (isL ? 0.95 : 0.6) * hl;
+      ctx.fillStyle = isL ? pal.accent : (i % 2 ? pal.accent2 : pal.fg);
+      ctx.beginPath(); ctx.arc(x, y, s * (isL && spec.mode === 'highlight' ? 1.3 : 1), 0, Math.PI * 2); ctx.fill();
+      if (isL) pos.push([x, y]);
+    }
+    ctx.globalAlpha = 1; ctx.fillStyle = pal.fg;
+    ctx.beginPath(); ctx.arc(cx, cy, 44 * ease(lt / 0.4), 0, Math.PI * 2); ctx.fill();
+    return { pos };
+  }
+
   function fmtPct(v) { const r = Math.round(v); return (Math.abs(v - r) < 0.05 ? r : v.toFixed(1).replace('.', ',')) + '%'; }
 
   function chrome(ctx, spec, W, H, pal, lt, L) {
@@ -332,6 +357,7 @@
     else if (spec.kind === 'people') L = drawPeople(ctx, spec, prev, W, innerH, pal, lt);
     else if (spec.kind === 'donut') L = drawDonut(ctx, spec, prev, W, innerH, pal, lt);
     else if (spec.kind === 'peaks') L = drawPeaks(ctx, spec, prev, W, innerH, pal, lt);
+    else if (spec.kind === 'dandelion') L = drawDandelion(ctx, spec, prev, W, innerH, pal, lt);
     ctx.restore();
     ctx.save(); ctx.translate(0, pad);
     if (L && L.pos) chrome(ctx, spec, W, innerH, pal, lt, L);

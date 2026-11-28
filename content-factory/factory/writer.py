@@ -185,17 +185,25 @@ Reels публикуются как пробные: сначала их видя
   к зрителю обращаешься редко и только по делу.
 - Эксперт с именем и ролью — сцена person: name_ru и role_ru, как подпись в кадре «Имя, роль».
 
-### Экран (формат: одна метафора на весь ролик)
-- Весь ролик идёт на фоне одной визуальной метафоры (viz), она развивается вместе с рассказом и не
-  прерывается. В первой сцене viz обязателен: метафора строится под хуком. Дальше viz указывай только
-  в сценах, где фигура меняется (новый mode, новая доля, новая форма); в остальных kind = none —
-  метафора продолжает жить с прошлым состоянием. Меняй kind редко (максимум 2 формы на ролик).
-- Главный текст на экране — субтитры фраз озвучки в плашках. В каждой сцене highlight — одно ключевое слово
-  из voice (будет набрано жирно), самое смысловое: цифра, имя, неожиданное слово.
-- title показывается крупно только у первой сцены (хук, до 8 слов) и у сцены stat (сама цифра). В остальных
-  сценах title — служебная пометка для сценария, на экран не выводится. text оставляй пустым.
-- Иллюстрация из каталога или фото исследователя (person) ложится карточкой поверх метафоры в своей сцене:
-  1–2 карточки на ролик, не больше.
+### Экран: фото → стол-коллаж → дата-арт (формат согласован с владельцем)
+Ролик собирается из кадров трёх типов (поле shot). Соседние сцены с одним shot идут одним кадром: внутри него
+двигается камера и добавляются детали, поэтому метафора не рвётся. Обычный сюжет: 1–2 сцены photo (хук) →
+3–5 сцен collage (история и данные) → 1–3 сцены dataart (развязка и вывод). Порядок можно менять под историю,
+но тип кадра меняй не чаще 3–4 раз за ролик.
+- photo — реальное фото из каталога «Фото для Reels» (photo_id) во весь кадр с медленной панорамой. Поверх
+  можно viz: network (узлы и связи между людьми на фото) или house (окна по доле). Хорош для хука.
+- collage — стол с карточками, камера переезжает к новой. Сцена кладёт на стол: note — бумажную заметку
+  с 2–4 фактами из источника (кто, где, сколько людей, сколько лет; последняя строка может быть вопросом,
+  она будет «от руки»), и/или photo_id (фото на скотче), illustration_id или person (фото учёного с подписью),
+  и/или viz (карточка с данными: people, dots, donut, rings, peaks), а сцена stat — крупную цифру (title)
+  с подписью (text до 60 символов). Одна-две вещи на сцену, сцена без вещей просто продолжает кадр.
+- dataart — фигура на весь кадр: dandelion (одуванчик связей от двора), network, dots, rings, peaks, house.
+  Соседние сцены dataart перестраивают фигуру (build → highlight → split). Хорош для развязки и финала.
+- Метафора выбирается под тему, а не всегда «точка = человек»: связи — dandelion/network, доли — people/donut,
+  сравнение — peaks/rings, дом и подъезд — house, время — peaks.
+- Главный текст на экране — субтитры фраз озвучки в плашках; highlight — одно ключевое слово из voice сцены.
+- title крупно показывается только у первой сцены (хук, до 8 слов) и у stat (сама цифра). text — только у stat.
+- Фото людей в кадре только из каталога «Фото для Reels»: там нет крупных лиц и детей крупным планом.
 
 ### Запрещённые дежурные фразы (шаблоны, которые сразу выдают нейросеть и повторяются из ролика в ролик)
 «Но самое странное другое», «И вот тут учёные удивились», «Ответ в конце», «В конце скажу», «Звучит как правда, да?»,
@@ -318,6 +326,31 @@ def _drive_numbers() -> list[str]:
     return lines
 
 
+VISUAL_RULES = """Ты режиссёр монтажа Reels. Тебе дают готовый сценарий: голос (voice), хук и цифры уже согласованы.
+Не меняй voice, title, text, highlight, type, people, caption и остальные тексты — верни их слово в слово.
+Твоя задача — визуальный ряд по правилам раздела «Экран»: для каждой сцены заполни shot, photo_id, note,
+illustration_id, person и viz. Числа в viz и note — только из сценария и источника."""
+
+
+def plan_visuals(pkg, item: dict | None = None):
+    """Визуальный ряд для готового текста (ролик #24: текст хорош, визуализации нет)."""
+    from .models import ReelPackage
+    import json as _json
+    user = ("Сценарий (JSON):\n" + _json.dumps(pkg.model_dump(), ensure_ascii=False)
+            + (f"\n\nИсточник: {item['title']}\n{item.get('summary') or ''}" if item else ""))
+    from .reels import reels_photos
+    cat = {p["id"]: p["desc"] for p in load_yaml("photos.yaml")["photos"]}
+    user += "\n\n## Фото для Reels (photo_id)\n" + "\n".join(f"- {k}: {cat.get(k, '')}" for k in reels_photos())
+    new = llm.ask(ReelPackage, system=reel_system() + "\n\n" + VISUAL_RULES, user=user,
+                  model=settings.writer_model, effort=settings.writer_effort)
+    out = pkg.model_copy(deep=True)
+    if len(new.scenes) == len(out.scenes):        # из ответа берём только визуальные поля
+        for o, n in zip(out.scenes, new.scenes):
+            o.shot, o.photo_id, o.note, o.viz = n.shot, n.photo_id, n.note, n.viz
+            o.illustration_id = n.illustration_id or o.illustration_id
+    return out
+
+
 def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = None,
                previous: dict | None = None, reel_format: str = "myth", plan: dict | None = None):
     from .models import ReelPackage
@@ -329,6 +362,11 @@ def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = 
     user += (f"\n\nreel_format: {reel_format} — шаблон {FORMAT_TITLES.get(reel_format, reel_format)}."
              f"\nvoice_mode: {plan['voice_mode']}. length: {plan['length']}. "
              f"Предпочтительная фигура инфографики: {plan['viz']}.")
+    from .reels import reels_photos
+    rp = reels_photos()
+    if rp:
+        cat = {p["id"]: p["desc"] for p in load_yaml("photos.yaml")["photos"]}
+        user += "\n\n## Фото для Reels (photo_id)\n" + "\n".join(f"- {k}: {cat.get(k, '')}" for k in rp)
     numbers = biglife_numbers()
     if numbers:
         user += ("\n\n## Цифры BIG Life (можно использовать в одной сцене, например в payoff или cta, "

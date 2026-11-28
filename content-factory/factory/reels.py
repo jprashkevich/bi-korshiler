@@ -42,9 +42,9 @@ def split_phrases(text: str, limit: int = SUB_MAX) -> list[tuple[int, str]]:
         word = m.group(0)
         if cur and (len(cur) + len(word.rstrip()) > limit or cur.rstrip()[-1:] in ".!?"):
             # не оставляем в конце плашки предлог или союз («…не знал по» / «имени»)
-            tail = re.search(r"(\S{1,3})\s*$", cur)
+            tail = re.search(r"\s(\S{1,3})\s*$", cur)       # отдельное короткое слово, а не конец длинного
             if tail and cur.rstrip()[-1:] not in ".!?,:" and len(cur.split()) > 2:
-                cut = tail.start()
+                cut = tail.start(1)
                 out.append((start, cur[:cut].strip()))
                 start, cur = start + cut, cur[cut:]
             else:
@@ -137,6 +137,124 @@ def silent_subs(pkg: ReelPackage, tl: list[dict]) -> list[dict]:
     return subs
 
 
+# ---------- формат 4: фото → стол-коллаж → дата-арт ----------
+
+ACCENT_HEX = {"sky": "#009fe3", "green": "#88c947", "orange": "#ff954c", "periwinkle": "#556bb8"}
+
+
+def reels_photos() -> dict[str, str]:
+    """Фото для пробных Reels: только помеченные reels: true (без крупных лиц и детей) и по сезону."""
+    import yaml
+    from .render import PHOTOS_DIR
+    from .season import fits
+    from .settings import CONFIG_DIR
+    out = {}
+    for p in yaml.safe_load((CONFIG_DIR / "photos.yaml").read_text(encoding="utf-8"))["photos"]:
+        f = PHOTOS_DIR / p["file"]
+        if p.get("reels") and fits(p) and f.exists():
+            out[p["id"]] = f.resolve().as_uri()
+    return out
+
+
+def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None) -> list[dict]:
+    """Склеивает соседние сцены с одним типом кадра в отрезки и раскладывает карточки на столе.
+    Почему так: метафора не должна рваться на каждой сцене (решение владельца), поэтому кадр меняется
+    только при смене типа, а внутри отрезка двигается камера и добавляются детали."""
+    from .render import illustrations, picture_uris
+    photos, ills, pics = reels_photos(), illustrations(), picture_uris(pictures)
+    people = {p.name_en: p for p in pkg.people}
+    accent = ACCENT_HEX.get(pkg.accent, "#ff954c")
+    spare_photo = next(iter(photos.values()), "")
+    shots = []
+    for s in pkg.scenes:
+        shot = s.shot
+        if shot == "photo" and not (photos.get(s.photo_id) or spare_photo):
+            shot = "collage"
+        if shot == "dataart" and s.viz.kind == "none" and not (shots and shots[-1] == "dataart"):
+            shot = "collage"
+        shots.append(shot)
+    runs = []
+    for i, (s, shot) in enumerate(zip(pkg.scenes, shots)):
+        if not runs or runs[-1]["shot"] != shot:
+            runs.append({"shot": shot, "idx": []})
+        runs[-1]["idx"].append(i)
+    out = []
+    for r in runs:
+        idx = r["idx"]
+        run = {"shot": r["shot"], "start": tl[idx[0]]["start"], "end": tl[idx[-1]]["end"], "scenes": []}
+        if r["shot"] == "photo":
+            pid = next((pkg.scenes[i].photo_id for i in idx if photos.get(pkg.scenes[i].photo_id)), "")
+            run["photo"] = photos.get(pid) or spare_photo
+        if r["shot"] == "collage":
+            cards, decos, y, side, focus = [], [], 300, 0, {"y": 700, "s": 1.0}
+            for i in idx:
+                s, at = pkg.scenes[i], tl[i]["start"]
+                items = []
+                if s.note:
+                    items.append({"kind": "note", "lines": s.note[:4], "w": 470, "h": 110 + 56 * len(s.note[:4])})
+                pic = None
+                if s.type == "person" and pics.get(s.person, {}).get("uri"):
+                    ref = people.get(s.person)
+                    pic = {"uri": pics[s.person]["uri"], "person": True, "name": ref.name_ru if ref else s.person,
+                           "role": ref.role_ru if ref else ""}
+                elif photos.get(s.photo_id):
+                    pic = {"uri": photos[s.photo_id], "person": False, "name": "", "role": ""}
+                elif ills.get(s.illustration_id):
+                    pic = {"uri": ills[s.illustration_id], "person": False, "name": "", "role": ""}
+                if pic:
+                    items.append({"kind": "photo", **pic, "w": 430, "h": 500})
+                if s.viz.kind != "none":
+                    items.append({"kind": "data", "viz": s.viz.model_dump(), "w": 600, "h": 440})
+                if s.type == "stat" and s.title:
+                    items.append({"kind": "number", "text": typograf(s.title), "caption": typograf(s.text),
+                                  "size": 170 if len(s.title) < 7 else 120, "w": 400, "h": 260})
+                if not items:
+                    run["scenes"].append({"i": i, "start": at, "end": tl[i]["end"], "viz": None, "focus": dict(focus)})
+                    continue
+                row_h = max(it["h"] for it in items[:2]) + (60 if any(it["kind"] == "photo" and it["name"] for it in items) else 0)
+                xs = [80, 600] if side == 0 else [600, 80]
+                for k, it in enumerate(items[:2]):
+                    x = xs[k] if len(items) > 1 else (110 if side == 0 else 420)
+                    if it["kind"] == "data" and len(items) > 1:
+                        it["w"] = 560
+                        x = 50 if k == 0 else 470
+                    if it["kind"] == "number" and len(items) > 1:
+                        it["size"], it["w"] = min(it["size"], 150), 380
+                        x = 650 if k == 1 else 60
+                    it.update(x=min(x, 1080 - it["w"] - 40), y=y, at=round(at + 0.15 + 0.35 * k, 2),
+                              rot=round((-2.5 if (k + side) % 2 else 2.5), 1))
+                    cards.append(it)
+                for it in items[2:]:              # третий предмет — под рядом
+                    it.update(x=200, y=y + row_h + 20, at=round(at + 0.9, 2), rot=-1.5)
+                    cards.append(it)
+                    row_h += it["h"] + 40
+                decos.append({"kind": ["half", "dot", "rule"][len(decos) % 3], "x": 140 + 520 * side,
+                              "y": y + row_h - 10, "r": 120 if len(decos) % 3 == 0 else 60,
+                              "color": "#c9b8f2" if len(decos) % 2 == 0 else accent, "at": round(at + 0.4, 2)})
+                # одиночную карточку камера берёт крупнее, пару — целиком
+                focus = {"y": y + row_h / 2, "s": 1.25 if len(items) == 1 else 1.0}
+                run["scenes"].append({"i": i, "start": at, "end": tl[i]["end"], "viz": None, "focus": dict(focus)})
+                y += row_h + 120
+                side = 1 - side
+            run.update(cards=cards, decos=decos, height=y + 400)
+            run["zoomout"] = len(cards) >= 3
+            run["zoomout_s"] = round(min(1.0, 1150 / max(y - 300, 1)), 3)
+            run["zoomout_y"] = round(300 + (y - 300) / 2, 1)
+            if run["scenes"] and run["scenes"][0]["focus"]["y"] == 700 and cards:
+                run["scenes"][0]["focus"] = run["scenes"][1]["focus"] if len(run["scenes"]) > 1 else {"y": cards[0]["y"] + 200, "s": 1.0}
+        else:
+            for i in idx:
+                s = pkg.scenes[i]
+                run["scenes"].append({"i": i, "start": tl[i]["start"], "end": tl[i]["end"],
+                                      "viz": s.viz.model_dump() if s.viz.kind != "none" else None, "focus": None})
+            if r["shot"] == "dataart" and not any(x["viz"] for x in run["scenes"]):
+                prev = next((pkg.scenes[j].viz.model_dump() for j in range(idx[0] - 1, -1, -1)
+                             if pkg.scenes[j].viz.kind != "none"), None)
+                run["scenes"][0]["viz"] = prev
+        out.append(run)
+    return out
+
+
 def _launch(pw):
     return pw.chromium.launch(**({"executable_path": settings.chromium_path} if settings.chromium_path else {}))
 
@@ -216,12 +334,14 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     from .render import SECOND_ACCENT
     if silent:
         subs = silent_subs(pkg, tl)
-    states, runs = meta_states(pkg)
+    runs = build_runs(pkg, tl, pictures)
+    runs_js = [{k: v for k, v in r.items() if k in ("shot", "start", "end", "scenes", "zoomout", "zoomout_s", "zoomout_y")}
+               for r in runs]
     html = _env.get_template("reels.html.j2").render(
         accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"),
-        scenes=scenes, cards=scene_cards(pkg, pictures), hook=scenes[0], hook_end=tl[0]["end"],
+        scenes=scenes, hook=scenes[0], hook_end=tl[0]["end"],
         accent=pkg.accent, rubric_title=rubric_title, timeline=tl, subtitles=subs,
-        vizs=states, runs=runs,
+        runs=runs, runs_js=runs_js,
         viz_js=(TEMPLATES_DIR / "viz.js").read_text(encoding="utf-8"),
         total=total, assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
     page_path = out_dir / "reel.html"
