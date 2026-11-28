@@ -1,4 +1,4 @@
-"""Рендер карусели: HTML-шаблон на токенах дизайн-системы → PNG 1080×1350 через Chromium."""
+"""Рендер карусели: HTML-шаблон на токенах дизайн-системы → PNG 1080×1440 (3:4, как сетка профиля) через Chromium."""
 from __future__ import annotations
 
 import logging
@@ -86,8 +86,10 @@ def backgrounds(slides) -> list[str]:
 
 def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = None,
                 drive_photos: dict | None = None, photo_city: dict | None = None,
-                cities: list | None = None) -> str:
+                cities: list | None = None, look: dict | None = None) -> str:
+    look = {"cover_texture": "paper", "cover_photo": "", "rubric_color": "sky", **(look or {})}
     return _env.get_template("carousel.html.j2").render(
+        **look,
         bgs=backgrounds(pkg.slides), accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"),
         photo_city=photo_city or {}, cities=cities or [],
         dphotos={k: Path(v).resolve().as_uri() for k, v in (drive_photos or {}).items()},
@@ -106,16 +108,16 @@ def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = Non
 
 def render(pkg: PostPackage, rubric_title: str, name: str, pictures: dict | None = None,
            drive_photos: dict | None = None, photo_city: dict | None = None,
-           cities: list | None = None) -> list[Path]:
+           cities: list | None = None, look: dict | None = None) -> list[Path]:
     out_dir = OUTPUT_DIR / name
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / "carousel.html"
-    html_path.write_text(render_html(pkg, rubric_title, pictures, drive_photos, photo_city, cities), encoding="utf-8")
+    html_path.write_text(render_html(pkg, rubric_title, pictures, drive_photos, photo_city, cities, look), encoding="utf-8")
     files = []
     launch = {"executable_path": settings.chromium_path} if settings.chromium_path else {}
     with sync_playwright() as pw:
         browser = pw.chromium.launch(**launch)
-        page = browser.new_page(viewport={"width": 1080, "height": 1350}, device_scale_factor=1)
+        page = browser.new_page(viewport={"width": 1080, "height": 1440}, device_scale_factor=1)
         page.goto(html_path.resolve().as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
         page.wait_for_function("document.body.dataset.fitted === '1'", timeout=15000)

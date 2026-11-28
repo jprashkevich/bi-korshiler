@@ -149,7 +149,7 @@ def test_carousel_html_has_illustration_and_person_collage(tmp_path):
     photo.write_bytes(b"x")
     html = render_html(sample(), "Наука о соседстве",
                        {"Dan Buettner": {"path": str(photo), "credit": "Фото: X / CC BY-SA 2.0, Wikimedia Commons"}})
-    assert "ill-elevator.jpg" in html and "cover-ill" in html
+    assert "ill-elevator.jpg" in html and "cv-card" in html
     assert 'class="collage"' in html and "Дэн Бюттнер" in html and "CC BY-SA 2.0" in html
 
 
@@ -159,7 +159,7 @@ def test_cover_pill_hidden_when_equal_to_rubric():
     pkg.slides[0].eyebrow = "Наука о соседстве"
     assert 'class="pill">Наука' not in render_html(pkg, "Наука о соседстве")
     pkg.slides[0].eyebrow = "Исследование"
-    assert 'class="pill">Исследование' in render_html(pkg, "Наука о соседстве")
+    assert 'class="cv-rub"' in render_html(pkg, "Наука о соседстве")      # рубрика — меткой, eyebrow на обложке не дублируем
 
 
 def test_person_slide_without_photo_is_a_namecard():

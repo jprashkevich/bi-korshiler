@@ -7,7 +7,7 @@
 @font-face{font-family:"TT Firs Neue";src:url("{{ assets }}/TT_Firs_Neue_Trial_Var_Roman.ttf") format("truetype-variations");font-weight:100 900}
 :root{
   --navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;
-  --ink:#2b3350;--muted:#808aa3;--light:#f5f7fb;--line:#e3e8f1;
+  --ink:#2b3350;--muted:#808aa3;--light:#f6efe4;--cream:#f6efe4;--line:#e3e8f1;
   --accent:var(--{{ accent }});--accent2:var(--{{ accent2 }});
   --display:"TT Firs Neue","Montserrat",sans-serif;--text:"Montserrat",sans-serif;
   /* шкала: обложка 100, вывод 84, заголовок 64, цифра 220, текст 34, метка 24, мелкий 20 */
@@ -15,7 +15,7 @@
   --pad:90px;--r:28px
 }
 *{box-sizing:border-box}body{margin:0;background:#cfd6e6;font-family:var(--text)}
-.f{width:1080px;height:1350px;position:relative;overflow:hidden;padding:84px var(--pad) 0;display:flex;flex-direction:column}
+.f{width:1080px;height:1440px;position:relative;overflow:hidden;padding:84px var(--pad) 0;display:flex;flex-direction:column}
 .bg-navy{background:var(--navy);color:#fff}.bg-light{background:var(--light);color:var(--navy)}
 .bg-accent{background:var(--accent);color:#fff}.bg-accent2{background:var(--accent2);color:#fff}
 .glow{position:absolute;width:760px;height:760px;border-radius:50%;right:-260px;top:-300px;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 55%,transparent),transparent 62%);pointer-events:none}
@@ -96,6 +96,27 @@ canvas.viz{display:block;width:100%;flex:1 1 0;min-height:420px;margin-top:20px}
 /* вывод на светлом фоне (когда подряд нельзя ставить цветной) */
 .bar{width:120px;height:10px;border-radius:5px;background:var(--accent);margin-bottom:36px}
 .btn{display:inline-block;align-self:flex-start;font-size:30px;font-weight:800;padding:22px 42px;border-radius:999px;background:var(--sky);color:#fff;margin-top:48px}
+
+/* обложки: три фактуры */
+.cv{padding:0!important;display:block!important}
+.cv-paper{background:var(--cream);color:var(--navy)}
+.cv-navy{background:var(--navy);color:#fff}
+.cv-photo{background:#222;color:#fff}
+.cv-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cv-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,24,60,.55),rgba(20,24,60,0) 45%,rgba(20,24,60,0) 75%,rgba(20,24,60,.3))}
+.cv-top{position:absolute;left:80px;right:80px;top:80px;display:flex;justify-content:space-between;align-items:center;z-index:3}
+.cv-rub{font-size:26px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;padding:12px 22px;border-radius:999px}
+.cv .logo{height:40px}
+.cv-paper .logo{filter:none}.cv-navy .logo,.cv-photo .logo{filter:brightness(0) invert(1)}
+.cv-title{position:absolute;left:80px;right:80px;top:200px;z-index:3;font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1;font-size:104px;margin:0}
+.cv-photo .cv-title span{background:#fff;color:var(--navy);padding:4px 18px;line-height:1.28;border-radius:14px;-webkit-box-decoration-break:clone;box-decoration-break:clone;font-size:88px}
+.cv-cities{position:absolute;left:80px;bottom:90px;z-index:3;font-size:26px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:#fff;color:var(--navy);padding:10px 18px;border-radius:12px}
+.cv-card{position:absolute;left:170px;right:170px;top:720px;height:560px;background:#fff;padding:16px;box-shadow:0 18px 40px rgba(60,40,20,.22);transform:rotate(2deg);z-index:2}
+.cv-card img{width:100%;height:100%;object-fit:cover;display:block}
+.cv-tape{position:absolute;width:170px;height:46px;background:rgba(255,244,210,.9);top:-22px;left:50%;margin-left:-85px;transform:rotate(-4deg)}
+.cv-ill{position:absolute;left:0;right:0;bottom:0;height:640px;border-radius:40px 40px 0 0;overflow:hidden}
+.cv-ill img{width:100%;height:100%;object-fit:cover}
+.cv-deco{position:absolute;inset:0;z-index:1}
 </style></head><body>
 {% set total = slides|length %}
 {% macro tagline(s, n) -%}<span class="tag"><b>{{ '%02d' % (n - 1) }}</b>{% if s.eyebrow %}· {{ s.eyebrow }}{% endif %}</span>{%- endmacro %}
@@ -106,17 +127,20 @@ canvas.viz{display:block;width:100%;flex:1 1 0;min-height:420px;margin-top:20px}
 {% for s in slides %}{% set n = loop.index %}{% set bg = bgs[loop.index0] %}
 
 {% if s.type == 'cover' %}
-{% set cimg = dphotos.get(s.photo_ref) or ills.get(s.illustration_id) %}
-<section class="f bg-navy cover" id="s{{ n }}">
-  {% if not cimg %}<div class="glow"></div>{% endif %}
-  <div class="hd"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"><span class="rub">{{ rubric_title }}</span></div>
-  <div class="ct{% if not cimg %} mid{% endif %}">
-    {% if s.eyebrow and s.eyebrow|lower|replace(' ', ' ') != rubric_title|lower %}<span class="pill">{{ s.eyebrow }}</span>{% endif %}
-    <h1{% if cimg %} style="font-size:88px"{% endif %}>{{ s.title }}</h1>
-    {% if cities %}<div class="cities">{{ cities|join(' · ') }}</div>{% endif %}
-    {% if not cimg %}<div class="swipe" style="margin-top:48px">Листайте →</div>{% endif %}
-  </div>
-  {% if cimg %}<div class="cover-ill{% if ills.get(s.illustration_id) and not dphotos.get(s.photo_ref) %} ill{% endif %}"><img src="{{ cimg }}" alt=""></div>{% endif %}
+{# Обложка — единая грамматика для трёх фактур (бумага / фото / navy): метка рубрики слева вверху цветом рубрики,
+   логотип справа вверху, заголовок в одной зоне, картинка снизу. Так лента читается как система при любых сдвигах сетки. #}
+{% set cimg = dphotos.get(s.photo_ref) or cover_photo or ills.get(s.illustration_id) %}
+{% set tex = cover_texture if (cover_texture != 'photo' or dphotos.get(s.photo_ref) or cover_photo) else 'paper' %}
+<section class="f cv cv-{{ tex }}" id="s{{ n }}">
+  {% if tex == 'photo' %}<img class="cv-bg" src="{{ dphotos.get(s.photo_ref) or cover_photo }}" alt=""><div class="cv-shade"></div>{% endif %}
+  {% if tex == 'navy' %}<div class="glow"></div>{% endif %}
+  <div class="cv-top"><span class="cv-rub" style="background:var(--{{ rubric_color }})">{{ rubric_title }}</span>
+    <img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"></div>
+  <h1 class="cv-title">{% if tex == 'photo' %}<span>{{ s.title }}</span>{% else %}{{ s.title }}{% endif %}</h1>
+  {% if cities %}<div class="cv-cities">{{ cities|join(' · ') }}</div>{% endif %}
+  {% if tex == 'paper' and cimg %}<div class="cv-card{% if ills.get(s.illustration_id) and not dphotos.get(s.photo_ref) and not cover_photo %} ill{% endif %}"><img src="{{ cimg }}" alt=""><div class="cv-tape"></div></div>
+  {% elif tex == 'navy' and cimg %}<div class="cv-ill"><img src="{{ cimg }}" alt=""></div>{% endif %}
+  {% if tex == 'paper' %}<svg class="cv-deco" width="1080" height="1440"><path d="M90 1300 a120 120 0 0 1 240 0 z" fill="#c9b8f2"/><circle cx="930" cy="1250" r="46" fill="var(--{{ rubric_color }})"/></svg>{% endif %}
 </section>
 
 {% elif s.type == 'cta' %}

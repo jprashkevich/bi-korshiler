@@ -28,6 +28,8 @@ def main() -> None:
     redo.add_argument("comment", nargs="*")
     rv = sub.add_parser("revisual", help="Новый визуальный ряд для готового текста Reels и отправка в Telegram")
     rv.add_argument("post_id", type=int)
+    vt = sub.add_parser("voicetest", help="5 вариантов озвучки фрагмента поста в Telegram")
+    vt.add_argument("post_id", type=int)
     show = sub.add_parser("show", help="Напечатать пакет поста (тексты) в лог")
     show.add_argument("post_id", type=int)
     top = sub.add_parser("top", help="Показать лучшие темы после скоринга")
@@ -68,6 +70,21 @@ def main() -> None:
         from . import pipeline
         pipeline.revisualize(args.post_id)
         print("revisual", args.post_id)
+    elif args.cmd == "voicetest":
+        from . import telegram, tts
+        from .settings import OUTPUT_DIR, chat_id
+        pkg = db.get_post(args.post_id)["package"]
+        text = " ".join(s["voice"] for s in pkg["scenes"][:4])
+        out_dir = OUTPUT_DIR / f"voicetest-{args.post_id}"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        telegram.send_message(chat_id(), f"Варианты озвучки: один и тот же фрагмент ролика #{args.post_id}. "
+                                         "Напишите номер, который нравится больше всего.")
+        for key, title, path in tts.voicetest(text, out_dir):
+            if path:
+                telegram.send_document(chat_id(), path, caption=f"Вариант {key}. {title}")
+            else:
+                telegram.send_message(chat_id(), f"Вариант {key}. {title}")
+        print("voicetest", args.post_id)
     elif args.cmd == "show":
         post = db.get_post(args.post_id)
         pkg = post["package"] or {}
