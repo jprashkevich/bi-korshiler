@@ -68,19 +68,25 @@ class PostPackage(BaseModel):
     fact_check: list[str] = Field(description="Каждое фактическое утверждение поста и где оно есть в источнике (для проверки человеком)")
 
 
-SceneType = Literal["hook", "stat", "context", "person", "insight", "question", "cta"]
+SceneType = Literal["hook", "stakes", "myth", "truth", "stat", "fact", "rehook", "context", "person",
+                    "insight", "payoff", "question", "cta"]
+ReelFormat = Literal["myth", "number", "experiment", "three"]
+MusicMood = Literal["warm", "upbeat", "mystery"]
 
 
 class Scene(BaseModel):
     type: SceneType = Field(description=(
-        "hook — первая сцена, интрига за 1–2 секунды; stat — одна крупная цифра (title = сама цифра, "
-        "например «52 000», «37%», «в 2 раза»); context — кто, где, сколько людей изучали; "
-        "person — коллаж с фото исследователя или организации из people; "
-        "insight — главный вывод; question — вопрос аудитории; cta — финальная сцена с призывом"))
+        "hook — первые 2 секунды: смелое утверждение, миф или цифра-шок; stakes — почему это касается зрителя "
+        "и обещание развязки; myth — что все думают; truth — как на самом деле; stat — одна крупная цифра "
+        "(title = сама цифра: «52 000», «37%», «в 2 раза»); fact — один факт или деталь исследования; "
+        "rehook — повторный крючок в середине («Но самое странное другое»); person — коллаж с фото исследователя "
+        "из people; payoff — развязка обещания и конкретное действие; question — вопрос зрителю; "
+        "cta — финал: призыв отправить соседу, фраза перетекает в начало ролика. context и insight — старые типы"))
     eyebrow: str = Field(description="Короткая надпись над текстом, 1–3 слова", max_length=30)
-    title: str = Field(description="Крупный текст на экране, до 40 символов. Не повторяет озвучку слово в слово", max_length=60)
+    title: str = Field(description="Крупный текст на экране: до 6 слов (до 40 символов). Ключевые слова, а не дубль озвучки", max_length=60)
+    highlight: str = Field(default="", description="Одно слово из title, которое подсветить акцентным цветом (самое ударное), или пусто")
     text: str = Field(description="Вторая строка на экране, до 70 символов, или пусто. В сценах с иллюстрацией или фото — пусто", max_length=100)
-    voice: str = Field(description="Что говорит голос в этой сцене: 1–2 коротких разговорных предложения на русском, до 18 слов", max_length=260)
+    voice: str = Field(description="Что говорит голос в этой сцене: одна короткая живая фраза, 4–12 слов, как в разговоре", max_length=200)
     illustration_id: str = Field(description="id иллюстрации из каталога для hook, insight или cta, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
 
@@ -88,6 +94,8 @@ class Scene(BaseModel):
 class ReelPackage(BaseModel):
     headline: str = Field(description="Тема ролика одной строкой для контент-плана", max_length=120)
     accent: Accent
+    reel_format: ReelFormat = Field(default="number", description="Сценарный шаблон ролика (задан в задании)")
+    music_mood: MusicMood = Field(default="warm", description="Настроение фоновой музыки: warm — тёплое, upbeat — бодрое, mystery — интригующее")
     cover_title: str = Field(description="Текст обложки Reels, до 40 символов, интрига", max_length=50)
     people: list[PersonRef] = Field(description="Исследователи и организации, названные в источнике (0–3). Только реально упомянутые")
     scenes: list[Scene]

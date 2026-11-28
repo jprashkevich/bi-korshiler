@@ -66,7 +66,8 @@ def test_feeds_and_rubrics_config():
     from factory.writer import load_yaml
     assert len(load_feeds()) >= 20
     cfg = load_yaml("rubrics.yaml")
-    assert sum(len(v) for v in cfg["schedule"].values()) == 14
+    assert sum(len(v) for v in cfg["schedule"].values()) == 21      # 2 карусели + Reels в день
+    assert len(cfg["slot_times"]) == 3
     for slots in cfg["schedule"].values():
         for key in slots:
             assert key in cfg["rubrics"]

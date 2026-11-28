@@ -39,7 +39,7 @@ class Settings:
     database_url: str = os.getenv("DATABASE_URL", f"sqlite:///{ROOT / 'factory.db'}")
     timezone: str = os.getenv("FACTORY_TZ", "Asia/Almaty")
     daily_run_hour: int = int(os.getenv("DAILY_RUN_HOUR", "6"))       # во сколько готовить пакеты на день
-    posts_per_day: int = int(os.getenv("POSTS_PER_DAY", "2"))
+    posts_per_day: int = int(os.getenv("POSTS_PER_DAY", "3"))      # две карусели + вечерний Reels
     freshness_days: int = int(os.getenv("FRESHNESS_DAYS", "21"))      # насколько старые материалы допускаются
 
     # Claude

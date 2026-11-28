@@ -248,7 +248,17 @@ def publish(post: dict) -> dict:
         params = dict(media_type="REELS", video_url=url(video["token"]), caption=text, share_to_feed="true")
         if cover:
             params["cover_url"] = url(cover["token"])
-        container = _create(**params)
+        if env("INSTAGRAM_TRIAL_REELS", "1") != "0":
+            # пробный Reels: сначала неподписанным, в ленту подписчиков — сам, если хорошо зайдёт
+            params["trial_params"] = json.dumps({"graduation_strategy": env("INSTAGRAM_TRIAL_STRATEGY", "SS_PERFORMANCE")})
+        try:
+            container = _create(**params)
+        except InstagramError as exc:
+            if "trial" not in str(exc).lower():
+                raise
+            log.warning("Пробные Reels недоступны, публикую обычным: %s", exc)
+            params.pop("trial_params")
+            container = _create(**params)
         _wait(container, timeout=600)
     else:
         images = [m for m in items if m["kind"] == "image"][:20]

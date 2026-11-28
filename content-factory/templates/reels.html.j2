@@ -9,7 +9,7 @@
 :root{--navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;
 --ink:#2b3350;--light:#f5f7fb;--accent:var(--{{ accent }});--accent2:var(--{{ accent2 }});
 --display:"TT Firs Neue","Montserrat",sans-serif;--text:"Montserrat",sans-serif;
---fs-hook:112px;--fs-h1:96px;--fs-h2:80px;--fs-stat:280px;--fs-body:42px;--fs-label:28px;--r:36px}
+--fs-hook:112px;--fs-h1:116px;--fs-h2:80px;--fs-stat:280px;--fs-body:42px;--fs-label:28px;--r:36px}
 *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--navy);font-family:var(--text)}
 #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--navy)}
 .scene{position:absolute;inset:0;opacity:0;overflow:hidden}
@@ -28,7 +28,11 @@
 .ct{position:absolute;left:90px;right:90px;top:300px;bottom:540px;display:flex;flex-direction:column;justify-content:center;z-index:2}
 .ct.top{justify-content:flex-start;padding-top:40px}
 .title{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1.0;font-size:var(--fs-h1)}
-.hook .title{font-size:var(--fs-hook)}
+.hook .title{font-size:140px;line-height:.96}
+.hook .ct{top:260px}
+.hl{color:var(--accent)}
+.bg-accent .hl,.bg-accent2 .hl{color:var(--navy)}
+.bg-light .hl{color:var(--accent)}
 .ct.top .title{font-size:var(--fs-h2);line-height:1.04}
 .text{font-size:var(--fs-body);font-weight:600;line-height:1.4;margin-top:36px;max-width:24ch}
 .bg-light .text{color:var(--ink)}
@@ -54,7 +58,8 @@
 .namecard b{font-family:var(--display);font-size:72px;line-height:1.05}
 .namecard span{font-size:34px;font-weight:700;opacity:.8;margin-top:12px}
 #sub{position:absolute;left:70px;right:70px;top:1430px;text-align:center;z-index:6}
-#sub span{display:inline;font-size:44px;font-weight:700;line-height:1.5;color:#fff;background:rgba(12,20,70,.78);padding:6px 18px;border-radius:14px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+#sub span{display:inline;font-size:48px;font-weight:800;line-height:1.5;color:#fff;background:rgba(12,20,70,.82);padding:6px 18px;border-radius:14px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+#sub b{font-weight:800;color:rgba(255,255,255,.45)}#sub b.on{color:#fff}
 #sub.hidden{display:none}
 </style></head><body>
 <div id="stage">
@@ -62,14 +67,15 @@
   {% set has_vis = (s.type == 'person') or ills.get(s.illustration_id) %}
   <div class="scene bg-{{ bg }} {{ s.type }}" id="sc{{ loop.index0 }}">
     {% if bg == 'navy' %}<div class="glow"></div>{% endif %}
-    <div class="hd"><span class="tag"><b>{{ '%02d' % loop.index }}</b>{% if s.eyebrow %}· {{ s.eyebrow }}{% endif %}</span>
-      <img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life"></div>
+    {# пробные Reels видят незнакомые с брендом: в начале только смысл, логотип — в финале #}
+    {% if s.type != 'hook' %}<div class="hd">{% if s.eyebrow %}<span class="tag">{{ s.eyebrow }}</span>{% else %}<span></span>{% endif %}
+      {% if s.type == 'cta' %}<img class="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life">{% endif %}</div>{% endif %}
     <div class="bar"></div><div class="barfill"></div>
     <div class="ct{% if has_vis %} top{% endif %}">
     {% if s.type == 'stat' %}
       <div class="stat" data-count="{{ s.title }}" style="font-size:{{ 280 if s.title|length < 7 else (210 if s.title|length < 11 else 150) }}px">{{ s.title }}</div>
     {% else %}
-      <div class="title">{% for w in s.title.split(' ') %}<span class="w">{{ w }}</span>{{ ' ' }}{% endfor %}</div>
+      <div class="title">{% for w in s.title.split(' ') %}<span class="w{% if s.highlight and s.highlight|lower in w|lower %} hl{% endif %}">{{ w }}</span>{{ ' ' }}{% endfor %}</div>
     {% endif %}
     {% if s.text and not has_vis %}<div class="text">{{ s.text }}</div>{% endif %}
     {% if s.type == 'person' %}{% set pic = pictures.get(s.person, {}) %}{% set ref = people.get(s.person, {}) %}
@@ -117,15 +123,17 @@ window.seek = function (t) {
   document.querySelectorAll('.barfill').forEach(b => { b.style.width = (900 * Math.min(t / TOTAL, 1)) + 'px'; });
   document.querySelectorAll('.glow').forEach(g => { g.style.transform = `translate(${-40 * Math.sin(t / 3)}px, ${30 * Math.cos(t / 4)}px)`; });
   TL.forEach((seg, i) => {
-    const el = scenes[i], fadeIn = ease((t - seg.start) / 0.3), fadeOut = i === TL.length - 1 ? 1 : 1 - ease((t - seg.end) / 0.25);
+    const el = scenes[i], fadeIn = ease((t - seg.start) / 0.16), fadeOut = i === TL.length - 1 ? 1 : 1 - ease((t - seg.end) / 0.12);
     // перекрёстное затухание: уходящая сцена гаснет, пока проявляется следующая
-    const vis = t >= seg.start - 0.01 && t < seg.end + 0.26 ? Math.min(fadeIn, fadeOut) : 0;
+    const vis = t >= seg.start - 0.01 && t < seg.end + 0.13 ? Math.min(fadeIn, fadeOut) : 0;
     el.style.opacity = vis;
-    el.querySelector('.ct').style.transform = `translateY(${(1 - fadeIn) * 60}px)`;
+    // «наезд» на смене кадра: сцена влетает чуть крупнее и садится на место, потом медленно дышит
+    const punch = ease((t - seg.start) / 0.28), drift = Math.min((t - seg.start) / Math.max(seg.end - seg.start, 1), 1);
+    el.querySelector('.ct').style.transform = `scale(${1.1 - 0.1 * punch + 0.025 * drift})`;
     const lt = t - seg.start;   // время внутри сцены
     // Заголовок появляется по словам
     el.querySelectorAll('.w').forEach((w, k) => {
-      const p = ease((lt - 0.06 * k) / 0.35);
+      const p = ease((lt - 0.04 * k) / 0.22);
       w.style.opacity = p; w.style.transform = `translateY(${(1 - p) * 40}px)`;
     });
     // Иллюстрация: появление с масштабом и медленный «наезд» камеры
@@ -156,7 +164,9 @@ window.seek = function (t) {
   const sub = SUBS.find(s => t >= s.start && t < s.end);
   const box = document.getElementById('sub');
   box.classList.toggle('hidden', !sub);
-  if (sub) box.firstElementChild.textContent = sub.text;
+  // субтитры по словам: сказанное — белым, ещё не сказанное — приглушённым (караоке)
+  if (sub) box.firstElementChild.innerHTML = (sub.words || [{t: sub.start, w: sub.text}])
+    .map(x => `<b class="${t >= x.t ? 'on' : ''}">${x.w.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'})[c])}</b>`).join(' ');
 };
 window.seek(0);
 </script>

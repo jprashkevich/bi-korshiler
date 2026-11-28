@@ -30,7 +30,8 @@ class Speech:
         return self.starts[min(max(char_index, 0), len(self.starts) - 1)]
 
 
-def synthesize(text: str, out_path: Path) -> Speech:
+def synthesize(text: str, out_path: Path, *, speed: float | None = None, style: float | None = None,
+               stability: float | None = None) -> Speech:
     voice = env("ELEVENLABS_VOICE_ID")
     resp = httpx.post(
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/with-timestamps",
@@ -40,10 +41,10 @@ def synthesize(text: str, out_path: Path) -> Speech:
             "text": text,
             "model_id": env("ELEVENLABS_MODEL", "eleven_multilingual_v2"),
             "voice_settings": {
-                "stability": float(env("ELEVENLABS_STABILITY", "0.5")),
+                "stability": stability if stability is not None else float(env("ELEVENLABS_STABILITY", "0.5")),
                 "similarity_boost": float(env("ELEVENLABS_SIMILARITY", "0.75")),
-                "style": float(env("ELEVENLABS_STYLE", "0.0")),
-                "speed": float(env("ELEVENLABS_SPEED", "1.0")),
+                "style": style if style is not None else float(env("ELEVENLABS_STYLE", "0.0")),
+                "speed": speed if speed is not None else float(env("ELEVENLABS_SPEED", "1.0")),
                 "use_speaker_boost": True,
             },
         },

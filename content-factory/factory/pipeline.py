@@ -43,7 +43,9 @@ def choose_item(rubric_key: str, exclude_ids: set[int] = frozenset()) -> dict | 
     r = writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key]
     if r["source"] in ("brand", "drive", "ideas"):
         return None
-    item = score.pick(rubric_key, prefer_kind=r.get("prefer_kind"), need_number=rubric_key == "number")
+    # у скоринга нет отдельной метки для Reels: ближе всего «number» (цифра, вирусность)
+    item = score.pick("number" if rubric_key == "reel" else rubric_key, prefer_kind=r.get("prefer_kind"),
+                      need_number=rubric_key == "number")
     if item is None and rubric_key == "number":   # нет материала с цифрой — берём лучшую тему для науки
         item = score.pick("science")
     if item and item["id"] in exclude_ids:
@@ -90,7 +92,9 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
         files = render.render(pkg, rubric["title"], name)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": {}}
     elif rubric.get("format") == "reels" and tts.enabled():
-        pkg, issues = proofread(writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous))
+        fmt = (previous or {}).get("reel_format") or writer.reel_format_for(date.fromisoformat(post["slot_date"]), item)
+        pkg, issues = proofread(writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous,
+                                                  reel_format=fmt))
         pictures = find_pictures(pkg, pkg.scenes)
         files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
         data = {**pkg.model_dump(), "format": "reels", "pictures": pictures}

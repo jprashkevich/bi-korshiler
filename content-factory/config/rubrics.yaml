@@ -37,6 +37,15 @@ rubrics:
     format: carousel
     slides: 12
     brief: Фото-дайджест по отчётам о проведённых соседских активностях BIG Life в разных городах, с реальными фото.
+  reel:
+    title: Reels
+    source: rss
+    format: reels           # шаблоны по очереди: миф/правда, цифра, эксперимент, 3 вещи (writer.REEL_FORMATS)
+    slides: 6               # если ElevenLabs не подключён — карусель
+    brief: >
+      Пробный Reels для людей, которые BIG Life ещё не знают: одно исследование о связях между людьми,
+      соседстве, одиночестве или долголетии в классической структуре хук → ставка и петля → три бита
+      с повторным крючком → развязка → «отправь соседу». Цель — досмотр и репосты.
   question:
     title: Вопрос недели
     source: rss
@@ -68,15 +77,15 @@ rubrics:
       Польза BIG App для жителей: лента активностей двора, календарь «Картина дня», чаты соседей,
       роль «Драйвера дома». Через жизненную ситуацию, без рекламного тона.
 
-# Недельная сетка (1 = понедельник). Два слота в день: утро и вечер.
+# Недельная сетка (1 = понедельник). Три слота: утренняя и вечерняя карусели, Reels вечером.
 schedule:
-  1: [science, practice]
-  2: [science, number]
-  3: [science, courtyard]
-  4: [science, practice]
-  5: [weekend, number]          # пятница: утром идеи на выходные, вечером Reels
-  6: [courtyard, question]
-  7: [number, app]
+  1: [science, practice, reel]
+  2: [science, question, reel]
+  3: [science, courtyard, reel]
+  4: [science, practice, reel]
+  5: [weekend, science, reel]   # пятница: утром идеи на выходные
+  6: [courtyard, question, reel]
+  7: [app, practice, reel]
 
 # Рекомендуемое время публикации (Asia/Almaty), отправляется SMM-щику вместе с пакетом.
-slot_times: ["09:00", "19:30"]
+slot_times: ["09:00", "19:30", "20:30"]   # третий слот — Reels каждый вечер

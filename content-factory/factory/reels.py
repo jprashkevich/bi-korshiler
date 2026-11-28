@@ -61,13 +61,15 @@ def timeline(pkg: ReelPackage, speech: tts.Speech) -> tuple[list[dict], list[dic
             st = speech.time_at(offsets[i] + off)
             en = (speech.time_at(offsets[i] + phrases[j + 1][0]) if j + 1 < len(phrases)
                   else (speech.time_at(offsets[i + 1]) if i + 1 < len(offsets) else speech.duration + 0.3))
-            subs.append({"start": round(st, 3), "end": round(en, 3), "text": text})
+            words = [{"t": round(speech.time_at(offsets[i] + off + m.start()), 3), "w": m.group(0)}
+                     for m in re.finditer(r"\S+", text)]
+            subs.append({"start": round(st, 3), "end": round(en, 3), "text": text, "words": words})
     return tl, subs, total
 
 
 # Ритм фонов как у каруселей: края navy, выводы и цифры — цветные (два акцента по очереди),
 # цветная сцена никогда не идёт сразу за цветной, остальное — светлый фон.
-COLORED = {"stat", "insight"}
+COLORED = {"stat", "insight", "truth", "rehook", "payoff"}
 
 
 def scene_backgrounds(scenes) -> list[str]:
@@ -105,18 +107,27 @@ def render_cover(pkg: ReelPackage, rubric_title: str, out: Path) -> Path:
     return out
 
 
+def reel_speech(text: str, out: Path) -> tts.Speech:
+    """Голос для Reels живее и быстрее, чем для длинных текстов: темп 1.12, больше интонации."""
+    from .settings import env
+    return tts.synthesize(text, out, speed=float(env("REELS_VOICE_SPEED", "1.12")),
+                          style=float(env("REELS_VOICE_STYLE", "0.35")),
+                          stability=float(env("REELS_VOICE_STABILITY", "0.4")))
+
+
 def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict | None = None,
-                 speech_fn=tts.synthesize) -> list[Path]:
+                 speech_fn=None, music_fn=None) -> list[Path]:
     """Возвращает [mp4, обложка.png]. speech_fn подменяется в тестах."""
     out_dir = OUTPUT_DIR / name
     out_dir.mkdir(parents=True, exist_ok=True)
     full, _ = voice_text(pkg)
-    speech = speech_fn(full, out_dir / "voice.mp3")
+    speech = (speech_fn or reel_speech)(full, out_dir / "voice.mp3")
     tl, subs, total = timeline(pkg, speech)
     scenes = []
     for s in pkg.scenes:
         d = s.model_dump()
         d["title"], d["text"], d["eyebrow"] = typograf(d["title"]), typograf(d["text"]), d["eyebrow"]
+        d.setdefault("highlight", "")
         scenes.append(d)
     from .render import SECOND_ACCENT, illustrations, picture_uris
     html = _env.get_template("reels.html.j2").render(
@@ -130,9 +141,21 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
 
     video = out_dir / "reel.mp4"
     frames = int(total * FPS)
+    if music_fn is None:
+        from .music import compose as music_fn
+    music = music_fn(getattr(pkg, "music_mood", "warm"), total, out_dir / "music.mp3")
+    audio_in = ["-i", str(speech.audio_path)]
+    if music:
+        # музыка тихо под голосом, плавно появляется и уходит; голос не трогаем
+        audio_in += ["-i", str(music)]
+        audio_filter = ["-filter_complex",
+                        f"[1:a]apad[v];[2:a]volume=0.13,afade=t=in:d=0.6,afade=t=out:st={max(total - 1.5, 0):.2f}:d=1.5[m];"
+                        "[v][m]amix=inputs=2:duration=first:normalize=0[a]", "-map", "0:v", "-map", "[a]"]
+    else:
+        audio_filter = ["-af", "apad"]
     cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error",
            "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg", "-i", "-",
-           "-i", str(speech.audio_path), "-af", "apad", "-t", f"{total:.2f}",
+           *audio_in, *audio_filter, "-t", f"{total:.2f}",
            "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
            "-r", str(FPS), "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(video)]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
