@@ -63,7 +63,9 @@ kv = Table(
 )
 
 engine = create_engine(settings.database_url.replace("postgres://", "postgresql+psycopg://", 1)
-                       .replace("postgresql://", "postgresql+psycopg://", 1), future=True)
+                       .replace("postgresql://", "postgresql+psycopg://", 1), future=True,
+                       # рендер Reels идёт десятки минут: соединение успевает закрыться — проверяем перед запросом
+                       pool_pre_ping=True, pool_recycle=300)
 
 
 def now() -> datetime:

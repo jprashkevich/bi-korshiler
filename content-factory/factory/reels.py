@@ -17,7 +17,7 @@ from .render import typograf
 from .settings import OUTPUT_DIR, TEMPLATES_DIR, settings
 
 log = logging.getLogger(__name__)
-FPS = 30
+FPS = 24          # для Reels достаточно; 30 к/с давали рендер под 35 минут на длинный ролик
 TAIL = 1.0          # пауза после последней фразы, сек (короче — ролик зациклен)
 MAX_VOICE_SECONDS = {"short": 30, "mid": 42, "long": 62}   # A/B длины: короткий, средний, длинный
 SUB_MAX = 44        # максимум символов во фразе-плашке (две строки)
@@ -173,6 +173,11 @@ def sfx_events(runs: list[dict]) -> list[tuple[str, float]]:
 ACCENT_HEX = {"sky": "#009fe3", "green": "#88c947", "orange": "#ff954c", "periwinkle": "#556bb8"}
 
 
+def env_flag(name: str, default: str = "1") -> bool:
+    from .settings import env
+    return env(name, default) != "0"
+
+
 def reels_photos() -> dict[str, str]:
     """Фото для пробных Reels: только помеченные reels: true (без крупных лиц и детей) и по сезону."""
     import yaml
@@ -187,7 +192,8 @@ def reels_photos() -> dict[str, str]:
     return out
 
 
-def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None, subs: list[dict] | None = None) -> list[dict]:
+def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None, subs: list[dict] | None = None,
+               clips: list[dict] | None = None) -> list[dict]:
     """Склеивает соседние сцены с одним типом кадра в отрезки и раскладывает карточки на столе.
     Почему так: метафора не должна рваться на каждой сцене (решение владельца), поэтому кадр меняется
     только при смене типа, а внутри отрезка двигается камера и добавляются детали."""
@@ -222,6 +228,8 @@ def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None, subs: li
                 if u not in chosen:
                     chosen.append(u)
             run["photos"] = chosen[:3] or [spare_photo]
+            if clips and not out:          # живые планы из отчётов BIG Life — в первый фото-отрезок (хук)
+                run["photos"] = [Path(c["path"]).resolve().as_uri() for c in clips] + run["photos"][:1]
         if r["shot"] == "collage":
             cards, decos, y, side, focus = [], [], 300, 0, {"y": 700, "s": 1.0}
             for i in idx:
@@ -387,7 +395,14 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     from .render import SECOND_ACCENT
     if silent:
         subs = silent_subs(pkg, tl)
-    runs = build_runs(pkg, tl, pictures, subs)
+    clips = []
+    if any(s.shot == "photo" for s in pkg.scenes) and env_flag("REELS_CLIPS"):
+        try:
+            from .clips import pick_clips
+            clips = pick_clips(limit=2)
+        except Exception as exc:          # видео — усиление, без него ролик всё равно собирается
+            log.warning("Видео из отчётов не подобраны: %s", exc)
+    runs = build_runs(pkg, tl, pictures, subs, clips)
     runs_js = [{k: v for k, v in r.items() if k in ("shot", "start", "end", "scenes", "zoomout", "zoomout_s", "zoomout_y")}
                for r in runs]
     html = _env.get_template("reels.html.j2").render(

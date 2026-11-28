@@ -19,6 +19,7 @@
 /* фото во весь кадр */
 .photo{overflow:hidden;background:#222}
 .photo img.bg{position:absolute;top:0;height:100%;width:auto;max-width:none;filter:saturate(.9)}
+.photo video.bg{position:absolute;inset:0;width:1080px;height:1920px;object-fit:cover;filter:saturate(.9)}
 .photo .shade{position:absolute;inset:0;z-index:3;background:linear-gradient(180deg,rgba(20,24,60,.55) 0,rgba(20,24,60,0) 32%,rgba(20,24,60,0) 60%,rgba(20,24,60,.35) 100%)}
 .photo canvas{position:absolute;left:0;top:860px;width:1080px;height:440px;color:#fff}
 .photo .scene{z-index:4}
@@ -62,7 +63,7 @@
   {% for r in runs %}
   {% if r.shot == 'photo' %}
   <div class="shot photo" id="run{{ loop.index0 }}">
-    {% for ph in r.photos %}<img class="bg" data-k="{{ loop.index0 }}" src="{{ ph }}" alt="">{% endfor %}
+    {% for ph in r.photos %}{% if ph.endswith('.webm') %}<video class="bg vid" data-k="{{ loop.index0 }}" src="{{ ph }}" muted preload="auto" playsinline></video>{% else %}<img class="bg" data-k="{{ loop.index0 }}" src="{{ ph }}" alt="">{% endif %}{% endfor %}
     <div class="shade"></div>
     <div class="scene" style="position:absolute;inset:0;color:#fff"><canvas class="over"></canvas></div>
   </div>
@@ -119,6 +120,7 @@ function vizAt(run, t) {        // состояние фигуры внутри 
 }
 
 window.seek = function (t) {
+  const waits = [];
   RUNS.forEach((r, k) => {
     const el = document.getElementById('run' + k);
     const fin = k === 0 ? 1 : ease((t - r.start) / FADE), fout = k === RUNS.length - 1 ? 1 : 1 - ease((t - r.end) / FADE);
@@ -131,8 +133,22 @@ window.seek = function (t) {
     let bi = -1; beats.forEach((b, j) => { if (t >= b) bi = j; });
     const bt = bi >= 0 ? t - beats[bi] : lt, punch = 1 - ease(bt / 0.35);
     if (r.shot === 'photo') {
-      const imgs = [...el.querySelectorAll('img.bg')], cur = Math.max(bi, 0) % imgs.length, prv = Math.max(bi - 1, 0) % imgs.length;
+      const imgs = [...el.querySelectorAll('.bg')], cur = Math.max(bi, 0) % imgs.length, prv = Math.max(bi - 1, 0) % imgs.length;
       imgs.forEach((img, j) => {
+        if (img.tagName === 'VIDEO') {   // живой план: точная перемотка на каждый кадр рендера
+          const on = j === cur || (j === prv && bt < 0.22);
+          img.style.opacity = j === cur ? ease(bt / 0.22) : (on ? 1 : 0);
+          img.style.zIndex = j === cur ? 2 : 1;
+          img.style.transform = `scale(${1.04 + 0.04 * punch})`;
+          if (on && img.duration) {
+            const want = Math.min(bt, img.duration - 0.05);
+            if (Math.abs(img.currentTime - want) > 0.001) {
+              waits.push(new Promise(res => img.addEventListener('seeked', res, {once: true})));
+              img.currentTime = want;
+            }
+          }
+          return;
+        }
         if (!img.naturalWidth) return;
         const w = 1920 * img.naturalWidth / img.naturalHeight, span = Math.max(w - 1080, 0);
         const p = inout(bt / 4), dir = (j % 2 ? -1 : 1);
@@ -187,8 +203,10 @@ window.seek = function (t) {
     box.firstElementChild.innerHTML = sub.text.split(' ').map(w => hl && w.toLowerCase().replace(/[.,!?:;«»"]/g, '').startsWith(hl.slice(0, Math.max(4, hl.length - 2))) ? `<b>${esc(w)}</b>` : esc(w)).join(' ');
   }
   document.getElementById('endtag').style.opacity = ease((t - (TOTAL - 2.2)) / 0.4);
+  return waits.length ? Promise.all(waits) : null;
 };
-Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })))
+Promise.all([...[...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })),
+             ...[...document.querySelectorAll('video')].map(v => v.readyState >= 2 ? 0 : new Promise(r => { v.onloadeddata = v.onerror = r; }))])
   .then(() => document.fonts.ready).then(() => { window.layoutIssues = []; window.seek(0); document.body.dataset.fitted = '1'; });
 </script>
 </body></html>

@@ -37,6 +37,7 @@ class Event:
     videos: int = 0
     report: dict = field(default_factory=dict)         # report.json от tunely: описание, участники, лучшие кадры
     city: str = ""
+    video_files: list[dict] = field(default_factory=list)   # [{"id", "name", "size"}] — для живых планов в Reels
 
     @property
     def label(self) -> str:
@@ -67,7 +68,7 @@ def _access_token() -> str:
     return creds.token
 
 
-def _list(query: str, fields: str = "files(id,name,mimeType,createdTime)") -> list[dict]:
+def _list(query: str, fields: str = "files(id,name,mimeType,createdTime,size)") -> list[dict]:
     out, page = [], None
     while True:
         params = {"q": query, "fields": f"nextPageToken,{fields}", "pageSize": 1000,
@@ -130,7 +131,9 @@ def recent_events(days: int = 8, today: date | None = None, include_used: bool =
                     cx = complex_["name"].strip()
                     events.append(Event(ev["id"], cx, m.group(3).strip(), d.isoformat(),
                                         photos[:4], sum(f["mimeType"].startswith("video/") for f in files),
-                                        report, city_for(cx, report.get("group", ""))))
+                                        report, city_for(cx, report.get("group", "")),
+                                        [{"id": f["id"], "name": f["name"], "size": int(f.get("size") or 0)}
+                                         for f in files if f["mimeType"].startswith("video/")]))
     events.sort(key=lambda e: e.day, reverse=True)
     return events
 
@@ -176,6 +179,26 @@ def download(file_id: str, max_side: int = 1600) -> Path:
         im = ImageOps.exif_transpose(Image.open(io.BytesIO(r.content))).convert("RGB")
         im.thumbnail((max_side, max_side))
         im.save(path, quality=88)
+    return path
+
+
+def download_video(file_id: str, max_mb: int = 120) -> Path | None:
+    """Видео из отчёта (с кешем). Большие файлы не берём: долго качать, а нужно 5 секунд."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    path = CACHE / f"{file_id}.video"
+    if path.exists():
+        return path
+    with httpx.stream("GET", f"{API}/{file_id}", params={"alt": "media", "supportsAllDrives": "true"},
+                      headers={"Authorization": f"Bearer {_access_token()}"}, timeout=300, follow_redirects=True) as r:
+        r.raise_for_status()
+        size = 0
+        with path.open("wb") as fh:
+            for chunk in r.iter_bytes():
+                size += len(chunk)
+                if size > max_mb * 1024 * 1024:
+                    fh.close(); path.unlink(missing_ok=True)
+                    return None
+                fh.write(chunk)
     return path
 
 
