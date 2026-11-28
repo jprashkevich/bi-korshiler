@@ -21,6 +21,17 @@ MONTHS_NOM = ["январь", "февраль", "март", "апрель", "м�
               "сентябрь", "октябрь", "ноябрь", "декабрь"]
 
 
+def optional_config(name: str) -> str:
+    """Внешние методики (reels-craft.md, redpolitika.md, см. config/SOURCES.md): нет файла — работаем без него."""
+    path = CONFIG_DIR / name
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+def reel_system() -> str:
+    craft = optional_config("reels-craft.md")
+    return system_prompt() + REEL_RULES + (f"\n\n{craft}" if craft else "")
+
+
 def lessons_block() -> str:
     """Уроки прошлой недели из еженедельного отчёта (insights.report): что сохраняли и пересылали."""
     from . import db
@@ -32,6 +43,9 @@ def system_prompt() -> str:
     from .season import today as season_today
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
     editorial = (CONFIG_DIR / "editorial.md").read_text(encoding="utf-8")
+    redpol = optional_config("redpolitika.md")
+    if redpol:
+        editorial += "\n\n" + redpol
     from .season import fits
     photos = [p for p in load_yaml("photos.yaml")["photos"] if fits(p)]
     catalog = "\n".join(f"- {p['id']}: {p['desc']}" for p in photos) or "- (по сезону подходящих фото нет)"
@@ -301,14 +315,14 @@ def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = 
     if numbers:
         user += ("\n\n## Цифры BIG Life (можно использовать в одной сцене, например в payoff или cta, "
                  "и как данные для инфографики)\n" + numbers)
-    pkg = llm.ask(ReelPackage, system=system_prompt() + REEL_RULES, user=user,
+    pkg = llm.ask(ReelPackage, system=reel_system(), user=user,
                   model=settings.writer_model, effort=settings.writer_effort)
     words = voice_words(pkg)
     limit = MAX_REEL_WORDS[plan["length"]]
     if words > limit:   # озвучка дороже текста: сокращаем до синтеза, а не после
         user += (f"\n\n## Сократи\nВ прошлой версии озвучка была {words} слов, это длиннее заданной длины. "
                  f"Сделай не больше {limit - 10} слов на весь ролик, смысл, факты и инфографику сохрани.")
-        pkg = llm.ask(ReelPackage, system=system_prompt() + REEL_RULES, user=user,
+        pkg = llm.ask(ReelPackage, system=reel_system(), user=user,
                       model=settings.writer_model, effort=settings.writer_effort)
     pkg.scenes = pkg.scenes[:12]
     pkg.reel_format, pkg.voice_mode, pkg.length = reel_format, plan["voice_mode"], plan["length"]

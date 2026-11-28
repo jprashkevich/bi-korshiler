@@ -122,6 +122,9 @@ def edit(pkg):
     skill = (CONFIG_DIR / "humanizer-ru.md").read_text(encoding="utf-8")
     rules = (CONFIG_DIR / "humanizer.md").read_text(encoding="utf-8")
     editorial = (CONFIG_DIR / "editorial.md").read_text(encoding="utf-8")
+    redpol = CONFIG_DIR / "redpolitika.md"
+    if redpol.exists():
+        editorial += "\n\n" + redpol.read_text(encoding="utf-8")
     system = (f"{skill}\n\n{rules}\n\n## Голос бренда (tone of voice) — важнее правил скилла\n{brand}\n\n{editorial}")
     current = pkg
     for attempt in range(2):
@@ -174,7 +177,10 @@ def review_reel(pkg, source: str = ""):
     import json
     skill = (CONFIG_DIR / "humanizer-ru.md").read_text(encoding="utf-8")
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
-    system = f"{REVIEW_RULES}\n\n## Голос бренда\n{brand}\n\n## Правила humanizer-ru\n{skill}"
+    craft = (CONFIG_DIR / "reels-craft.md")
+    redpol = (CONFIG_DIR / "redpolitika.md")
+    extra = "".join(f"\n\n{p.read_text(encoding='utf-8')}" for p in (craft, redpol) if p.exists())
+    system = f"{REVIEW_RULES}\n\nОценивай по чек-листу из «Ремесла Reels», если он ниже.{extra}\n\n## Голос бренда\n{brand}\n\n## Правила humanizer-ru\n{skill}"
     user = (("Источник:\n" + source[:6000] + "\n\n") if source else "") + \
         "Сценарий (JSON):\n" + json.dumps(pkg.model_dump(), ensure_ascii=False)
     return llm.ask(ReelReview, system=system, user=user, model=settings.writer_model, effort=settings.editor_effort)
