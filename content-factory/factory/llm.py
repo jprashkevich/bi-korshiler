@@ -63,7 +63,9 @@ def ask(model_cls: type[T], *, system: str, user: str | list, model: str, effort
     messages = [{"role": "user", "content": user}]
     schema = strict_schema(model_cls)
     for attempt in range(2):
-        resp = client().beta.messages.create(
+        # потоковый запрос: без него SDK не пускает длинные ответы (вычитка с полным humanizer-ru,
+        # max_tokens 32k) — «Streaming is required for operations that may take longer than 10 minutes»
+        with client().beta.messages.stream(
             model=model,
             max_tokens=max_tokens,
             system=system,
@@ -72,7 +74,8 @@ def ask(model_cls: type[T], *, system: str, user: str | list, model: str, effort
             output_config={"effort": effort, "format": {"type": "json_schema", "schema": schema}},
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",   # при отказе модели запрос автоматически выполнит резервная модель
-        )
+        ) as stream:
+            resp = stream.get_final_message()
         if resp.stop_reason == "refusal":
             raise LLMError(f"Модель отказалась отвечать: {resp.stop_details}")
         if resp.stop_reason == "max_tokens":
