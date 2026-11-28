@@ -387,6 +387,9 @@ def _resolve_cut(c, t: float, phrase: str, ctx: dict) -> list[dict]:
     if c.kind == "illustration" and ctx["ills"].get(c.query):
         return [{**base, "type": "card", "uri": ctx["ills"][c.query]}]
     if c.kind == "map":
+        if ctx.get("world"):                     # формат 6: влёт с карты мира в страну
+            ws = world_svg(c.query, ctx["accent"])
+            return [{**base, "type": "world", "svg": ws[0], "box": ws[1]}] if ws else []
         svg = map_svg(c.query, ctx["accent"])
         return [{**base, "type": "map", "svg": svg}] if svg else []
     if c.kind == "person":
@@ -414,7 +417,7 @@ def _resolve_cut(c, t: float, phrase: str, ctx: dict) -> list[dict]:
 
 
 def resolve_storyboard(sb, words: list[dict], subs: list[dict], pkg, item: dict | None, pictures: dict | None,
-                       clips: list[dict] | None = None, lead: float = 0.4) -> list[dict]:
+                       clips: list[dict] | None = None, lead: float = 0.4, world: bool = False) -> list[dict]:
     """Перебивки раскадровки → готовые кадры [{type, start, …}] по времени. Не прошедшие проверку выпадают:
     предыдущий кадр держится дольше, а не заменяется случайным."""
     from concurrent.futures import ThreadPoolExecutor
@@ -422,7 +425,7 @@ def resolve_storyboard(sb, words: list[dict], subs: list[dict], pkg, item: dict 
     from .render import illustrations, picture_uris
     ctx = {"photos": reels_photos(), "ills": illustrations(), "pics": picture_uris(pictures),
            "people": {p.name_en: p for p in pkg.people}, "accent": ACCENT_HEX.get(pkg.accent, "#ff954c"),
-           "used": set(), "clips": list(clips or []), "item": item}
+           "used": set(), "clips": list(clips or []), "item": item, "world": world}
     jobs = []
     for c in sb.cuts:
         t = max(0.0, words[c.word]["t"] - lead) if words else 0.0
@@ -447,3 +450,38 @@ def resolve_storyboard(sb, words: list[dict], subs: list[dict], pkg, item: dict 
             continue
         clean.append(x)
     return clean
+
+
+def world_svg(country: str, accent: str = "#ff954c") -> tuple[str, list[float]] | None:
+    """Карта мира для «влёта в страну» (формат 6): весь мир одной SVG, страна выделена; рамка страны
+    возвращается отдельно — по ней камера в шаблоне летит с глобуса в страну."""
+    q = country.strip().lower()
+    target = next((c for c in _countries() if q in (c["name"].lower(), c["ru"].lower(), (c["iso"] or "").lower())), None)
+    if not target:
+        target = next((c for c in _countries() if q and (q in c["name"].lower() or q in c["ru"].lower())), None)
+    if not target:
+        return None
+    W, H = 2000, 1000
+
+    def rings(c):
+        return c["coords"] if c["type"] == "Polygon" else [r for poly in c["coords"] for r in poly]
+
+    def xy(lon, lat):
+        return (lon + 180) / 360 * W, (90 - lat) / 180 * H
+
+    def path(c):
+        out = []
+        for r in rings(c):
+            pts = [xy(x, y) for x, y in r[::2] or r]
+            if len(pts) > 2:
+                out.append("M" + "L".join(f"{x:.0f},{y:.0f}" for x, y in pts) + "Z")
+        return "".join(out)
+    others = "".join(f'<path d="{path(c)}"/>' for c in _countries() if c is not target)
+    # рамка по самому большому кольцу: у Франции, США и других — далёкие острова, камере нужен материк
+    main = max(rings(target), key=len)
+    xs, ys = zip(*(xy(x, y) for x, y in main))
+    box = [min(xs), min(ys), max(xs), max(ys)]
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" overflow="visible">'
+           f'<g class="others" fill="#e4dccd" stroke="#f6efe4" stroke-width="1.5">{others}</g>'
+           f'<path class="hit" d="{path(target)}" fill="{accent}" stroke="#28348a" stroke-width="2"/></svg>')
+    return svg, [round(v, 1) for v in box]

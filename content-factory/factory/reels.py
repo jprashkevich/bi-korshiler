@@ -392,6 +392,98 @@ def silent_timeline(pkg: ReelPackage, out: Path) -> tuple[list[dict], list[dict]
     return tl, [], total, silence
 
 
+MAX_HOLD = 2.5        # формат 6: дольше перебивка не держится (кроме глав данных)
+
+
+def build_shots(cuts: list[dict], sb, words: list[dict], subs: list[dict], hook_end: float, total: float) -> tuple[list, list]:
+    """Формат 6: главы данных + перебивки → один таймлайн кадров на весь экран.
+    Пустоты (картинка не прошла проверку) заполняются кинетическим текстом фразы, а не удержанием
+    прошлого кадра: на прогоне #24 удержание дало мёртвые 4–6 секунд."""
+    from . import director
+    wt = lambda i: director.word_time(words, i)
+    vizs, chapters = [], []
+    for a in sb.anchor:
+        st = max(wt(a.word) - 0.15, hook_end + 0.3)
+        en = wt(a.until_word) if a.until_word > a.word else st + 4.5
+        chapters.append([st, min(max(en, st + 3.0), st + 6.0), len(vizs)])
+        vizs.append(a.viz.model_dump())
+    exp = min(max(wt(sb.expand_word) - 0.2, total - 6.0), total - 2.5)
+    chapters = [c for c in chapters if c[0] < exp - 1.5]
+    for k in range(len(chapters) - 1):
+        chapters[k][1] = min(chapters[k][1], chapters[k + 1][0])
+    if chapters:
+        chapters[-1][1] = min(chapters[-1][1], exp)
+    if vizs:
+        chapters.append([exp, total + 1, len(vizs)])
+        vizs.append(vizs[-1])                   # финальная глава возвращается к метафоре в полном виде
+    inside = lambda t: any(c[0] - 0.3 <= t < c[1] for c in chapters)
+    shots = [dict(c) for c in cuts if not inside(c["start"])]
+    shots += [{"type": "chapter", "start": round(c[0], 2), "chapter": c[2], "cend": c[1]} for c in chapters]
+    shots.sort(key=lambda x: x["start"])
+    if shots and shots[0]["start"] > 0:
+        shots[0]["start"] = 0.0
+    def sub_at(t):
+        return next((x for x in subs if x["start"] - 0.05 <= t < x["end"]), None)
+    out = []
+    for k, sh in enumerate(shots):
+        end = shots[k + 1]["start"] if k + 1 < len(shots) else total + 1
+        if sh["type"] == "chapter":
+            # глава закончилась, а следующего кадра ещё нет — пустоту заполняет текст, а не застывшая фигура
+            sh["end"] = round(min(sh.pop("cend"), end), 2)
+            out.append(sh)
+            t = sh["end"]
+        else:
+            sh["end"] = round(end, 2)
+            out.append(sh)
+            t = sh["start"] + 1.8
+        while end - t > 0.9 and t < total:
+            if t < hook_end:                     # в хуке держит крупный текст; первый текстовый кадр — сразу после
+                t = hook_end + 0.05
+                continue
+            if t >= hook_end:
+                sub = sub_at(t)
+                if sub:
+                    key = sub.get("hl") or max(sub["text"].split(), key=len)
+                    out[-1]["end"] = round(t, 2)
+                    out.append({"type": "kinetic", "start": round(t, 2), "end": round(min(t + 1.8, end), 2),
+                                "text": sub["text"], "key": key.strip(".,!?«»")})
+            t += 1.8
+    return out, vizs
+
+
+def directed_html6(pkg: ReelPackage, subs: list[dict], tl: list[dict], total: float,
+                   pictures: dict | None, clips: list[dict], item: dict | None) -> tuple[str, list]:
+    """Формат 6 (config/reels-motion-v6.md): весь экран, движение в каждом кадре, метафора главами."""
+    from . import director
+    from .broll import resolve_storyboard
+    from .render import SECOND_ACCENT
+    hook_end = tl[0]["end"]
+    sb = director.direct(pkg, subs, hook_end, total, item, fmt=6)
+    words = director.words_of(subs)
+    cuts = resolve_storyboard(sb, words, subs, pkg, item, pictures, clips, lead=director.LEAD, world=True)
+    shots, vizs = build_shots(cuts, sb, words, subs, hook_end, total)
+    if not shots:
+        raise RuntimeError("в раскадровке нет кадров")
+    accents_js = [{"t": round(director.word_time(words, a.word), 2), "motion": a.motion} for a in sb.accents]
+    final = next((x["start"] for x in shots if x["type"] == "chapter" and x["chapter"] == len(vizs) - 1), None)
+    if final and not any(a["motion"] == "flash" for a in accents_js):
+        accents_js.append({"t": round(final, 2), "motion": "flash"})       # вспышка перед финалом
+    hook = {"title": typograf(pkg.scenes[0].title), "highlight": pkg.scenes[0].highlight}
+    import zlib
+    html = _env.get_template("reels6.html.j2").render(
+        accent=pkg.accent, accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"), hook=hook, shots=shots,
+        shots_js=[{k: x[k] for k in ("type", "start", "end", "text", "chapter") if k in x} for x in shots],
+        chapters_js=[{"viz": v} for v in vizs], accents_js=accents_js, hook_end=hook_end, total=total,
+        subtitles=subs, source=sb.source or pkg.source_line[:60], seed=zlib.crc32(pkg.headline.encode()) % 100000,
+        art_js=(TEMPLATES_DIR / "dataart.js").read_text(encoding="utf-8"), assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
+    events = [("whoosh", max(hook_end - 0.2, 0))] + [("whoosh", max(a["t"] - 0.2, 0)) for a in accents_js if a["motion"] == "flash"]
+    events += [("pop" if x["type"] == "number" else "paper", x["start"]) for x in shots
+               if x["type"] not in ("full", "chapter", "kinetic")]
+    events += [("whoosh", max(x["start"] - 0.15, 0)) for x in shots if x["type"] == "chapter"]
+    (OUTPUT_DIR / "last_storyboard.json").write_text(sb.model_dump_json(indent=1), encoding="utf-8")
+    return html, events[:40]
+
+
 def directed_html(pkg: ReelPackage, rubric_title: str, subs: list[dict], tl: list[dict], total: float,
                   pictures: dict | None, clips: list[dict], item: dict | None) -> tuple[str, list]:
     """Формат 5: раскадровка режиссёра по времени слов → кадры, прошедшие проверку «по глазам» → HTML."""
@@ -462,7 +554,11 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     html, events = None, None
     if not silent and env_flag("REELS_DIRECTOR"):
         try:
-            html, events = directed_html(pkg, rubric_title, subs, tl, total, pictures, clips, item)
+            from .settings import env
+            if env("REELS_FORMAT", "5") == "6":
+                html, events = directed_html6(pkg, subs, tl, total, pictures, clips, item)
+            else:
+                html, events = directed_html(pkg, rubric_title, subs, tl, total, pictures, clips, item)
         except Exception as exc:          # режиссёр — новый формат; при сбое ролик собирается прежним
             log.warning("Режиссёр не справился, собираю прежним форматом: %s", exc)
     if html is None:

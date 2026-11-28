@@ -38,15 +38,16 @@ def _catalogs() -> str:
     return out
 
 
-def system() -> str:
+def system(fmt: int = 5) -> str:
     from .season import today
     from .writer import MONTHS_NOM
-    rules = (CONFIG_DIR / "reels-motion.md").read_text(encoding="utf-8")
+    rules = (CONFIG_DIR / ("reels-motion-v6.md" if fmt == 6 else "reels-motion.md")).read_text(encoding="utf-8")
     return (f"{rules}\n\n## Сейчас\nМесяц: {MONTHS_NOM[today().month - 1]}. Сезон картинок — этот.\n\n"
             "## Как отвечать\nВерни раскадровку по схеме. Номера слов — из списка ниже. Не меняй текст озвучки.")
 
 
-def direct(pkg: ReelPackage, subs: list[dict], hook_end: float, total: float, item: dict | None) -> Storyboard:
+def direct(pkg: ReelPackage, subs: list[dict], hook_end: float, total: float, item: dict | None,
+           fmt: int = 5) -> Storyboard:
     words = words_of(subs)
     listing = "\n".join(f"{w['i']} [{w['t']:.2f}] {w['w']}" for w in words)
     scenes = [{"type": s.type, "voice": s.voice, "highlight": s.highlight,
@@ -58,7 +59,10 @@ def direct(pkg: ReelPackage, subs: list[dict], hook_end: float, total: float, it
             f"## Источник\n{pkg.source_line}\n"
             + (f"{item['title']}\n{item.get('summary') or ''}\n" if item else "")
             + "\n" + _catalogs())
-    sb = llm.ask(Storyboard, system=system(), user=user, model=settings.writer_model, effort=settings.writer_effort)
+    if fmt == 6:
+        user += ("\n\n## Формат 6\nanchor — это главы данных на весь экран: 2–3 главы, у каждой word (начало) и "
+                 "until_word (конец, через 3–6 с). Внутри глав перебивок нет. expand_word — начало финальной главы.")
+    sb = llm.ask(Storyboard, system=system(fmt), user=user, model=settings.writer_model, effort=settings.writer_effort)
     return normalize(sb, words, hook_end)
 
 

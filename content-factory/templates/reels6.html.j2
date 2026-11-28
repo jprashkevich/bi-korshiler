@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Caveat:wght@600;700&display=swap">
+<style>
+@font-face{font-family:"TT Firs Neue";src:url("{{ assets }}/TT_Firs_Neue_Trial_Var_Roman.ttf") format("truetype-variations");font-weight:100 900}
+/* Формат 6 (config/reels-motion-v6.md). Весь экран — один кадр; картинка меняется на названном слове
+   каждые 1,2–2 с; в каждом кадре что-то движется (без ведущего движение даёт картинка); метафора выходит
+   главами на весь экран и каждая продолжает прошлую. Зоны Instagram: 0–140 и 1600–1920. */
+:root{--navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;--cream:#f6efe4;--ink:#2b3350;
+--accent:var(--{{ accent }});--accent2:var(--{{ accent2 }});--display:"TT Firs Neue","Montserrat",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--cream);font-family:Montserrat,sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--cream);color:var(--navy)}
+.grain{position:absolute;inset:0;z-index:40;pointer-events:none;opacity:.16;mix-blend-mode:multiply;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 .55 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>")}
+#logo{position:absolute;left:50%;top:142px;transform:translateX(-50%);height:38px;z-index:35;background:var(--cream);padding:10px 18px;border-radius:999px;box-sizing:content-box}
+.shot{position:absolute;inset:0;opacity:0;overflow:hidden}
+.shot.full{background:#1c2036}
+.shot .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.95);transform-origin:50% 50%}
+.shot .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,24,60,.45) 0,rgba(20,24,60,0) 28%,rgba(20,24,60,0) 66%,rgba(20,24,60,.35) 100%)}
+.shot.paper,.shot.kinetic{background:var(--cream)}
+.deco{position:absolute;pointer-events:none}
+.inner{position:absolute;left:50%;top:47%;width:1080px;height:1100px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform-origin:50% 50%}
+.pcard{position:relative;background:#fff;padding:18px;box-shadow:0 22px 50px rgba(60,40,20,.22)}
+.pcard img{display:block;width:100%;height:100%;object-fit:cover}
+.pcard.ill img{object-fit:contain}
+.pcard.bw img{object-position:50% 18%;filter:grayscale(1) contrast(1.1)}
+.tape{position:absolute;width:160px;height:44px;background:rgba(255,244,210,.9);top:-20px;left:50%;margin-left:-80px;transform:rotate(-4deg)}
+.cap{margin-top:44px;max-width:940px;text-align:center;font-family:var(--display);font-weight:800;font-size:72px;line-height:1.02;color:var(--navy)}
+.cap small{display:block;font-family:Montserrat;font-weight:700;font-size:36px;line-height:1.3;color:var(--ink);opacity:.75;margin-top:14px}
+.worldwrap{position:relative;width:1000px;height:760px;overflow:hidden}
+.worldwrap svg{position:absolute;left:0;top:0;transform-origin:0 0}
+.pin{position:absolute;width:34px;height:34px;border-radius:50% 50% 50% 0;background:var(--navy);transform-origin:50% 100%;border:6px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.tagname{display:inline-block;margin-top:30px;background:var(--accent);color:#fff;font-weight:800;font-size:38px;padding:10px 24px;border-radius:14px}
+.tagrole{display:inline-block;margin-top:12px;background:#fff;color:var(--navy);font-weight:700;font-size:30px;padding:8px 18px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.jcover{width:640px;height:860px;background:var(--navy);color:#fff;padding:46px 44px;position:relative;box-shadow:0 22px 50px rgba(20,20,60,.3);display:flex;flex-direction:column}
+.jcover .mast{font-family:var(--display);font-weight:800;font-size:86px;line-height:.92;letter-spacing:-.02em;border-bottom:4px solid rgba(255,255,255,.85);padding-bottom:24px}
+.jcover .kick{margin-top:26px;font-weight:800;font-size:26px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.jcover .head{margin-top:auto;font-family:var(--display);font-weight:700;font-size:54px;line-height:1.08}
+.jcover .bar{position:absolute;right:44px;top:46px;width:70px;height:70px;border-radius:50%;background:var(--accent)}
+.article{width:880px;height:1000px;overflow:hidden;padding:0}
+.article img{width:100%;height:auto;object-fit:initial;position:relative}
+.article .hl{position:absolute;left:30px;top:150px;height:70px;background:color-mix(in srgb,var(--accent) 45%,transparent);mix-blend-mode:multiply;width:0}
+.segnum{font-family:var(--display);font-weight:800;color:var(--navy);letter-spacing:-.03em;line-height:.9;font-size:320px}
+.segquote{max-width:920px;font-family:var(--display);font-weight:700;font-size:78px;line-height:1.12;color:var(--navy)}
+.segquote:before{content:"«";display:block;font-size:210px;line-height:.6;color:var(--accent)}
+.kin{max-width:920px;font-family:var(--display);font-weight:800;font-size:104px;line-height:1.02;letter-spacing:-.02em;color:var(--navy)}
+.kin .w{display:inline-block;margin-right:.22em}
+.kin .k{color:var(--accent)}
+#art{position:absolute;inset:0;width:1080px;height:1920px;opacity:0;z-index:2}
+#src{position:absolute;left:50%;transform:translateX(-50%);top:212px;z-index:30;font-weight:700;font-size:24px;color:var(--ink);opacity:0;white-space:nowrap}
+#circle{position:absolute;left:180px;top:520px;width:720px;height:640px;z-index:20;pointer-events:none;overflow:visible;opacity:0}
+#circle path{stroke-dasharray:100;stroke-dashoffset:100}
+#hook{position:absolute;left:80px;right:80px;top:290px;z-index:30;font-family:var(--display);font-weight:800;font-size:112px;line-height:.98;letter-spacing:-.02em;color:var(--navy)}
+#hook.on-photo{color:#fff;text-shadow:0 6px 30px rgba(10,14,50,.45)}
+#hook .hl{color:var(--accent)}
+#hook .w{display:inline-block;opacity:0}
+#sub{position:absolute;left:70px;right:70px;top:1390px;z-index:31;text-align:center}
+#sub span{display:inline;font-size:50px;font-weight:700;line-height:1.5;color:var(--navy);background:#fff;padding:6px 20px;border-radius:16px;
+  box-shadow:0 6px 18px rgba(40,52,138,.12);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+#sub b{font-weight:900;border-radius:8px;padding:0 6px;background:linear-gradient(color-mix(in srgb,var(--accent) 55%,#fff),color-mix(in srgb,var(--accent) 55%,#fff)) no-repeat 0 85%/0% 40%}
+#sub.hidden{display:none}
+#flash{position:absolute;inset:0;z-index:38;background:#fff;opacity:0;pointer-events:none}
+#endtag{position:absolute;left:50%;transform:translateX(-50%);top:1540px;z-index:31;font-weight:800;font-size:28px;color:var(--navy);opacity:0;
+  background:#fff;padding:12px 26px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(40,52,138,.12)}
+</style></head><body>
+<div id="stage">
+  <img id="logo" src="{{ assets }}/logo-horizontal.png" alt="BIG Life">
+  <canvas id="art" width="1080" height="1920"></canvas>
+  {% for g in shots %}{% if g.type != 'chapter' %}
+  <div class="shot {{ 'full' if g.type == 'full' else ('kinetic' if g.type == 'kinetic' else 'paper') }}" id="shot{{ loop.index0 }}">
+    {% if g.type == 'full' %}
+      {% if g.uri.endswith('.webm') or g.uri.endswith('.mp4') %}<video class="bg vid" src="{{ g.uri }}" muted preload="auto" playsinline></video>{% else %}<img class="bg" src="{{ g.uri }}" alt="">{% endif %}<div class="shade"></div>
+    {% else %}
+      <svg class="deco d1" width="420" height="210" style="left:{{ [-60, 700, 600, -40][loop.index0 % 4] }}px;top:{{ [1180, 260, 1220, 300][loop.index0 % 4] }}px"><path d="M0 210 a210 210 0 0 1 420 0 z" fill="var(--accent2)" opacity=".22"/></svg>
+      <svg class="deco d2" width="140" height="140" style="left:{{ [820, 60, 120, 860][loop.index0 % 4] }}px;top:{{ [360, 1150, 330, 1180][loop.index0 % 4] }}px"><circle cx="70" cy="70" r="60" fill="var(--accent)" opacity=".85"/></svg>
+      <svg class="deco d3" width="980" height="40" style="left:50px;top:{{ [1290, 230, 1300, 240][loop.index0 % 4] }}px"><g stroke="var(--ink)" stroke-width="2" opacity=".35"><line x1="0" y1="8" x2="980" y2="8"/>{% for k in range(15) %}<line x1="{{ k * 70 }}" y1="8" x2="{{ k * 70 }}" y2="{{ 26 if k % 3 == 0 else 18 }}"/>{% endfor %}</g></svg>
+      <div class="inner">
+      {% if g.type == 'kinetic' %}<div class="kin">{% for w in g.text.split(' ') %}<span class="w{% if g.key and g.key|lower in w|lower %} k{% endif %}">{{ w }}</span>{% endfor %}</div>
+      {% elif g.type == 'card' %}<div class="pcard ill" style="width:840px;height:840px"><img src="{{ g.uri }}" alt=""><div class="tape"></div></div>
+      {% elif g.type == 'world' %}<div class="worldwrap" data-box='{{ g.box | tojson }}'>{{ g.svg | safe }}<span class="pin"></span></div>
+      {% elif g.type == 'map' %}{{ g.svg | safe }}
+      {% elif g.type == 'person' %}<div class="pcard bw" style="width:580px;height:700px"><img src="{{ g.uri }}" alt=""><div class="tape"></div></div><span class="tagname">{{ g.name }}</span>{% if g.role %}<span class="tagrole">{{ g.role }}</span>{% endif %}
+      {% elif g.type == 'namecard' %}<div class="cap" style="font-size:104px">{{ g.name }}{% if g.role %}<small>{{ g.role }}</small>{% endif %}</div>
+      {% elif g.type == 'journal' %}<div class="jcover"><span class="bar"></span><div class="mast">{{ g.name }}</div><div class="kick">{{ g.detail or 'исследование' }}</div><div class="head">{{ g.caption }}</div></div>
+      {% elif g.type == 'article' %}<div class="pcard article"><img src="{{ g.uri }}" alt=""><span class="hl"></span><div class="tape"></div></div>
+      {% elif g.type == 'number' %}<div class="segnum" data-count="{{ g.text }}"><span class="v">{{ g.text }}</span></div>
+      {% elif g.type == 'quote' %}<div class="segquote">{% for w in g.text.split(' ') %}<span class="w">{{ w }} </span>{% endfor %}</div>
+      {% endif %}
+      {% if g.caption and g.type not in ('journal', 'namecard', 'article', 'kinetic') %}<div class="cap">{{ g.caption }}{% if g.detail and g.type not in ('person',) %}<small>{{ g.detail }}</small>{% endif %}</div>{% endif %}
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}{% endfor %}
+  <svg id="circle" viewBox="0 0 400 260" preserveAspectRatio="none"><path d="M210 12 C 90 4, 10 50, 18 130 C 28 220, 300 250, 372 160 C 420 90, 340 10, 190 18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" pathLength="100"/></svg>
+  {% if source %}<div id="src">{{ source }}</div>{% endif %}
+  <div id="hook" style="font-size:{{ 112 if hook.title|length <= 28 else (96 if hook.title|length <= 44 else 84) }}px">{% for w in hook.title.split(' ') %}<span class="w{% if hook.highlight and hook.highlight|lower in w|lower %} hl{% endif %}">{{ w }}</span>{{ ' ' }}{% endfor %}</div>
+  <div id="sub"><span></span></div>
+  <div id="endtag">BIG Life · соседство в цифрах</div>
+  <div id="flash"></div>
+  <div class="grain"></div>
+</div>
+<script>{{ art_js | safe }}</script>
+<script>
+const SUBS = {{ subtitles | tojson }};
+const SHOTS = {{ shots_js | tojson }};     // [{type, start, end, text, chapter}]
+const CHAPTERS = {{ chapters_js | tojson }}; // [{viz}] по порядку
+const ACCENTS = {{ accents_js | tojson }};
+const HOOK_END = {{ hook_end }}, TOTAL = {{ total }}, SEED = {{ seed }};
+const FLASHES = [HOOK_END].concat(ACCENTS.filter(a => a.motion === 'flash').map(a => a.t));
+const ease = x => 1 - Math.pow(1 - Math.min(Math.max(x, 0), 1), 3);
+const inout = x => { x = Math.min(Math.max(x, 0), 1); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const esc = s => s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'})[c]);
+
+window.seek = function (t) {
+  const waits = [];
+  let cur = -1; SHOTS.forEach((s, k) => { if (t >= s.start) cur = k; });
+  const art = document.getElementById('art');
+  let onPhoto = false, inChapter = false;
+  SHOTS.forEach((s, k) => {
+    const on = k === cur;
+    if (s.type === 'chapter') {
+      if (!on) return;
+      inChapter = true;
+      const lt = t - s.start, c = CHAPTERS[s.chapter], prev = s.chapter > 0 ? CHAPTERS[s.chapter - 1].viz : null;
+      window.drawArt(art, c.viz, prev, lt, t, SEED);
+      return;
+    }
+    const el = document.getElementById('shot' + k);
+    el.style.opacity = on ? 1 : 0;           // рез
+    if (!on) return;
+    const lt = t - s.start, dur = Math.max(s.end - s.start, 0.6), p = lt / dur;
+    const enter = 1 - ease(lt / 0.25);       // рез-толчок: кадр входит крупнее и садится
+    let punch = 0;
+    ACCENTS.forEach(a => { if (a.motion === 'punch' && t >= a.t && a.t >= s.start) punch = Math.max(punch, 1 - ease((t - a.t) / 0.25)); });
+    if (s.type === 'full') {
+      onPhoto = true;
+      const m = el.querySelector('.bg'), dir = k % 4, a = 0.11;
+      // наезд, отъезд, панорама влево, вправо — направление чередуется от кадра к кадру
+      let sc = 1.08, tx = 0;
+      if (dir === 0) sc = 1.04 + a * p; else if (dir === 1) sc = 1.04 + a * (1 - p);
+      else { sc = 1.14; tx = (dir === 2 ? 1 : -1) * (40 - 80 * p); }
+      m.style.transform = `translateX(${tx}px) scale(${sc * (1 + 0.07 * enter + 0.15 * punch)})`;
+      if (m.tagName === 'VIDEO' && m.duration) {
+        const want = Math.min(lt, m.duration - 0.05);
+        if (Math.abs(m.currentTime - want) > 0.001) {
+          waits.push(new Promise(res => m.addEventListener('seeked', res, {once: true})));
+          m.currentTime = want;
+        }
+      }
+      return;
+    }
+    // бумажный кадр: фон-декор плывёт медленно, карточка — быстрее (параллакс)
+    el.querySelectorAll('.deco').forEach((d, j) => { d.style.transform = `translate(${(j % 2 ? -1 : 1) * 30 * p}px, ${-24 * p * (j + 1)}px) rotate(${(j - 1) * 8 * p}deg)`; });
+    const inner = el.querySelector('.inner'), drop = ease(lt / 0.35);
+    inner.style.transform = `translate(-50%, -50%) translateY(${(1 - drop) * 120 - 40 * p}px) scale(${(1.06 - 0.06 * drop + 0.05 * p) * (1 + 0.1 * punch)}) rotate(${(k % 2 ? -1 : 1) * 3 * (1 - drop)}deg)`;
+    if (s.type === 'kinetic') {
+      el.querySelectorAll('.kin .w').forEach((w, j) => { const q = ease((lt - 0.07 * j) / 0.2); w.style.opacity = q; w.style.transform = `translateY(${(1 - q) * 40}px)`; });
+    }
+    if (s.type === 'quote') el.querySelectorAll('.segquote .w').forEach((w, j) => { w.style.opacity = ease((lt - 0.05 * j) / 0.15); });
+    const ww = el.querySelector('.worldwrap');
+    if (ww) {                                // влёт с карты мира в страну, булавка на ней
+      const svg = ww.querySelector('svg'), b = JSON.parse(ww.dataset.box), q = inout((lt - 0.15) / 1.0);
+      const s0 = 1000 / 2000, bw = Math.max(b[2] - b[0], 20), bh = Math.max(b[3] - b[1], 20);
+      const s1 = Math.min(520 / bw, 380 / bh, 8);
+      const cx0 = 1000, cy0 = 500, cx1 = (b[0] + b[2]) / 2, cy1 = (b[1] + b[3]) / 2;
+      const sc = s0 * Math.pow(s1 / s0, q), cx = cx0 + (cx1 - cx0) * Math.min(1, q * 1.3), cy = cy0 + (cy1 - cy0) * Math.min(1, q * 1.3);
+      svg.style.transform = `translate(${500 - cx * sc}px, ${380 - cy * sc}px) scale(${sc})`;
+      const pin = ww.querySelector('.pin'), pq = ease((lt - 1.05) / 0.3);
+      pin.style.left = '483px'; pin.style.top = (346 - 60 * (1 - pq)) + 'px'; pin.style.opacity = pq;
+      pin.style.transform = `rotate(-45deg) scale(${0.6 + 0.4 * pq})`;
+    }
+    const art2 = el.querySelector('.article');
+    if (art2) {                              // страница статьи едет вверх, маркер на заголовке
+      const img = art2.querySelector('img');
+      img.style.top = (-Math.max(img.clientHeight - 1000, 0) * 0.35 * inout(lt / 1.6)) + 'px';
+      art2.querySelector('.hl').style.width = (760 * ease((lt - 0.3) / 0.5)) + 'px';
+    }
+    const num = el.querySelector('.segnum');
+    if (num) {
+      const raw = num.dataset.count, mm = raw.match(/\d[\d\s ]*(?:[.,]\d+)?/);
+      if (mm) { const val = parseFloat(mm[0].replace(/[\s ]/g, '').replace(',', '.')), dec = (mm[0].split(/[.,]/)[1] || '').length;
+        let v = (val * ease(lt / 0.8)).toFixed(dec).replace('.', ',');
+        if (v.length > 4) v = v.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        num.querySelector('.v').textContent = raw.replace(mm[0], v); }
+    }
+  });
+  art.style.opacity = inChapter ? 1 : 0;
+  // рукописная обводка
+  const circ = document.getElementById('circle');
+  const ca = ACCENTS.filter(a => a.motion === 'circle' && t >= a.t && cur >= 0 && a.t >= SHOTS[cur].start).pop();
+  circ.style.opacity = ca ? 1 : 0;
+  circ.firstElementChild.style.strokeDashoffset = ca ? 100 * (1 - ease((t - ca.t) / 0.6)) : 100;
+  const src = document.getElementById('src'); if (src) src.style.opacity = inChapter ? 0.85 : 0;
+  // хук печатается по словам
+  const hk = document.getElementById('hook');
+  hk.classList.toggle('on-photo', onPhoto);
+  hk.style.opacity = 1 - ease((t - HOOK_END + 0.1) / 0.2);
+  hk.querySelectorAll('.w').forEach((w, k) => { const q = ease((t - 0.09 * k) / 0.18); w.style.opacity = q; w.style.transform = `translateY(${(1 - q) * 40}px) scale(${1.15 - 0.15 * q})`; });
+  // субтитры
+  const sub = SUBS.find(s => t >= s.start && t < s.end), box = document.getElementById('sub');
+  box.classList.toggle('hidden', !sub || t < HOOK_END - 0.05);
+  if (sub) {
+    const hl = (sub.hl || '').toLowerCase();
+    const mk = ACCENTS.find(a => a.motion === 'marker' && a.t >= sub.start - 0.05 && a.t < sub.end);
+    box.firstElementChild.innerHTML = sub.text.split(' ').map(w => {
+      const bare = w.toLowerCase().replace(/[.,!?:;«»"]/g, '');
+      return (hl && bare.startsWith(hl.slice(0, Math.max(4, hl.length - 2)))) || /\d/.test(w) ? `<b>${esc(w)}</b>` : esc(w);
+    }).join(' ');
+    const q = mk ? ease((t - mk.t) / 0.45) : ease((t - sub.start - 0.15) / 0.4);
+    box.querySelectorAll('b').forEach(b => { b.style.backgroundSize = `${100 * q}% 40%`; });
+  }
+  let fl = 0; FLASHES.forEach(f => { if (t >= f - 0.05 && t < f + 0.3) fl = Math.max(fl, t < f ? 1 - (f - t) / 0.05 : 1 - ease((t - f) / 0.3)); });
+  document.getElementById('flash').style.opacity = 0.9 * fl;
+  document.getElementById('endtag').style.opacity = ease((t - (TOTAL - 2.2)) / 0.4);
+  return waits.length ? Promise.all(waits) : null;
+};
+Promise.all([...[...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })),
+             ...[...document.querySelectorAll('video')].map(v => v.readyState >= 2 ? 0 : new Promise(r => { v.onloadeddata = v.onerror = r; }))])
+  .then(() => document.fonts.ready).then(() => { window.layoutIssues = []; window.seek(0); document.body.dataset.fitted = '1'; });
+</script>
+</body></html>

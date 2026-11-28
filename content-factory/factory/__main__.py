@@ -28,6 +28,7 @@ def main() -> None:
     redo.add_argument("comment", nargs="*")
     rv = sub.add_parser("revisual", help="Новый визуальный ряд для готового текста Reels и отправка в Telegram")
     rv.add_argument("post_id", type=int)
+    rv.add_argument("--format", choices=["5", "6"], help="Формат монтажа Reels для этой пересборки (сравнение вариантов)")
     vt = sub.add_parser("voicetest", help="5 вариантов озвучки фрагмента поста в Telegram")
     vt.add_argument("post_id", type=int)
     show = sub.add_parser("show", help="Напечатать пакет поста (тексты) в лог")
@@ -67,7 +68,10 @@ def main() -> None:
         pipeline.generate(args.post_id, feedback=feedback)
         print("redone", args.post_id)
     elif args.cmd == "revisual":
+        import os
         from . import pipeline
+        if args.format:
+            os.environ["REELS_FORMAT"] = args.format
         pipeline.revisualize(args.post_id)
         print("revisual", args.post_id)
     elif args.cmd == "voicetest":

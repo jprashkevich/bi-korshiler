@@ -617,3 +617,23 @@ def test_director_normalize_keeps_rhythm_and_one_metaphor():
     assert [c.word for c in out.cuts] == [0, 10]                  # 3 и 4 ближе 0,8 с; первый кадр — с первого слова
     assert [a.viz.kind for a in out.anchor] == ["dots", "dots"] and out.anchor[0].word == 10   # после хука
     assert out.expand_word == 39 and sum(a.motion == "flash" for a in out.accents) == 1
+
+
+def test_format6_shots_fill_gaps_and_keep_chapters():
+    """Формат 6: перебивки внутри глав данных выпадают, пустоты дольше 2,5 с заполняются текстом фразы,
+    финальная глава возвращает метафору."""
+    from factory import reels
+    from factory.models import Storyboard
+    words = [{"i": i, "t": i * 0.4, "w": f"w{i}"} for i in range(60)]
+    subs = [{"start": k * 2.0, "end": k * 2.0 + 2.0, "text": f"фраза номер {k}", "hl": ""} for k in range(13)]
+    sb = Storyboard.model_validate({"metaphor": "m", "expand_word": 55,
+        "anchor": [{"word": 20, "until_word": 30, "viz": {"kind": "dots"}}],
+        "cuts": [{"word": 0, "kind": "number", "query": "1"}, {"word": 22, "kind": "number", "query": "2"}]})
+    cuts = [{"type": "full", "start": 0.0, "uri": "a"}, {"type": "number", "start": 8.4, "text": "2"}]
+    shots, vizs = reels.build_shots(cuts, sb, words, subs, hook_end=2.0, total=24.0)
+    kinds = [s["type"] for s in shots]
+    assert "number" not in kinds                                  # перебивка внутри главы выпала
+    assert kinds.count("chapter") == 2 and len(vizs) == 2         # глава + финал
+    assert "kinetic" in kinds                                     # пустота после первого кадра заполнена
+    gaps = [b["start"] - a["start"] for a, b in zip(shots, shots[1:]) if a["type"] != "chapter"]
+    assert max(gaps) <= 2.6

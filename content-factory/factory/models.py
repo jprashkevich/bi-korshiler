@@ -208,7 +208,9 @@ class Accent(BaseModel):
 
 
 class AnchorState(BaseModel):
-    word: int = Field(description="Номер слова про данные, на котором метафора меняет состояние")
+    word: int = Field(description="Номер слова про данные, на котором метафора меняет состояние (в формате 6 — начало главы)")
+    until_word: int = Field(default=-1, description="Формат 6: номер слова, на котором глава данных заканчивается "
+                                                    "(через 3–6 с после начала); -1 — через 4,5 с")
     viz: VizSpec
 
 
