@@ -338,3 +338,94 @@ def test_weekend_ideas_prompt(monkeypatch):
     assert "Выходные: 12 декабря–13 декабря" in seen["user"]
     assert "16 декабря: День Независимости (KZ)" in seen["user"]
     assert "Идеи на выходные" in seen["system"] and pkg.people == []
+
+
+def _ig_post(tmp_path, fmt="carousel", n=3, slot_date="2026-11-30"):
+    from PIL import Image
+    from factory import db
+    db.init()
+    files = []
+    for i in range(n):
+        if fmt == "reels" and i == 0:
+            f = tmp_path / "reel.mp4"
+            f.write_bytes(b"mp4")
+        else:
+            f = tmp_path / f"s{i}.png"
+            Image.new("RGBA", (40, 50), (10, 20, 30, 255)).save(f)
+        files.append(str(f))
+    pkg = json.loads((HERE / "fixtures" / ("sample_reel.json" if fmt == "reels" else "sample_package.json")).read_text())
+    pkg["format"] = fmt
+    with db.engine.begin() as c:
+        pid = c.execute(db.posts.insert().values(
+            rubric="science", slot_date=slot_date, slot=1, status="approved", package=pkg, files=files,
+            feedback=[], tg_message_id=5, created_at=db.now(), updated_at=db.now())).inserted_primary_key[0]
+    return pid, files
+
+
+def test_instagram_media_stored_as_jpeg_with_random_tokens(tmp_path):
+    from factory import db, instagram
+    pid, files = _ig_post(tmp_path, "reels", 2)
+    items = instagram.store_media(pid, files, is_reel=True)
+    assert [m["kind"] for m in items] == ["video", "cover"]
+    assert items[0]["token"].endswith(".mp4") and items[1]["token"].endswith(".jpg")
+    assert len(items[1]["token"]) > 40
+    with db.engine.begin() as c:
+        mime, data = c.execute(db.select(db.media.c.mime, db.media.c.data)
+                               .where(db.media.c.token == items[1]["token"])).first()
+    assert mime == "image/jpeg" and data[:2] == b"\xff\xd8"
+    assert instagram.media_for(pid) == items
+
+
+def test_instagram_caption_limits():
+    from factory.instagram import caption
+    text = caption({"caption_ru": "а" * 3000, "source_line": "Nature, 2026", "hashtags": [f"t{i}" for i in range(40)]})
+    assert len(text) <= 2200 and text.endswith("#t29") and "#t30" not in text
+
+
+def test_instagram_publish_carousel(tmp_path, monkeypatch):
+    from factory import instagram
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtest")
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "42")
+    monkeypatch.setenv("MEDIA_BASE_URL", "https://media.example/")
+    pid, files = _ig_post(tmp_path, "carousel", 3)
+    instagram.store_media(pid, files, is_reel=False)
+    calls = []
+
+    def fake(method, path, **params):
+        calls.append((method, path, params))
+        if path == "42/media":
+            return {"id": f"c{len(calls)}"}
+        if path == "42/media_publish":
+            return {"id": "m1"}
+        if params.get("fields") == "permalink":
+            return {"permalink": "https://instagram.com/p/x"}
+        return {"status_code": "FINISHED"}
+    monkeypatch.setattr(instagram, "_request", fake)
+    monkeypatch.setattr(instagram, "wake_media_server", lambda: None)
+    from factory import db
+    res = instagram.publish(db.get_post(pid))
+    assert res == {"media_id": "m1", "permalink": "https://instagram.com/p/x"}
+    creates = [p for m, path, p in calls if path == "42/media"]
+    assert len(creates) == 4 and all(p["image_url"].startswith("https://media.example/m/") for p in creates[:3])
+    assert creates[3]["media_type"] == "CAROUSEL" and len(creates[3]["children"].split(",")) == 3
+    assert instagram.graph() == "https://graph.facebook.com/v21.0"
+
+
+def test_instagram_queue_waits_for_slot(tmp_path, monkeypatch):
+    from datetime import datetime, timezone
+    from factory import bot, instagram, telegram
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtest")
+    monkeypatch.setenv("MEDIA_BASE_URL", "https://media.example")
+    pid, _ = _ig_post(tmp_path, "carousel", 2, slot_date="2099-01-01")
+    sent = []
+    monkeypatch.setattr(telegram, "send_message", lambda chat, text, keyboard=None, **k: sent.append((text, keyboard)) or 7)
+    from factory import db
+    bot.after_approve(db.get_post(pid), 1, 5, "Одобрено.")
+    assert instagram.state(pid)["state"] == "queued"
+    assert pid not in instagram.due() and "19:30" in sent[-1][0]
+    assert sent[-1][1][0][0]["callback_data"] == f"p:{pid}"
+    assert pid in instagram.due(datetime(2099, 1, 2, tzinfo=timezone.utc))
+    # Reels сначала спрашивают, публиковать ли самому
+    rid, _ = _ig_post(tmp_path, "reels", 2)
+    bot.after_approve(db.get_post(rid), 1, 5, "Одобрено.")
+    assert instagram.state(rid) == {} and sent[-1][1][0][0]["callback_data"] == f"q:{rid}"

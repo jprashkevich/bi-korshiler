@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    JSON, Boolean, Column, DateTime, Float, Integer, MetaData, String, Table, Text,
+    JSON, Boolean, Column, DateTime, Float, Integer, LargeBinary, MetaData, String, Table, Text,
     create_engine, select, update,
 )
 
@@ -44,6 +44,16 @@ posts = Table(
     Column("threads_ids", JSON),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
+)
+
+# Файлы для публикации в Instagram: их отдаёт по случайному адресу media_server.py (см. instagram.py)
+media = Table(
+    "media", metadata,
+    Column("token", String(80), primary_key=True),
+    Column("post_id", Integer, nullable=False, index=True),
+    Column("mime", String(40), nullable=False),
+    Column("data", LargeBinary, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False),
 )
 
 kv = Table(

@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import update
 
-from . import db, drive, editor, ingest, people, reels, render, score, sheets, telegram, threads, tts, writer
+from . import db, drive, editor, ingest, instagram, people, reels, render, score, sheets, telegram, threads, tts, writer
 from .models import PostPackage, ReelPackage
 from .settings import chat_id, settings
 
@@ -22,6 +22,13 @@ MONTHS = ["января", "февраля", "марта", "апреля", "ма�
 
 def today() -> date:
     return datetime.now(ZoneInfo(settings.timezone)).date()
+
+
+def slot_datetime(post: dict) -> datetime:
+    """Время слота поста в часовом поясе завода (09:00 или 19:30 из rubrics.yaml)."""
+    hh, mm = writer.load_yaml("rubrics.yaml")["slot_times"][post["slot"]].split(":")
+    d = date.fromisoformat(post["slot_date"])
+    return datetime(d.year, d.month, d.day, int(hh), int(mm), tzinfo=ZoneInfo(settings.timezone))
 
 
 def resolve_rubric(key: str) -> str:
@@ -160,6 +167,16 @@ def deliver(post_id: int) -> None:
         telegram.send_document(chat, _zip(post["files"], f"BIGLife-{post['slot_date']}-{post_id}"),
                                caption="Слайды в исходном качестве для загрузки в Instagram")
 
+    ig_note = ""
+    if instagram.enabled():
+        try:
+            instagram.store_media(post_id, post["files"], is_reel)
+            ig_note = ("после «Одобрить» спрошу, опубликовать Reels самому или вы выложите его руками с музыкой"
+                       if is_reel else f"после «Одобрить» опубликую сам в {cfg['slot_times'][post['slot']]}")
+        except Exception as exc:
+            log.exception("Файлы для Instagram")
+            ig_note = f"файлы не сохранились ({e(str(exc))[:150]}), опубликуйте вручную"
+
     head = (f"<b>Пост #{post_id} · {e(when)}</b>\n"
             f"Рубрика: {e(cfg['rubrics'][post['rubric']]['title'])}\n"
             f"Тема: {e(pkg.headline)}\n"
@@ -174,7 +191,8 @@ def deliver(post_id: int) -> None:
                     else "Threads не подключён, опубликуйте вручную")
     extra = (f"<b>Текст озвучки:</b> {e(' '.join(s.voice for s in pkg.scenes))}\n\n" if is_reel
              else f"<b>Alt-текст:</b> {e(pkg.alt_text)}\n\n")
-    details = (f"<b>Қазақша:</b> {e(pkg.summary_kz)}\n\n<b>O‘zbekcha:</b> {e(pkg.summary_uz)}\n\n"
+    details = ((f"<b>Instagram:</b> {ig_note}\n\n" if ig_note else "") +
+               f"<b>Қазақша:</b> {e(pkg.summary_kz)}\n\n<b>O‘zbekcha:</b> {e(pkg.summary_uz)}\n\n"
                + extra +
                f"<b>Threads ({threads_note}):</b>\n{thread_text}\n\n"
                f"<b>Проверка фактов:</b>\n{facts}")

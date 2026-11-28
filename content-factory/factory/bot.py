@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import html
 import logging
+import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
-from . import db, pipeline, sheets, telegram, threads
+from . import db, instagram, pipeline, sheets, telegram, threads
 from .settings import chat_id, env_problem, settings
 
 log = logging.getLogger(__name__)
@@ -29,6 +30,9 @@ def on_callback(cb: dict) -> None:
         telegram.answer_callback(cb["id"], "Пост не найден")
         return
     chat, msg_id, who = cb["message"]["chat"]["id"], cb["message"]["message_id"], e(user.get("first_name", ""))
+    if action in IG_ACTIONS:
+        on_instagram_callback(action, post, cb, chat, msg_id, who)
+        return
     if post["status"] in ("approved", "rejected"):
         telegram.answer_callback(cb["id"], "Решение по этому посту уже принято")
         return
@@ -48,7 +52,7 @@ def on_callback(cb: dict) -> None:
         done = f"Пост #{post['id']} одобрил(а) {who}."
         if ids:
             done += f" Тред в Threads опубликован ({len(ids)} сообщ.)."
-        telegram.send_message(chat, done + " Можно публиковать в Instagram.", reply_to=msg_id)
+        after_approve(db.get_post(post["id"]), chat, msg_id, done)
     elif action == "x":
         telegram.answer_callback(cb["id"], "Отклонено")
         telegram.edit_keyboard(chat, msg_id, None)
@@ -67,6 +71,134 @@ def on_callback(cb: dict) -> None:
         db.update_post(post["id"], status="rejected")
         replace_topic(post, chat)
     sheets.upsert(db.get_post(post["id"]), db.get_item(post["item_id"]))
+
+
+# ---------- Instagram ----------
+# p — опубликовать сейчас, q — поставить Reels в очередь на время слота, m — выложу руками
+IG_ACTIONS = {"p", "q", "m"}
+
+
+def ig_keyboard(post_id: int, queued: bool) -> list[list[dict]]:
+    first = ({"text": "Опубликовать сейчас", "callback_data": f"p:{post_id}"} if queued
+             else {"text": "Опубликовать самостоятельно", "callback_data": f"q:{post_id}"})
+    return [[first, {"text": "Выложу руками", "callback_data": f"m:{post_id}"}]]
+
+
+def _when(at: datetime) -> str:
+    local = at.astimezone(ZoneInfo(settings.timezone))
+    today = datetime.now(ZoneInfo(settings.timezone)).date()
+    day = "сегодня" if local.date() == today else f"{local.day} {pipeline.MONTHS[local.month - 1]}"
+    return f"{day} в {local:%H:%M}"
+
+
+def _queue_at_slot(post: dict) -> datetime:
+    at = max(pipeline.slot_datetime(post), datetime.now(timezone.utc))   # одобрили после слота — публикуем сразу
+    instagram.queue(post["id"], at)
+    return at
+
+
+def after_approve(post: dict, chat, msg_id: int, done: str) -> None:
+    if not instagram.enabled():
+        telegram.send_message(chat, done + " Можно публиковать в Instagram.", reply_to=msg_id)
+        return
+    if post["package"].get("format") == "reels":
+        telegram.send_message(
+            chat, done + "\nReels: опубликовать самому (с озвучкой, без музыки) или выложите руками, "
+                         "чтобы добавить музыку из библиотеки Instagram?",
+            reply_to=msg_id, keyboard=ig_keyboard(post["id"], queued=False))
+        return
+    at = _queue_at_slot(post)
+    telegram.send_message(chat, done + f" Опубликую в Instagram {_when(at)}.",
+                          reply_to=msg_id, keyboard=ig_keyboard(post["id"], queued=True))
+
+
+def on_instagram_callback(action: str, post: dict, cb: dict, chat, msg_id: int, who: str) -> None:
+    st = instagram.state(post["id"])
+    if post["status"] != "approved":
+        telegram.answer_callback(cb["id"], "Сначала пост нужно одобрить")
+        return
+    if st.get("state") in ("publishing", "published"):
+        telegram.answer_callback(cb["id"], "Пост уже публикуется или опубликован")
+        return
+    telegram.edit_keyboard(chat, msg_id, None)
+    if action == "m":
+        instagram.set_state(post["id"], state="manual")
+        telegram.answer_callback(cb["id"], "Хорошо, без автопубликации")
+        telegram.send_message(chat, f"Пост #{post['id']}: {who} выложит в Instagram руками. "
+                                    "Файлы и подпись — выше.", reply_to=msg_id)
+    elif action == "q":
+        at = _queue_at_slot(post)
+        telegram.answer_callback(cb["id"], "Поставил в очередь")
+        telegram.send_message(chat, f"Пост #{post['id']}: опубликую в Instagram {_when(at)}.",
+                              reply_to=msg_id, keyboard=ig_keyboard(post["id"], queued=True))
+    elif action == "p":
+        instagram.queue(post["id"], datetime.now(timezone.utc))
+        telegram.answer_callback(cb["id"], "Публикую")
+        telegram.send_message(chat, f"Пост #{post['id']}: публикую в Instagram, это займёт до пары минут.",
+                              reply_to=msg_id)
+
+
+def publish_due() -> None:
+    for post_id in instagram.due():
+        post = db.get_post(post_id)
+        if not post or post["status"] != "approved":
+            instagram.set_state(post_id, state="cancelled")
+            continue
+        instagram.set_state(post_id, state="publishing")
+        chat = chat_id()
+        try:
+            res = instagram.publish(post)
+        except Exception as exc:
+            log.exception("Instagram, пост %s", post_id)
+            instagram.set_state(post_id, state="failed", error=str(exc)[:300])
+            telegram.send_message(chat, f"Пост #{post_id} не опубликован в Instagram: {e(str(exc))[:400]}",
+                                  reply_to=post["tg_message_id"],
+                                  keyboard=[[{"text": "Повторить", "callback_data": f"p:{post_id}"},
+                                             {"text": "Выложу руками", "callback_data": f"m:{post_id}"}]])
+            continue
+        instagram.set_state(post_id, state="published", **res)
+        link = f' <a href="{e(res["permalink"])}">Открыть</a>' if res.get("permalink") else ""
+        telegram.send_message(chat, f"Пост #{post_id} опубликован в Instagram.{link}",
+                              reply_to=post["tg_message_id"])
+
+
+def recover_interrupted() -> None:
+    """Публикация прервалась перезапуском (деплой). Повторять вслепую нельзя — пост мог уже выйти."""
+    for post_id, st in instagram.all_states().items():
+        if st.get("state") == "publishing":
+            instagram.set_state(post_id, state="failed", error="прервано перезапуском")
+            telegram.send_message(
+                chat_id(), f"Публикация поста #{post_id} в Instagram прервалась перезапуском сервиса. "
+                           "Проверьте ленту: если поста там нет, нажмите «Повторить».",
+                keyboard=[[{"text": "Повторить", "callback_data": f"p:{post_id}"},
+                           {"text": "Выложу руками", "callback_data": f"m:{post_id}"}]])
+
+
+def publisher_loop() -> None:
+    """Отдельный поток: генерация поста занимает минуты, а пост в слот должен выйти вовремя."""
+    while True:
+        try:
+            if instagram.enabled():
+                publish_due()
+        except Exception:
+            log.exception("Очередь Instagram")
+        time.sleep(30)
+
+
+def instagram_report() -> str:
+    if not instagram.enabled():
+        return "Instagram: не подключён (" + "; ".join(instagram.problems()) + ")"
+    try:
+        acc = instagram.account()
+    except Exception as exc:
+        return f"Instagram: токен не подошёл ({e(str(exc))[:200]})"
+    queued = [(pid, st) for pid, st in instagram.all_states().items() if st.get("state") == "queued"]
+    lines = [f"Instagram: @{e(acc.get('username', '?'))}, публикаций за сутки: {e(acc['quota'])}"]
+    for pid, st in sorted(queued):
+        lines.append(f"• пост #{pid} — {_when(datetime.fromisoformat(st['at']))}")
+    if not queued:
+        lines.append("В очереди на публикацию пусто.")
+    return "\n".join(lines)
 
 
 def replace_topic(post: dict, chat) -> None:
@@ -136,6 +268,9 @@ def on_message(msg: dict) -> None:
     if text.startswith("/status") and allowed(msg["from"]["id"]):
         telegram.send_message(chat, status_report())
         return
+    if text.startswith("/instagram") and allowed(msg["from"]["id"]):
+        telegram.send_message(chat, instagram_report())
+        return
     if text.startswith("/threads") and allowed(msg["from"]["id"]):
         try:
             url = threads.authorize_url()
@@ -184,13 +319,15 @@ def status_report() -> str:
     import os
     names = ["ANTHROPIC_API_KEY", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "TELEGRAM_APPROVER_IDS",
              "ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID",
-             "THREADS_APP_ID", "THREADS_APP_SECRET", "GOOGLE_SHEET_ID", "GOOGLE_SERVICE_ACCOUNT_JSON"]
+             "THREADS_APP_ID", "THREADS_APP_SECRET", "GOOGLE_SHEET_ID", "GOOGLE_SERVICE_ACCOUNT_JSON",
+             "INSTAGRAM_ACCESS_TOKEN", "MEDIA_BASE_URL"]
     lines = []
     for n in names:
         problem = env_problem(n)
         lines.append(f"{'✅' if not problem else '❌'} {e(problem or n)}")
     commit = os.environ.get("RENDER_GIT_COMMIT", "")[:7] or "неизвестна"
     lines.append(f"\nThreads подключён: {'да' if threads.enabled() else 'нет'}")
+    lines.append(instagram_report())
     from . import drive
     if drive.enabled():
         try:
@@ -216,6 +353,7 @@ def maybe_run_daily() -> None:
     log.info("Ежедневный запуск %s", key)
     try:
         threads.refresh_token_if_needed()
+        instagram.refresh_token_if_needed()
         pipeline.run_daily(now.date())
     except Exception as exc:
         log.exception("Ежедневный запуск")
@@ -234,6 +372,9 @@ def run_forever() -> None:
         log.exception("Threads из переменной окружения")
         if chat_id():
             telegram.send_message(chat_id(), f"Threads не подключился: {e(str(exc))[:400]}")
+    if chat_id():
+        recover_interrupted()
+    threading.Thread(target=publisher_loop, name="instagram", daemon=True).start()
     offset = int(db.kv_get("tg_offset", "0")) or None
     while True:
         try:

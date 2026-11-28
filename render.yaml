@@ -44,6 +44,31 @@ services:
         sync: false
       - key: GOOGLE_DRIVE_FOLDER_ID
         value: 1QTob9XH2ZcJTSFE8auFQvxIg6zmUxfKK
+      - key: INSTAGRAM_ACCESS_TOKEN     # токен системного пользователя Meta Business (EAA…) или Instagram Login (IG…)
+        sync: false
+      - key: INSTAGRAM_USER_ID          # id Instagram-аккаунта BIG Life (для токена IG… можно не задавать)
+        sync: false
+      - key: MEDIA_BASE_URL
+        value: https://biglife-media.onrender.com
+
+  # Публичная раздача слайдов и видео для Instagram: он скачивает файлы сам по адресу,
+  # а воркер из интернета не виден. Бесплатный план: засыпает, воркер будит его перед публикацией.
+  - type: web
+    name: biglife-media
+    runtime: python
+    plan: free
+    rootDir: content-factory
+    buildCommand: pip install "psycopg[binary]>=3.2,<4"
+    startCommand: python media_server.py
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - content-factory/media_server.py
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: biglife-factory-db
+          property: connectionString
 
 databases:
   - name: biglife-factory-db
