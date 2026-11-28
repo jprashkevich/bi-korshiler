@@ -68,7 +68,8 @@ def direct(pkg: ReelPackage, subs: list[dict], hook_end: float, total: float, it
                  "(зрение — eye или glasses; дом и подъезд — window, house, door; одиночество — elder; чай — cup), "
                  "silhouette — форма темы. evidence — дословная фраза источника с этими цифрами. "
                  "1–3 главы по 3–6 с (word — начало, until_word — конец), внутри глав перебивок нет. "
-                 "expand_word — начало финальной главы (повтор последней в полном виде).\n\n"
+                 "expand_word — начало финальной главы (повтор последней в полном виде). "
+                 "theme_icons — 1–2 значка предмета ролика для бледного фона карточек.\n\n"
                  f"## Текст источника для цифр\n{source_text(pkg, item)[:6000]}")
     sb = llm.ask(Storyboard, system=system(fmt), user=user, model=settings.writer_model, effort=settings.writer_effort)
     return normalize(sb, words, hook_end)

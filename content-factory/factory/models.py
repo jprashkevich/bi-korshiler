@@ -23,6 +23,10 @@ class ItemScore(BaseModel):
     usefulness: int = Field(ge=0, le=10, description="Можно ли превратить в практический шаг для жителей двора")
     has_number: bool = Field(description="В заголовке или аннотации есть конкретная цифра из исследования")
     has_story: bool = Field(default=False, description="Есть человеческая история: конкретный герой (учёный, участник, человек), эксперимент с людьми или узнаваемая жизненная ситуация, а не сухой вывод")
+    medical: bool = Field(default=False, description=(
+        "true — материал в первую очередь медицинский: симптомы, диагноз, лечение, течение болезни "
+        "(деменция, рак, диабет, болезни глаз), а соседство, общение и поддержка не в центре. "
+        "false — если болезнь лишь фон, а главное — отношения между людьми, одиночество, поддержка"))
     best_rubric: Rubric
     hook: str = Field(description="Идея хука для обложки на русском, до 90 символов")
 
@@ -252,6 +256,9 @@ class Storyboard(BaseModel):
     cuts: list[Cut] = Field(description="Перебивки в окне по порядку слов: на каждом названном существительном, "
                                         "в среднем раз в 1,5–2,5 с, не чаще раза в 0,8 с, ни одна не дольше 4,5 с")
     accents: list[Accent] = Field(default_factory=list, description="Толчки, маркеры, обводки, вторая вспышка")
+    theme_icons: list[Icon] = Field(default_factory=list, description=(
+        "1–2 значка предмета ролика для бледного фона карточек: зрение — eye, glasses; дом — window, door; "
+        "одиночество — elder; чай — cup"))
     expand_word: int = Field(description="Номер слова, с которого метафора раскрывается на весь кадр (вывод, последние 3–5 с)")
     source: str = Field(default="", description="Строка источника внизу кадра: «Журнал, год» до 50 символов", max_length=80)
 

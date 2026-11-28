@@ -666,3 +666,12 @@ def test_usage_is_recorded_and_summed():
     llm._record("claude-opus-5-5", "ScoreBatch", u)
     text = insights.spend(date.today(), date.today())
     assert "Расход API за неделю: $0.05" in text and "отбор тем" in text
+
+
+def test_purely_medical_topics_are_skipped():
+    """Владелец 28.11: чисто медицинские темы не берём; болезнь как фон истории о соседях — можно."""
+    from factory.score import is_medical
+    assert is_medical({"title": "Признаки деменции, которые видит не сам человек", "score_data": {}})
+    assert not is_medical({"title": "Одиночество и деменция: соседи как защита", "score_data": {}})
+    assert is_medical({"title": "Как соседи помогают", "score_data": {"medical": True}})
+    assert not is_medical({"title": "Symptoms of dementia", "score_data": {"medical": False}})

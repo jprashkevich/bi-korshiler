@@ -19,6 +19,8 @@ SYSTEM = """Ты — редактор Instagram-паблика BIG Life о до�
 которые прямо касаются отношений между людьми, соседства, сообществ, одиночества, социальной поддержки,
 семьи, долголетия, здоровых привычек, которые легче делать вместе, или городской среды.
 Узкоспециальные нейро- и клинические работы без понятного вывода для обычного человека — низкая релевантность.
+Чисто медицинские темы (симптомы, диагноз, лечение болезней) BIG Life не берёт — решение владельца 28.11:
+отметь их medical = true и поставь релевантность не выше 3.
 Не выдумывай цифры: has_number = true, только если цифра есть в тексте материала."""
 
 
@@ -79,5 +81,21 @@ def pick(rubric: str, prefer_kind: str | None = None, need_number: bool = False,
                   if (not need_number or (r["score_data"] or {}).get("has_number"))
                   and (not only_kind or r["kind"] == only_kind)
                   and (not need_story or (r["score_data"] or {}).get("has_story"))]
-    candidates = [r for r in candidates if (r["score_data"] or {}).get("relevance", 0) >= 5]
+    candidates = [r for r in candidates if (r["score_data"] or {}).get("relevance", 0) >= 5 and not is_medical(r)]
     return max(candidates, key=rank) if candidates else None
+
+
+# Для материалов, оценённых до 28.11 (без поля medical), — грубый фильтр по заголовку. Решение владельца:
+# чисто медицинские темы (ролик о признаках деменции) не берём; болезнь как фон истории о соседях — можно.
+_MEDICAL = ("деменц", "альцгеймер", "паркинсон", "онколог", " рак ", "диабет", "инсульт", "диагноз", "симптом",
+            "dementia", "alzheimer", "parkinson", "cancer", "tumor", "diabetes", "stroke", "diagnos", "symptom",
+            "glaucoma", "cataract", "clinical trial")
+_SOCIAL = ("сосед", "одиноч", "общени", "поддержк", "neighbo", "lonel", "social", "community", "friend")
+
+
+def is_medical(r: dict) -> bool:
+    sd = r.get("score_data") or {}
+    if "medical" in sd:
+        return bool(sd["medical"])
+    text = f" {(r.get('title') or '')} ".lower()
+    return any(w in text for w in _MEDICAL) and not any(w in text for w in _SOCIAL)

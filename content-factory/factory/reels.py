@@ -474,7 +474,8 @@ def directed_html6(pkg: ReelPackage, subs: list[dict], tl: list[dict], total: fl
     html = _env.get_template("reels6.html.j2").render(
         accent=pkg.accent, accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"), hook=hook, shots=shots,
         shots_js=[{k: x[k] for k in ("type", "start", "end", "text", "chapter") if k in x} for x in shots],
-        chapters_js=vizs, accents_js=accents_js, hook_end=hook_end, total=total,
+        chapters_js=vizs, accents_js=accents_js,
+        theme_icons=(sb.theme_icons or [c["icon"] for c in vizs] or ["person"])[:2], hook_end=hook_end, total=total,
         subtitles=subs, source=sb.source or pkg.source_line[:60], seed=zlib.crc32(pkg.headline.encode()) % 100000,
         art_js=(TEMPLATES_DIR / "dataart.js").read_text(encoding="utf-8"), assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
     events = [("whoosh", max(hook_end - 0.2, 0))] + [("whoosh", max(a["t"] - 0.2, 0)) for a in accents_js if a["motion"] == "flash"]
