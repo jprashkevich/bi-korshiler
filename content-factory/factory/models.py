@@ -185,8 +185,9 @@ class Cut(BaseModel):
     word: int = Field(description="Номер слова озвучки, которое называет то, что в кадре")
     kind: VisualKind
     query: str = Field(description=(
-        "stock / stock_video — запрос НА АНГЛИЙСКОМ: что в кадре, пол и возраст людей, время года "
-        "(«elderly woman knitting by window, winter»); map — страна по-английски; person — name_en из people; "
+        "stock / stock_video — КОРОТКИЙ запрос к фотобанку НА АНГЛИЙСКОМ, 2–5 слов: главный предмет и пол/возраст "
+        "(«elderly woman window», «reading glasses», «apartment stairwell»); ракурс, сезон и прочие детали — в must_show, "
+        "длинные запросы фотобанк не находит; map — страна по-английски; person — name_en из people; "
         "photo / illustration — id из каталога; journal — название журнала; number — цифра («37%»); "
         "quote — цитата по-русски; our_video — пусто"), max_length=200)
     caption: str = Field(default="", description="Подпись на карточке до 40 символов (карта, цифра, журнал) или пусто", max_length=60)
@@ -225,4 +226,7 @@ class Storyboard(BaseModel):
 class PickVerdict(BaseModel):
     """Проверка картинок «по глазам»: какая из кандидатов показывает то, что нужно."""
     best: int = Field(description="Номер подходящей картинки (с 0) или -1, если не подходит ни одна")
-    reason: str = Field(description="Коротко: почему выбрана или почему все не подходят", max_length=300)
+    reason: str = Field(description="Одной-двумя фразами: почему выбрана или почему все не подходят", max_length=800)
+    better_query: str = Field(default="", description=(
+        "Если не подошла ни одна: новый запрос к фотобанку НА АНГЛИЙСКОМ, проще и короче (2–5 слов), по которому "
+        "нужный кадр скорее найдётся: «elderly woman window», «reading glasses table». Иначе пусто"), max_length=120)

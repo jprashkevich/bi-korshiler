@@ -303,6 +303,13 @@ def _jpeg_small(path: Path) -> bytes:
 
 def pick(cands: list[dict], must_show: str, phrase: str) -> int:
     """Номер подходящего кандидата или -1. Кандидат — {"thumb": url} или {"path": локальный файл}."""
+    return pick_verdict(cands, must_show, phrase)[0]
+
+
+def pick_verdict(cands: list[dict], must_show: str, phrase: str) -> tuple[int, str]:
+    """(номер или -1, запрос получше). Второй запрос нужен потому, что режиссёр пишет длинные точные запросы
+    («elderly woman drinking tea by window, autumn, back view»), а фотобанк по ним находит мало: на первом
+    живом прогоне #24 отбраковано три четверти перебивок."""
     import base64
     from . import llm
     from .models import PickVerdict
@@ -329,11 +336,11 @@ def pick(cands: list[dict], must_show: str, phrase: str) -> int:
         content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
                                                     "data": base64.b64encode(jpg).decode()}})
     if not shown:
-        return -1
+        return -1, ""
     v = llm.ask(PickVerdict, system="Ты фоторедактор научно-популярного издания. Картинка должна буквально совпадать с фразой.",
                 user=content, model=settings.scorer_model, effort="low")
     log.info("Проверка «по глазам» (%s): %s — %s", must_show[:40], v.best, v.reason[:120])
-    return shown[v.best] if 0 <= v.best < len(shown) else -1
+    return (shown[v.best], "") if 0 <= v.best < len(shown) else (-1, v.better_query)
 
 
 def _phrase_at(subs: list[dict], t: float) -> str:
@@ -348,10 +355,15 @@ def _resolve_cut(c, t: float, phrase: str, ctx: dict) -> list[dict]:
     if c.kind in ("stock", "stock_video"):
         tries = [("video", c.query)] if c.kind == "stock_video" else []
         tries.append(("photo", c.query))
-        for what, q in tries:
+        retried = False
+        while tries:
+            what, q = tries.pop(0)
             cands = [x for x in (_video_cands(q) if what == "video" else _photo_cands(q)) if x["id"] not in ctx["used"]]
-            k = pick(cands, c.must_show, phrase) if cands else -1
+            k, better = pick_verdict(cands, c.must_show, phrase) if cands else (-1, "")
             if k < 0:
+                if better and not retried:            # одна повторная попытка с запросом от фоторедактора
+                    retried = True
+                    tries = [(what, better)] + ([("photo", better)] if what == "video" else [])
                 continue
             x = cands[k]
             ctx["used"].add(x["id"])
