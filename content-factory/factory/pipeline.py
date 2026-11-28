@@ -31,6 +31,30 @@ def slot_datetime(post: dict) -> datetime:
     return datetime(d.year, d.month, d.day, int(hh), int(mm), tzinfo=ZoneInfo(settings.timezone))
 
 
+REEL_THRESHOLD = 18      # порог чек-листа «Ремесла Reels» (из 24)
+
+
+def write_reviewed_reel(post: dict, item: dict | None, feedback, previous, plan):
+    """Сценарий → редактор сценария → при слабом хуке, расползшейся истории или рубленой озвучке
+    одно переписывание. Возвращает (сценарий, оценку редактора или None)."""
+    draft = writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous, plan=plan)
+    if not settings.editor_enabled:
+        return draft, None
+    source = f"{item['title']}\n{item.get('summary') or ''}" if item else ""
+    try:
+        review = editor.review_reel(draft, source)
+        chop = editor.choppy(draft)
+        if review.verdict == "rewrite" or review.checklist_score < REEL_THRESHOLD or chop:
+            notes = list(feedback or []) + review.problems + ([chop] if chop else []) + [
+                f"Хук слабый ({review.hook_score}/10). Сильнее, например: «{review.best_hook}»."]
+            draft = writer.write_reel(post["rubric"], item, feedback=notes, previous=draft.model_dump(), plan=plan)
+            review = editor.review_reel(draft, source)
+        return draft, review
+    except Exception as exc:
+        log.warning("Редактор сценария не отработал: %s", exc)
+        return draft, None
+
+
 def resolve_rubric(key: str) -> str:
     rubrics = writer.load_yaml("rubrics.yaml")["rubrics"]
     r = rubrics[key]
@@ -102,20 +126,18 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
         for k in ("reel_format", "voice_mode", "length"):      # при переделке эксперимент не меняем
             if (previous or {}).get(k):
                 plan[k] = previous[k]
-        draft = writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous, plan=plan)
-        review = None
-        if settings.editor_enabled:
-            # редактор сценария: хук, одна история, устная речь — до озвучки, пока переписать дёшево
-            source = f"{item['title']}\n{item.get('summary') or ''}" if item else ""
-            try:
-                review = editor.review_reel(draft, source)
-                if review.verdict == "rewrite":
-                    notes = list(feedback or []) + review.problems + [
-                        f"Хук слабый ({review.hook_score}/10). Сильнее, например: «{review.best_hook}»."]
-                    draft = writer.write_reel(post["rubric"], item, feedback=notes, previous=draft.model_dump(), plan=plan)
-                    review = editor.review_reel(draft, source)
-            except Exception as exc:
-                log.warning("Редактор сценария не отработал: %s", exc)
+        draft, review = write_reviewed_reel(post, item, feedback, previous, plan)
+        if (review and review.checklist_score < REEL_THRESHOLD and not feedback
+                and writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]["source"] == "rss"):
+            # тема не вытянула (часто — у источника нет истории и деталей): пробуем другую, а не отдаём слабый ролик
+            other = choose_item(post["rubric"], exclude_ids={item["id"]} if item else set())
+            if other:
+                mark_used(other)
+                d2, r2 = write_reviewed_reel(post, other, feedback, None, writer.reel_plan(
+                    date.fromisoformat(post["slot_date"]), other))
+                if r2 and r2.checklist_score > review.checklist_score:
+                    draft, review, item = d2, r2, other
+                    db.update_post(post_id, item_id=other["id"])
         pkg, issues = proofread(draft)
         pictures = find_pictures(pkg, pkg.scenes)
         files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)

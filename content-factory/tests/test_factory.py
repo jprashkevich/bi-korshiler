@@ -544,3 +544,16 @@ def test_reel_template_phrases_and_full_humanizer_in_editor(monkeypatch):
     monkeypatch.setattr(editor.llm, "ask", lambda cls, system, user, **k: seen.setdefault("system", system) and (_ for _ in ()).throw(RuntimeError("stop")))
     editor.edit(pkg)
     assert "Humanizer-RU" in seen["system"] and "Поправки BIG Life" in seen["system"]
+
+
+def test_choppy_voice_is_flagged():
+    from factory import editor
+    from factory.models import ReelPackage
+    pkg = ReelPackage.model_validate(json.loads((HERE / "fixtures/sample_reel.json").read_text()))
+    for s in pkg.scenes:
+        s.voice = "Соседи молчат. Это важно. Учёные знают."
+    assert "рубленая" in editor.choppy(pkg)
+    for s in pkg.scenes:
+        s.voice = ("Учёные двадцать лет опрашивали жителей одного района и заметили, что одиноких выдаёт "
+                   "не возраст, а то, знают ли они по имени хотя бы одного соседа.")
+    assert editor.choppy(pkg) == ""

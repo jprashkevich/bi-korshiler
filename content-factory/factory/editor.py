@@ -75,8 +75,25 @@ def lint(pkg) -> dict:
     return {"score": res["score"], "hits": hits[:12]}
 
 
+def choppy(pkg) -> str:
+    """Рубленая озвучка: средняя длина предложения меньше 9 слов или три коротких подряд (жалоба владельца)."""
+    if not hasattr(pkg, "scenes"):
+        return ""
+    text = " ".join(s.voice for s in pkg.scenes)
+    sents = [x for x in re.split(r"(?<=[.!?…])\s+", text) if x.strip()]
+    if not sents:
+        return ""
+    lens = [len(x.split()) for x in sents]
+    avg = sum(lens) / len(lens)
+    run = max((sum(1 for _ in g) for k, g in __import__("itertools").groupby(l <= 6 for l in lens) if k), default=0)
+    if avg < 9 or run >= 3:
+        return (f"озвучка рубленая: в среднем {avg:.0f} слов в предложении, коротких подряд {run}. "
+                "Нужен связный рассказ полными предложениями по 12–20 слов, как в образцах голоса")
+    return ""
+
+
 def violations(pkg) -> list[str]:
-    found = []
+    found = [c] if (c := choppy(pkg)) else []
     for t in texts_of(pkg):
         for rx, name in BANNED:
             if re.search(rx, t, flags=re.IGNORECASE | re.MULTILINE):
@@ -185,8 +202,9 @@ REVIEW_RULES = """Ты шеф-редактор коротких видео и р
 3. Ход: хук → почему это касается зрителя → как узнали → находка с цифрой → поворот → что делать → финал,
    который перекликается с хуком и не оборван.
 4. Инфографика на настоящих числах источника (или честно помечена как условная).
-5. Устная речь по humanizer-ru: короткие фразы, глаголы, нет канцелярита, кальки, «является», дежурных связок,
-   псевдо-сократики, цепочек фраз-кивков, длинного тире. Тон BIG Life: тёплый сосед плюс наука, без морали.
+5. Голос как в образцах tillo.journal: связный рассказ полными предложениями (12–20 слов, союзы), а не
+   нарезка коротких фраз; рубленый ритм — серьёзная проблема. Плюс humanizer-ru: глаголы, нет канцелярита,
+   кальки, «является», дежурных связок, длинного тире. Тон BIG Life: тёплый сосед плюс наука, без морали.
 6. Факты только из источника.
 Пиши problems конкретно: «сцена 3: …». Не переписывай сценарий сам."""
 
@@ -198,7 +216,8 @@ def review_reel(pkg, source: str = ""):
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
     craft = (CONFIG_DIR / "reels-craft.md")
     redpol = (CONFIG_DIR / "redpolitika.md")
-    extra = "".join(f"\n\n{p.read_text(encoding='utf-8')}" for p in (craft, redpol) if p.exists())
+    samples = CONFIG_DIR / "reels-voice-samples.md"
+    extra = "".join(f"\n\n{p.read_text(encoding='utf-8')}" for p in (craft, redpol, samples) if p.exists())
     system = f"{REVIEW_RULES}\n\nОценивай по чек-листу из «Ремесла Reels», если он ниже.{extra}\n\n## Голос бренда\n{brand}\n\n## Правила humanizer-ru\n{skill}"
     user = (("Источник:\n" + source[:6000] + "\n\n") if source else "") + \
         "Сценарий (JSON):\n" + json.dumps(pkg.model_dump(), ensure_ascii=False)
