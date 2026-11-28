@@ -5,3 +5,6 @@ RewriteRule ^about/?$ about.html [L]
 # убрать .html из адресной строки (опционально)
 RewriteCond %{THE_REQUEST} \s/+([^.\s?]+)\.html[\s?] [NC]
 RewriteRule ^ /%1 [R=301,L,NE]
+# Код контент-завода и настройки Render живут в том же репозитории, но на сайте им не место:
+# если хостинг выкладывает репозиторий целиком, эти пути отдают 404
+RedirectMatch 404 ^/(content-factory|render\.yaml|\.git)(/|$)
