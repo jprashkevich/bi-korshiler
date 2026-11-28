@@ -600,3 +600,20 @@ def test_instagram_claim_is_exclusive(monkeypatch):
     assert instagram.state(9001)["state"] == "failed" and len(sent) == 1
     bot.recover_interrupted(now=datetime.now(timezone.utc) + timedelta(minutes=30))
     assert len(sent) == 1
+
+
+def test_director_normalize_keeps_rhythm_and_one_metaphor():
+    """Режиссёр мог нарушить правила монтажа: резы чаще 0,8 с, вторая фигура, лишние вспышки — чиним кодом."""
+    from factory import director
+    from factory.models import Storyboard
+    words = [{"i": i, "t": i * 0.3, "w": f"w{i}"} for i in range(40)]
+    sb = Storyboard.model_validate({
+        "metaphor": "m", "expand_word": 99,
+        "anchor": [{"word": 2, "viz": {"kind": "dots"}}, {"word": 20, "viz": {"kind": "house"}}, {"word": 25, "viz": {"kind": "dots", "mode": "highlight"}}],
+        "cuts": [{"word": 3, "kind": "number", "query": "5%"}, {"word": 4, "kind": "quote", "query": "q"},
+                 {"word": 10, "kind": "map", "query": "Japan"}],
+        "accents": [{"word": 5, "motion": "flash"}, {"word": 30, "motion": "flash"}, {"word": 7, "motion": "punch"}]})
+    out = director.normalize(sb, words, hook_end=3.0)
+    assert [c.word for c in out.cuts] == [0, 10]                  # 3 и 4 ближе 0,8 с; первый кадр — с первого слова
+    assert [a.viz.kind for a in out.anchor] == ["dots", "dots"] and out.anchor[0].word == 10   # после хука
+    assert out.expand_word == 39 and sum(a.motion == "flash" for a in out.accents) == 1

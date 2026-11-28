@@ -12,9 +12,11 @@ import hashlib
 import json
 import logging
 import math
+import subprocess
 from pathlib import Path
 
 import httpx
+from urllib.parse import unquote, urlparse
 
 from .settings import OUTPUT_DIR, TEMPLATES_DIR, env
 
@@ -252,3 +254,184 @@ def resolve(pkg, item: dict | None, pictures: dict | None, clips: list[dict] | N
                 row.append(got)
         out.append(row[:3])
     return out
+
+
+# ---------- раскадровка режиссёра: кандидаты и проверка «по глазам» ----------
+# Решение владельца 28.11: каждую картинку перед рендером смотрит модель — совпадают ли пол, возраст,
+# сезон и предмет с фразой. Поиск в стоке по словам этого не гарантирует: на «пожилая женщина»
+# фотобанк спокойно отдаёт мужчину.
+
+PICK_CANDIDATES = 5
+
+
+def _photo_cands(query: str) -> list[dict]:
+    out = []
+    key = env("PIXABAY_API_KEY")
+    if key:
+        data = _get("https://pixabay.com/api/", params={"key": key, "q": query[:100], "image_type": "photo",
+                                                        "orientation": "vertical", "safesearch": "true", "per_page": 12})
+        out += [{"id": f"pb{h['id']}", "thumb": h["webformatURL"], "full": h["largeImageURL"], "video": False}
+                for h in data.get("hits", []) if h.get("largeImageURL")]
+    if len(out) < PICK_CANDIDATES:
+        data = _get("https://api.openverse.org/v1/images/", params={"q": query[:200], "license": "cc0,pdm",
+                                                                   "aspect_ratio": "tall", "page_size": 10, "mature": "false"})
+        out += [{"id": f"ov{h['id']}", "thumb": h.get("thumbnail") or h["url"], "full": h["url"], "video": False}
+                for h in data.get("results", []) if h.get("url")]
+    return out
+
+
+def _video_cands(query: str) -> list[dict]:
+    key = env("PIXABAY_API_KEY")
+    if not key:
+        return []
+    data = _get("https://pixabay.com/api/videos/", params={"key": key, "q": query[:100], "safesearch": "true", "per_page": 10})
+    out = []
+    for h in data.get("hits", []):
+        files = [f for f in (h.get("videos") or {}).values() if f.get("url") and f.get("height", 0) >= 720]
+        thumbs = [f.get("thumbnail") for f in (h.get("videos") or {}).values() if f.get("thumbnail")]
+        if files and thumbs:
+            out.append({"id": f"pbv{h['id']}", "thumb": thumbs[0], "full": min(files, key=lambda f: f["height"])["url"],
+                        "video": True})
+    return out
+
+
+def _jpeg_small(path: Path) -> bytes:
+    from .clips import FF
+    return subprocess.run([FF, "-loglevel", "error", "-i", str(path), "-frames:v", "1", "-vf", "scale=512:-2",
+                           "-f", "image2", "-c:v", "mjpeg", "-"], capture_output=True).stdout
+
+
+def pick(cands: list[dict], must_show: str, phrase: str) -> int:
+    """Номер подходящего кандидата или -1. Кандидат — {"thumb": url} или {"path": локальный файл}."""
+    import base64
+    from . import llm
+    from .models import PickVerdict
+    from .settings import settings
+    content = [{"type": "text", "text": (
+        f"Фраза ролика: «{phrase}».\nВ кадре обязательно: {must_show or 'то, о чём фраза'}.\n"
+        "Ниже кандидаты. Выбери тот, что буквально показывает нужное: пол, возраст, время года, предмет совпадают. "
+        "Не подходит: крупное лицо (больше ~1/8 кадра), дети крупным планом, логотипы и крупный текст, "
+        "лето и зелень, если нужна зима, постановочная «стоковая» улыбка в камеру. При сомнении — -1.")}]
+    shown = []
+    for k, c in enumerate(cands[:PICK_CANDIDATES]):
+        try:
+            if c.get("path"):
+                jpg = _jpeg_small(Path(c["path"]))
+            else:
+                r = httpx.get(c["thumb"], timeout=30, follow_redirects=True, headers={"User-Agent": "biglife-content-factory/1.0"})
+                jpg = r.content if r.status_code == 200 else b""
+        except (httpx.HTTPError, OSError):
+            jpg = b""
+        if not jpg:
+            continue
+        shown.append(k)
+        content.append({"type": "text", "text": f"Кандидат {len(shown) - 1}"})
+        content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                                    "data": base64.b64encode(jpg).decode()}})
+    if not shown:
+        return -1
+    v = llm.ask(PickVerdict, system="Ты фоторедактор научно-популярного издания. Картинка должна буквально совпадать с фразой.",
+                user=content, model=settings.scorer_model, effort="low")
+    log.info("Проверка «по глазам» (%s): %s — %s", must_show[:40], v.best, v.reason[:120])
+    return shown[v.best] if 0 <= v.best < len(shown) else -1
+
+
+def _phrase_at(subs: list[dict], t: float) -> str:
+    s = next((s for s in subs if s["start"] - 0.05 <= t < s["end"]), None)
+    return s["text"] if s else ""
+
+
+def _resolve_cut(c, t: float, phrase: str, ctx: dict) -> list[dict]:
+    """Одна перебивка → 0, 1 или 2 кадра (журнал даёт обложку и снимок статьи)."""
+    from .clips import prepare
+    base = {"start": t, "caption": c.caption, "detail": c.detail}
+    if c.kind in ("stock", "stock_video"):
+        tries = [("video", c.query)] if c.kind == "stock_video" else []
+        tries.append(("photo", c.query))
+        for what, q in tries:
+            cands = [x for x in (_video_cands(q) if what == "video" else _photo_cands(q)) if x["id"] not in ctx["used"]]
+            k = pick(cands, c.must_show, phrase) if cands else -1
+            if k < 0:
+                continue
+            x = cands[k]
+            ctx["used"].add(x["id"])
+            src = _download(x["full"], ".mp4" if x["video"] else ".jpg")
+            if not src:
+                continue
+            path = prepare(src, 0.3, x["id"]) if x["video"] else src
+            return [{**base, "type": "full", "uri": Path(path).resolve().as_uri()}]
+        return []
+    if c.kind == "photo":
+        uri = ctx["photos"].get(c.query)
+        if uri and pick([{"path": unquote(urlparse(uri).path)}], c.must_show, phrase) == 0:
+            return [{**base, "type": "full", "uri": uri}]
+        return []
+    if c.kind == "our_video":
+        for clip in list(ctx["clips"]):
+            if pick([{"path": clip["path"]}], c.must_show, phrase) == 0:
+                ctx["clips"].remove(clip)
+                return [{**base, "type": "full", "uri": Path(clip["path"]).resolve().as_uri()}]
+        return []
+    if c.kind == "illustration" and ctx["ills"].get(c.query):
+        return [{**base, "type": "card", "uri": ctx["ills"][c.query]}]
+    if c.kind == "map":
+        svg = map_svg(c.query, ctx["accent"])
+        return [{**base, "type": "map", "svg": svg}] if svg else []
+    if c.kind == "person":
+        ref = ctx["people"].get(c.query)
+        pic = ctx["pics"].get(c.query)
+        if not (pic and pic.get("uri")) and ref:      # режиссёр назвал учёного, которого не было в сценах
+            from . import people as people_mod
+            found = people_mod.find(ref.name_en, ref.kind)
+            pic = {"uri": Path(found.path).resolve().as_uri()} if found else None
+        name, role = (ref.name_ru if ref else c.query), (c.detail or (ref.role_ru if ref else ""))
+        if pic and pic.get("uri"):
+            return [{**base, "type": "person", "uri": pic["uri"], "name": name, "role": role}]
+        return [{**base, "type": "namecard", "name": name, "role": role}] if ref else []
+    if c.kind == "journal":
+        out = [{**base, "type": "journal", "name": c.query}]
+        shot = article_shot(ctx["item"]["url"]) if ctx.get("item") else None
+        if shot:
+            out.append({**base, "start": t + 1.3, "type": "article", "uri": shot.resolve().as_uri()})
+        return out
+    if c.kind == "number":
+        return [{**base, "type": "number", "text": c.query}]
+    if c.kind == "quote":
+        return [{**base, "type": "quote", "text": c.query}]
+    return []
+
+
+def resolve_storyboard(sb, words: list[dict], subs: list[dict], pkg, item: dict | None, pictures: dict | None,
+                       clips: list[dict] | None = None, lead: float = 0.4) -> list[dict]:
+    """Перебивки раскадровки → готовые кадры [{type, start, …}] по времени. Не прошедшие проверку выпадают:
+    предыдущий кадр держится дольше, а не заменяется случайным."""
+    from concurrent.futures import ThreadPoolExecutor
+    from .reels import reels_photos, ACCENT_HEX
+    from .render import illustrations, picture_uris
+    ctx = {"photos": reels_photos(), "ills": illustrations(), "pics": picture_uris(pictures),
+           "people": {p.name_en: p for p in pkg.people}, "accent": ACCENT_HEX.get(pkg.accent, "#ff954c"),
+           "used": set(), "clips": list(clips or []), "item": item}
+    jobs = []
+    for c in sb.cuts:
+        t = max(0.0, words[c.word]["t"] - lead) if words else 0.0
+        if c.word == 0:
+            t = 0.0
+        jobs.append((c, round(t, 2), _phrase_at(subs, words[c.word]["t"]) if words else ""))
+
+    def run(j):
+        try:
+            return _resolve_cut(*j, ctx)
+        except Exception as exc:          # одна картинка не должна ронять ролик
+            log.info("Перебивка %s/%s не собрана: %s", j[0].kind, j[0].query[:40], exc)
+            return []
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        rows = list(pool.map(run, jobs))
+    out = sorted((x for row in rows for x in row), key=lambda x: x["start"])
+    # статья не должна наезжать на следующую перебивку
+    clean = []
+    for k, x in enumerate(out):
+        nxt = out[k + 1]["start"] if k + 1 < len(out) else 1e9
+        if x["type"] == "article" and nxt - x["start"] < 0.9:
+            continue
+        clean.append(x)
+    return clean

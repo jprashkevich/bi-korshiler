@@ -169,7 +169,8 @@ def revisualize(post_id: int) -> None:
     rubric = writer.load_yaml("rubrics.yaml")["rubrics"][post["rubric"]]
     pkg = ReelPackage.model_validate(post["package"])
     item = db.get_item(post["item_id"]) if post.get("item_id") else None
-    pkg = writer.plan_visuals(pkg, item)
+    if not reels.env_flag("REELS_DIRECTOR"):      # с режиссёром визуал строится по времени слов при рендере
+        pkg = writer.plan_visuals(pkg, item)
     pictures = find_pictures(pkg, pkg.scenes)
     name = f"{post['slot_date']}-post{post_id}"
     files = reels.render_video(pkg, rubric["title"], name, pictures=pictures, item=item)

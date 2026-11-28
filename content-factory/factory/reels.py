@@ -392,6 +392,36 @@ def silent_timeline(pkg: ReelPackage, out: Path) -> tuple[list[dict], list[dict]
     return tl, [], total, silence
 
 
+def directed_html(pkg: ReelPackage, rubric_title: str, subs: list[dict], tl: list[dict], total: float,
+                  pictures: dict | None, clips: list[dict], item: dict | None) -> tuple[str, list]:
+    """Формат 5: раскадровка режиссёра по времени слов → кадры, прошедшие проверку «по глазам» → HTML."""
+    from . import director
+    from .broll import resolve_storyboard
+    from .render import SECOND_ACCENT
+    hook_end = tl[0]["end"]
+    sb = director.direct(pkg, subs, hook_end, total, item)
+    words = director.words_of(subs)
+    cuts = resolve_storyboard(sb, words, subs, pkg, item, pictures, clips, lead=director.LEAD)
+    if not cuts or not sb.anchor:
+        raise RuntimeError("в раскадровке нет кадров или метафоры")
+    wt = lambda i: director.word_time(words, i)
+    expand_t = min(max(wt(sb.expand_word) - 0.2, total - 6.0), total - 2.5)
+    anchor_js = [{"t": round(max(wt(a.word) - 0.1, hook_end), 2), "viz": a.viz.model_dump()} for a in sb.anchor]
+    accents_js = [{"t": round(wt(a.word), 2), "motion": a.motion} for a in sb.accents]
+    hook = {"title": typograf(pkg.scenes[0].title), "highlight": pkg.scenes[0].highlight}
+    html = _env.get_template("reels5.html.j2").render(
+        accent=pkg.accent, accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"), hook=hook, cuts=cuts,
+        cuts_js=[{k: c[k] for k in ("type", "start", "text") if k in c} for c in cuts],
+        anchor_js=anchor_js, accents_js=accents_js, hook_end=hook_end, expand_t=round(expand_t, 2),
+        total=total, subtitles=subs, source=sb.source or pkg.source_line[:60],
+        viz_js=(TEMPLATES_DIR / "viz.js").read_text(encoding="utf-8"), assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
+    # звук: карточка на стол — шелест, цифра — щелчок, вспышки — «вжух»
+    events = [("whoosh", max(hook_end - 0.2, 0))] + [("whoosh", max(a["t"] - 0.2, 0)) for a in accents_js if a["motion"] == "flash"]
+    events += [("pop" if c["type"] == "number" else "paper", c["start"]) for c in cuts if c["type"] not in ("full",)]
+    (OUTPUT_DIR / "last_storyboard.json").write_text(sb.model_dump_json(indent=1), encoding="utf-8")
+    return html, events[:40]
+
+
 def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict | None = None,
                  speech_fn=None, music_fn=None, item: dict | None = None) -> list[Path]:
     """Возвращает [mp4, обложка.png]. speech_fn подменяется в тестах."""
@@ -429,24 +459,32 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
             clips = pick_clips(limit=2)
         except Exception as exc:          # видео — усиление, без него ролик всё равно собирается
             log.warning("Видео из отчётов не подобраны: %s", exc)
-    runs = build_runs(pkg, tl, pictures, subs, clips)
-    broll = []
-    if any(s.visuals for s in pkg.scenes):
+    html, events = None, None
+    if not silent and env_flag("REELS_DIRECTOR"):
         try:
-            from .broll import resolve
-            broll = broll_segments(pkg, tl, subs, resolve(pkg, item, pictures, clips))
-        except Exception as exc:          # иллюстрации — усиление: без них остаётся прежний кадр сцены
-            log.warning("Иллюстрации фраз не собраны: %s", exc)
-    runs_js = [{k: v for k, v in r.items() if k in ("shot", "start", "end", "scenes", "zoomout", "zoomout_s", "zoomout_y")}
-               for r in runs]
-    html = _env.get_template("reels.html.j2").render(
-        accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"),
-        scenes=scenes, hook=scenes[0], hook_end=tl[0]["end"],
-        accent=pkg.accent, rubric_title=rubric_title, timeline=tl, subtitles=subs,
-        runs=runs, runs_js=runs_js, broll=broll,
-        broll_js=[{k: v[k] for k in ("type", "start", "end", "split", "text") if k in v} for v in broll],
-        viz_js=(TEMPLATES_DIR / "viz.js").read_text(encoding="utf-8"),
-        total=total, assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
+            html, events = directed_html(pkg, rubric_title, subs, tl, total, pictures, clips, item)
+        except Exception as exc:          # режиссёр — новый формат; при сбое ролик собирается прежним
+            log.warning("Режиссёр не справился, собираю прежним форматом: %s", exc)
+    if html is None:
+        runs = build_runs(pkg, tl, pictures, subs, clips)
+        broll = []
+        if any(s.visuals for s in pkg.scenes):
+            try:
+                from .broll import resolve
+                broll = broll_segments(pkg, tl, subs, resolve(pkg, item, pictures, clips))
+            except Exception as exc:          # иллюстрации — усиление: без них остаётся прежний кадр сцены
+                log.warning("Иллюстрации фраз не собраны: %s", exc)
+        runs_js = [{k: v for k, v in r.items() if k in ("shot", "start", "end", "scenes", "zoomout", "zoomout_s", "zoomout_y")}
+                   for r in runs]
+        html = _env.get_template("reels.html.j2").render(
+            accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"),
+            scenes=scenes, hook=scenes[0], hook_end=tl[0]["end"],
+            accent=pkg.accent, rubric_title=rubric_title, timeline=tl, subtitles=subs,
+            runs=runs, runs_js=runs_js, broll=broll,
+            broll_js=[{k: v[k] for k in ("type", "start", "end", "split", "text") if k in v} for v in broll],
+            viz_js=(TEMPLATES_DIR / "viz.js").read_text(encoding="utf-8"),
+            total=total, assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
+        events = sfx_events(runs)
     page_path = out_dir / "reel.html"
     page_path.write_text(html, encoding="utf-8")
 
@@ -464,7 +502,6 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
                      f"afade=t=out:st={max(total - 1.5, 0):.2f}:d=1.5[m]")
         mix.append("[m]")
     # звуковые акценты: каждый звук — один вход, размножаем через asplit и сдвигаем adelay на свой момент
-    events = sfx_events(runs)
     sfx = sfx_files(out_dir)
     next_in = 2 + (1 if music else 0)
     for name in sorted({e[0] for e in events}):

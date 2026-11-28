@@ -176,3 +176,53 @@ class ReelPackage(BaseModel):
     source_line: str = Field(description="Источник: издание/журнал, год; исследователи, если названы (коротко, до 200 символов)", max_length=400)
     threads: list[str] = Field(description="Тред для Threads: 3–5 сообщений до 450 символов, последнее — вопрос аудитории")
     fact_check: list[str] = Field(description="Каждое фактическое утверждение и где оно есть в источнике")
+
+
+# ---------- раскадровка режиссёра Reels (config/reels-motion.md) ----------
+
+class Cut(BaseModel):
+    """Перебивка в окне: появляется на слове word (за 0,3–0,7 с до него) и держится до следующей."""
+    word: int = Field(description="Номер слова озвучки, которое называет то, что в кадре")
+    kind: VisualKind
+    query: str = Field(description=(
+        "stock / stock_video — запрос НА АНГЛИЙСКОМ: что в кадре, пол и возраст людей, время года "
+        "(«elderly woman knitting by window, winter»); map — страна по-английски; person — name_en из people; "
+        "photo / illustration — id из каталога; journal — название журнала; number — цифра («37%»); "
+        "quote — цитата по-русски; our_video — пусто"), max_length=200)
+    caption: str = Field(default="", description="Подпись на карточке до 40 символов (карта, цифра, журнал) или пусто", max_length=60)
+    detail: str = Field(default="", description="map — город; journal — год; person — роль; number — что значит; иначе пусто", max_length=160)
+    must_show: str = Field(default="", description=(
+        "Для stock, stock_video, photo, our_video — что ОБЯЗАТЕЛЬНО должно быть в кадре, по-русски, для проверки "
+        "картинки: «пожилая женщина, зима, без крупного лица»"), max_length=160)
+
+
+Motion = Literal["punch", "flash", "marker", "circle"]
+
+
+class Accent(BaseModel):
+    word: int = Field(description="Номер слова, на котором срабатывает приём")
+    motion: Motion = Field(description="punch — толчок картинки крупнее; flash — вспышка (не больше 2 за ролик, первая "
+                                       "ставится автоматически после хука); marker — маркер под ключевым словом субтитра; "
+                                       "circle — рукописная обводка в окне")
+
+
+class AnchorState(BaseModel):
+    word: int = Field(description="Номер слова про данные, на котором метафора меняет состояние")
+    viz: VizSpec
+
+
+class Storyboard(BaseModel):
+    metaphor: str = Field(description="Одной фразой: почему эта фигура — образ главной находки ролика", max_length=200)
+    anchor: list[AnchorState] = Field(description="1–4 состояния одной метафоры: первое — на первом слове после хука, "
+                                                  "дальше только на словах про данные; kind во всех одинаковый")
+    cuts: list[Cut] = Field(description="Перебивки в окне по порядку слов: на каждом названном существительном, "
+                                        "в среднем раз в 1,5–2,5 с, не чаще раза в 0,8 с, ни одна не дольше 4,5 с")
+    accents: list[Accent] = Field(default_factory=list, description="Толчки, маркеры, обводки, вторая вспышка")
+    expand_word: int = Field(description="Номер слова, с которого метафора раскрывается на весь кадр (вывод, последние 3–5 с)")
+    source: str = Field(default="", description="Строка источника внизу кадра: «Журнал, год» до 50 символов", max_length=80)
+
+
+class PickVerdict(BaseModel):
+    """Проверка картинок «по глазам»: какая из кандидатов показывает то, что нужно."""
+    best: int = Field(description="Номер подходящей картинки (с 0) или -1, если не подходит ни одна")
+    reason: str = Field(description="Коротко: почему выбрана или почему все не подходят", max_length=300)
