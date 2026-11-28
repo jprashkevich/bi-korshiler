@@ -71,6 +71,8 @@ def main() -> None:
             print(f"[{i}] {sc.get('type')} | {sc.get('title')} | {sc.get('text')} | voice: {sc.get('voice', '')} | viz: {(sc.get('viz') or {}).get('kind')}")
         print("caption:", (pkg.get("caption_ru") or "").replace("\n", " / ")[:1500])
         print("edit_issues:", pkg.get("edit_issues"))
+        print("review:", pkg.get("review"))
+        print("hook_options:", pkg.get("hook_options"))
     elif args.cmd == "top":
         from sqlalchemy import select
         with db.engine.begin() as c:

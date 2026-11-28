@@ -140,6 +140,6 @@ class ReelPackage(BaseModel):
     hashtags: list[str] = Field(description="5–8 хэштегов без символа #")
     summary_kz: str = Field(description="Краткое содержание на казахском, 2–3 предложения", max_length=500)
     summary_uz: str = Field(description="Краткое содержание на узбекском (латиница), 2–3 предложения", max_length=500)
-    source_line: str = Field(description="Источник: издание/журнал, год; исследователи, если названы", max_length=220)
+    source_line: str = Field(description="Источник: издание/журнал, год; исследователи, если названы (коротко, до 200 символов)", max_length=400)
     threads: list[str] = Field(description="Тред для Threads: 3–5 сообщений до 450 символов, последнее — вопрос аудитории")
     fact_check: list[str] = Field(description="Каждое фактическое утверждение и где оно есть в источнике")
