@@ -218,7 +218,7 @@ def deliver(post_id: int) -> None:
     threads_note = ("опубликуется после «Одобрить»" if threads.enabled()
                     else "Threads не подключён, опубликуйте вручную")
     rv = post["package"].get("review") or {}
-    review_note = ((f"<b>Редактор сценария:</b> хук {rv.get('hook_score')}/10"
+    review_note = ((f"<b>Редактор сценария:</b> чек-лист {rv.get('checklist_score', '?')}/24, хук {rv.get('hook_score')}/10"
                     + ("" if rv.get("one_story") else ", история расползается")
                     + ("" if rv.get("data_driven") else ", инфографика без точных чисел") + "\n"
                     + "".join(f"• {e(p)}\n" for p in (rv.get("problems") or [])[:4]) + "\n") if is_reel and rv else "")
@@ -236,6 +236,12 @@ def deliver(post_id: int) -> None:
     if post["package"].get("edit_issues"):
         details += ("\n\n<b>Вычитка: остались замечания</b>\n"
                     + "\n".join(f"• {e(x)}" for x in post["package"]["edit_issues"][:5]))
+    try:
+        lt = editor.lint(pkg)
+        details += f"\n\n<b>Линтер текста (pishi):</b> {lt['score']}/100" + (
+            "\n" + "\n".join(f"• {e(h)}" for h in lt["hits"][:4]) if lt["hits"] else "")
+    except Exception:
+        log.exception("Линтер pishi")
     if post["package"].get("layout_issues"):
         details += ("\n\n<b>Вёрстка: проверьте " + ("ролик" if is_reel else "слайды") + "</b>\n"
                     + "\n".join(f"• {'' if is_reel else 'слайд '}{e(x)}" for x in post["package"]["layout_issues"][:6])

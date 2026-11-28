@@ -324,6 +324,7 @@ def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = 
                  f"Сделай не больше {limit - 10} слов на весь ролик, смысл, факты и инфографику сохрани.")
         pkg = llm.ask(ReelPackage, system=reel_system(), user=user,
                       model=settings.writer_model, effort=settings.writer_effort)
+    pkg.hashtags = pkg.hashtags[:5]          # для Reels 3–5 хэштегов (reels-craft.md)
     pkg.scenes = pkg.scenes[:12]
     pkg.reel_format, pkg.voice_mode, pkg.length = reel_format, plan["voice_mode"], plan["length"]
     if pkg.scenes and pkg.scenes[0].type != "hook":

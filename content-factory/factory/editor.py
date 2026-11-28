@@ -63,6 +63,18 @@ def texts_of(pkg) -> list[str]:
     return [t for t in out if t]
 
 
+LINT_CATS = ("hard", "parallel", "calque", "bureau")   # из pishi берём то, что почти всегда правка, а не вкус
+
+
+def lint(pkg) -> dict:
+    """Линтер pishi (factory/vendor) по текстам пакета: подсказка редактору и балл для согласующего.
+    Жёстким фильтром не делаем: для коротких текстов одно попадание сильно роняет балл."""
+    from .vendor.pishi_check import analyze
+    res = analyze("\n".join(texts_of(pkg)))
+    hits = [f"{h['hit']} («{h['context'].strip()[:60]}»)" for c in LINT_CATS for h in res["findings"].get(c, [])]
+    return {"score": res["score"], "hits": hits[:12]}
+
+
 def violations(pkg) -> list[str]:
     found = []
     for t in texts_of(pkg):
@@ -130,6 +142,12 @@ def edit(pkg):
     for attempt in range(2):
         issues = violations(current)
         note = ("\n\nАвтоматическая проверка нашла запрещённое:\n- " + "\n- ".join(issues)) if issues else ""
+        try:
+            hints = lint(current)["hits"]
+        except Exception:      # линтер — подсказка, его сбой не должен мешать вычитке
+            hints = []
+        if hints:
+            note += ("\n\nЛинтер pishi подсвечивает (проверь, большинство стоит переписать):\n- " + "\n- ".join(hints))
         user = ("Вычитай тексты этого поста по правилам выше. Верни тот же JSON целиком, меняя только тексты. "
                 "Структуру, типы слайдов, количество пунктов и все id не меняй." + note +
                 "\n\n" + json.dumps(current.model_dump(), ensure_ascii=False))
@@ -149,12 +167,13 @@ def edit(pkg):
 # ---------- редактор сценария Reels ----------
 
 class ReelReview(BaseModel):
+    checklist_score: int = Field(ge=0, le=24, description="Сумма по чек-листу «Ремесла Reels» (12 пунктов по 0/1/2)")
     hook_score: int = Field(ge=1, le=10, description="Сила хука для незнакомого с брендом зрителя: 10 — невозможно пролистать")
     best_hook: str = Field(description="Лучший хук из hook_options или твой вариант, до 8 слов, если все слабые")
     one_story: bool = Field(description="Ролик рассказывает одну историю одного исследования, без лишних экспертов и тем")
     data_driven: bool = Field(description="Инфографика опирается на настоящие числа источника")
     problems: list[str] = Field(description="Конкретные проблемы: номер сцены и что не так (структура, хук, дежурные фразы, устная речь, ToV)")
-    verdict: Literal["ok", "rewrite"] = Field(description="rewrite — если hook_score < 7, нет одной истории или 3+ серьёзных проблемы")
+    verdict: Literal["ok", "rewrite"] = Field(description="rewrite — если checklist_score < 18, ноль по блокирующему пункту, hook_score < 7 или нет одной истории")
 
 
 REVIEW_RULES = """Ты шеф-редактор коротких видео и редактор humanizer-ru. Тебе дают сценарий Reels для пробного показа
