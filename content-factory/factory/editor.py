@@ -153,7 +153,7 @@ def edit(pkg):
                 "\n\n" + json.dumps(current.model_dump(), ensure_ascii=False))
         try:
             edited = llm.ask(type(pkg), system=system, user=user, model=settings.writer_model,
-                             effort=settings.editor_effort)
+                             effort=settings.editor_effort, max_tokens=32000)
             current = _merge(current, edited)
         except Exception as exc:          # вычитка не должна ронять пост
             log.warning("Вычитка не удалась: %s", exc)
@@ -202,4 +202,6 @@ def review_reel(pkg, source: str = ""):
     system = f"{REVIEW_RULES}\n\nОценивай по чек-листу из «Ремесла Reels», если он ниже.{extra}\n\n## Голос бренда\n{brand}\n\n## Правила humanizer-ru\n{skill}"
     user = (("Источник:\n" + source[:6000] + "\n\n") if source else "") + \
         "Сценарий (JSON):\n" + json.dumps(pkg.model_dump(), ensure_ascii=False)
-    return llm.ask(ReelReview, system=system, user=user, model=settings.writer_model, effort=settings.editor_effort)
+    # правил много (humanizer-ru + ремесло Reels): с лимитом 16k ответ обрезался на размышлениях
+    return llm.ask(ReelReview, system=system, user=user, model=settings.writer_model, effort=settings.editor_effort,
+                   max_tokens=32000)

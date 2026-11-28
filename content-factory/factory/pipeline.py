@@ -46,7 +46,9 @@ def choose_item(rubric_key: str, exclude_ids: set[int] = frozenset()) -> dict | 
     # Reels держится на инфографике, поэтому берём только материал с настоящей цифрой и из исследований:
     # колонка психолога без данных (как в ролике #19) даёт лишь «условную схему» и пустой ролик
     if rubric_key == "reel":
-        item = (score.pick("number", prefer_kind="journal", need_number=True)
+        # сначала научные журналы с цифрой: новость о вирусном видео с одной цифрой (ролик #20) данных не даёт
+        item = (score.pick("number", need_number=True, only_kind="journal")
+                or score.pick("science", only_kind="journal")
                 or score.pick("number", need_number=True) or score.pick("science"))
     else:
         item = score.pick(rubric_key, prefer_kind=r.get("prefer_kind"), need_number=rubric_key == "number")
