@@ -13,4 +13,5 @@ illustrations:
   - {id: ill-helping,      file: ill-helping.jpg, season: warm,      desc: "Молодой сосед помогает пожилой женщине донести сумки до подъезда, маленькие добрые дела"}
   - {id: ill-common-room,  file: ill-common-room.jpg, season: any,  desc: "Общая комната дома: настольный теннис, шахматы и настольные игры соседей"}
   - {id: ill-newyear,      file: ill-newyear.jpg, season: winter, desc: "Соседи наряжают новогоднюю ёлку в заснеженном дворе вечером: взрослые на стремянках, дети вешают шары, гирлянды, чай из термоса"}
+  - {id: ill-winter,       file: ill-winter.jpg, season: winter, desc: "Зимний двор вечером: соседи лепят снеговика с детьми, вместе чистят дорожку от снега, пьют чай из термоса на скамейке, каток"}
   # TODO (не загружена из Canva): - {id: ill-kids-workshop, file: ill-kids-workshop.jpg, season: any, desc: "Детский творческий мастер-класс в общей комнате: рисуют и лепят с педагогом и родителями"}
