@@ -92,9 +92,12 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
         files = render.render(pkg, rubric["title"], name)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": {}}
     elif rubric.get("format") == "reels" and tts.enabled():
-        fmt = (previous or {}).get("reel_format") or writer.reel_format_for(date.fromisoformat(post["slot_date"]), item)
+        plan = writer.reel_plan(date.fromisoformat(post["slot_date"]), item)
+        for k in ("reel_format", "voice_mode", "length"):      # при переделке эксперимент не меняем
+            if (previous or {}).get(k):
+                plan[k] = previous[k]
         pkg, issues = proofread(writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous,
-                                                  reel_format=fmt))
+                                                  plan=plan))
         pictures = find_pictures(pkg, pkg.scenes)
         files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
         data = {**pkg.model_dump(), "format": "reels", "pictures": pictures}
@@ -196,7 +199,11 @@ def deliver(post_id: int) -> None:
     facts = "\n".join(f"• {e(f)}" for f in pkg.fact_check)
     threads_note = ("опубликуется после «Одобрить»" if threads.enabled()
                     else "Threads не подключён, опубликуйте вручную")
-    extra = (f"<b>Текст озвучки:</b> {e(' '.join(s.voice for s in pkg.scenes))}\n\n" if is_reel
+    variant = (f"<b>Эксперимент Reels:</b> шаблон {e(pkg.reel_format)}, "
+               f"{'с голосом' if pkg.voice_mode == 'voice' else 'без голоса, музыка и текст'}, длина {e(pkg.length)}, "
+               f"инфографика: {e(', '.join(sorted({s.viz.kind for s in pkg.scenes if s.viz.kind != 'none'})) or 'нет')}\n\n"
+               if is_reel else "")
+    extra = variant + (f"<b>Текст озвучки:</b> {e(' '.join(s.voice for s in pkg.scenes))}\n\n" if is_reel
              else f"<b>Alt-текст:</b> {e(pkg.alt_text)}\n\n")
     details = ((f"<b>Instagram:</b> {ig_note}\n\n" if ig_note else "") +
                f"<b>Қазақша:</b> {e(pkg.summary_kz)}\n\n<b>O‘zbekcha:</b> {e(pkg.summary_uz)}\n\n"

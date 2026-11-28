@@ -86,7 +86,10 @@ def collect(start: date, end: date) -> list[dict]:
     out = []
     for p in posts:
         row = {"id": p["id"], "rubric": p["rubric"], "headline": p["package"].get("headline", ""),
-               "format": p["package"].get("format", "carousel"), "metrics": {}, "score": None}
+               "format": p["package"].get("format", "carousel"), "metrics": {}, "score": None,
+               # A/B Reels: голос или музыка, длина, шаблон — чтобы выбрать победителя по цифрам
+               "voice_mode": p["package"].get("voice_mode"), "length": p["package"].get("length"),
+               "reel_format": p["package"].get("reel_format")}
         if p["id"] in media:
             row["metrics"] = fetch_metrics(media[p["id"]])
             row["score"] = score(row["metrics"])
@@ -101,6 +104,26 @@ def rubric_stats(rows: list[dict]) -> list[tuple[str, float, int]]:
         if r["score"] is not None:
             by.setdefault(r["rubric"], []).append(r["score"])
     return sorted(((k, round(sum(v) / len(v), 2), len(v)) for k, v in by.items()), key=lambda x: -x[1])
+
+
+def reel_experiments(rows: list[dict]) -> list[str]:
+    """Сравнение вариантов Reels. Сигнал слабый, пока роликов мало: показываем число роликов рядом."""
+    reels = [r for r in rows if r["format"] == "reels" and r["score"] is not None]
+    if len(reels) < 2:
+        return []
+    names = {"voice": "с голосом", "music": "без голоса", "short": "короткие", "mid": "средние", "long": "длинные"}
+    out = ["\n<b>Эксперимент Reels</b> (вовлечённость на 100 охвата):"]
+    for key in ("voice_mode", "length", "reel_format"):
+        by: dict[str, list[float]] = {}
+        for r in reels:
+            if r.get(key):
+                by.setdefault(r[key], []).append(r["score"])
+        if len(by) > 1:
+            out.append("• " + " · ".join(f"{names.get(k, k)}: {round(sum(v) / len(v), 2)} ({len(v)})"
+                                         for k, v in sorted(by.items(), key=lambda x: -sum(x[1]) / len(x[1]))))
+    if len(out) > 1:
+        out.append("Выводы надёжны, когда в каждом варианте хотя бы 4–5 роликов.")
+    return out if len(out) > 1 else []
 
 
 def learnings(rows: list[dict], titles: dict[str, str]) -> str:
@@ -151,6 +174,7 @@ def report(today: date) -> str:
         if len(stats) > 1:
             lines.append(f"\nУсилить: «{e(titles.get(stats[0][0], stats[0][0]))}». "
                          f"Пересмотреть подачу: «{e(titles.get(stats[-1][0], stats[-1][0]))}».")
+    lines += reel_experiments(rows)
     text = learnings(rows, titles)
     if text:
         db.kv_set("learnings", text)

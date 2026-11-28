@@ -57,6 +57,7 @@
 .namecard{display:inline-flex;flex-direction:column;align-self:flex-start;background:var(--navy);color:#fff;border-radius:28px;padding:34px 42px;margin-top:48px;max-width:860px;flex:0 0 auto;min-height:0}
 .namecard b{font-family:var(--display);font-size:72px;line-height:1.05}
 .namecard span{font-size:34px;font-weight:700;opacity:.8;margin-top:12px}
+canvas.viz{display:block;width:100%;flex:1 1 0;min-height:620px;margin-top:30px}
 #sub{position:absolute;left:70px;right:70px;top:1430px;text-align:center;z-index:6}
 #sub span{display:inline;font-size:48px;font-weight:800;line-height:1.5;color:#fff;background:rgba(12,20,70,.82);padding:6px 18px;border-radius:14px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 #sub b{font-weight:800;color:rgba(255,255,255,.45)}#sub b.on{color:#fff}
@@ -64,7 +65,8 @@
 </style></head><body>
 <div id="stage">
   {% for s in scenes %}{% set bg = bgs[loop.index0] %}
-  {% set has_vis = (s.type == 'person') or ills.get(s.illustration_id) %}
+  {% set has_viz = s.viz and s.viz.kind and s.viz.kind != 'none' %}
+  {% set has_vis = has_viz or (s.type == 'person') or ills.get(s.illustration_id) %}
   <div class="scene bg-{{ bg }} {{ s.type }}" id="sc{{ loop.index0 }}">
     {% if bg == 'navy' %}<div class="glow"></div>{% endif %}
     {# пробные Reels видят незнакомые с брендом: в начале только смысл, логотип — в финале #}
@@ -89,6 +91,8 @@
       {% else %}
       <div class="namecard" data-anim="ill"><b>{{ ref.name_ru or s.person }}</b>{% if ref.role_ru %}<span>{{ ref.role_ru }}</span>{% endif %}</div>
       {% endif %}
+    {% elif has_viz %}
+      <canvas class="viz" data-i="{{ loop.index0 }}"></canvas>
     {% elif ills.get(s.illustration_id) %}
       <div class="vis ill" data-anim="ill"><img src="{{ ills[s.illustration_id] }}" alt=""></div>
     {% endif %}
@@ -97,10 +101,12 @@
   {% endfor %}
   <div id="sub"><span></span></div>
 </div>
+<script>{{ viz_js | safe }}</script>
 <script>
 const TL = {{ timeline | tojson }};      // [{start, end}] для каждой сцены
 const SUBS = {{ subtitles | tojson }};   // [{start, end, text}]
 const TOTAL = {{ total }};
+const VIZ = {{ vizs | tojson }};         // инфографика по сценам (или null)
 const ease = x => 1 - Math.pow(1 - Math.min(Math.max(x, 0), 1), 3);
 const scenes = TL.map((_, i) => document.getElementById('sc' + i));
 // Счётчик: первая цифра в строке растёт от 0 до значения, остальной текст неизменен.
@@ -154,6 +160,11 @@ window.seek = function (t) {
       q('tape').style.opacity = ptape; q('tape').style.transform = `rotate(-38deg) scale(${1.3 - 0.3 * ptape})`;
       q('tag').style.opacity = ptag; q('tag').style.transform = `rotate(-2deg) translateY(${(1 - ptag) * 30}px)`;
       col.style.transform = `translateY(${-6 * Math.sin(lt * 1.2)}px)`;
+    }
+    const cv = el.querySelector('canvas.viz');
+    if (cv && vis > 0) {
+      const prev = i > 0 && VIZ[i - 1] && VIZ[i - 1].kind === VIZ[i].kind ? VIZ[i - 1] : null;
+      window.drawViz(cv, VIZ[i], prev, Math.max(lt, 0));
     }
     const c = counters.find(c => el.contains(c.el));
     if (c) {

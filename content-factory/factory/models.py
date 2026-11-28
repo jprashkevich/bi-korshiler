@@ -33,6 +33,35 @@ class ScoreBatch(BaseModel):
 SlideType = Literal["cover", "lead", "insight", "person", "event", "statement", "stat", "list", "steps", "question", "cta"]
 
 
+VizKind = Literal["none", "dots", "network", "rings", "house"]
+VizColor = Literal["accent", "accent2", "white", "muted"]
+
+
+class VizGroup(BaseModel):
+    label: str = Field(description="Подпись группы, 1–3 слова: «знают соседей», «одиноки»", max_length=40)
+    value: float = Field(description="Доля группы в процентах 0–100 (для rings — процент шкалы, для network — доля людей без связей)")
+    color: VizColor = Field(description="accent — главная группа, accent2 — вторая, white — нейтральная, muted — фон/остальные")
+
+
+class VizSpec(BaseModel):
+    """Инфографика сцены: точки-люди, сеть связей, кольца процентов или дом с окнами.
+    Рисуется кодом по этим числам, поэтому числа — только из источника (или conditional)."""
+    kind: VizKind = Field(default="none", description=(
+        "none — без инфографики; dots — облако точек, 1 точка = группа людей, цветом выделены доли; "
+        "network — люди и связи между ними, value первой группы = доля одиноких (без линий); "
+        "rings — концентрические кольца-шкалы для сравнения 1–3 процентов; "
+        "house — фасад дома, окна загораются по доле (про дом, подъезд, соседей)"))
+    mode: Literal["build", "split", "highlight"] = Field(default="build", description=(
+        "build — фигура собирается; split — группы разъезжаются в отдельные облака; "
+        "highlight — выделяется главная группа, остальное гаснет. Соседние сцены с той же фигурой "
+        "перестраивают её: build → highlight → split"))
+    total: int = Field(default=0, description="Сколько людей (или домов) за фигурой: число из источника, например 3000; 0 — неизвестно")
+    unit: str = Field(default="", description="Легенда: «1 точка = 10 человек», «1 окно = 1 семья»", max_length=40)
+    groups: list[VizGroup] = Field(default_factory=list, description="1–3 группы с долями из источника")
+    callouts: list[str] = Field(default_factory=list, description="0–2 выноски до 30 символов к ключевым точкам")
+    conditional: bool = Field(default=False, description="true — точных чисел в источнике нет, схема условная (на экране будет пометка «условно»)")
+
+
 class Slide(BaseModel):
     type: SlideType = Field(description=(
         "cover — обложка с хуком (первый слайд); lead — второй слайд: лид из 2–3 предложений, расшифровка заголовка; insight — заголовок, текст и фото или иллюстрация; "
@@ -49,6 +78,7 @@ class Slide(BaseModel):
     illustration_id: str = Field(description="id иллюстрации из каталога для cover или insight, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
     photo_ref: str = Field(description="Для event (и cover в «Жизни дворов»): id фото из отчёта; иначе пустая строка")
+    viz: VizSpec = Field(default_factory=VizSpec, description="Для stat: визуализация цифры точками, кольцами или домом; для остальных kind=none")
 
 
 class PostPackage(BaseModel):
@@ -89,12 +119,15 @@ class Scene(BaseModel):
     voice: str = Field(description="Что говорит голос в этой сцене: одна короткая живая фраза, 4–12 слов, как в разговоре", max_length=200)
     illustration_id: str = Field(description="id иллюстрации из каталога для hook, insight или cta, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
+    viz: VizSpec = Field(default_factory=VizSpec, description="Инфографика сцены (см. правила). В сцене с viz illustration_id пустой")
 
 
 class ReelPackage(BaseModel):
     headline: str = Field(description="Тема ролика одной строкой для контент-плана", max_length=120)
     accent: Accent
     reel_format: ReelFormat = Field(default="number", description="Сценарный шаблон ролика (задан в задании)")
+    voice_mode: Literal["voice", "music"] = Field(default="voice", description="Задано в задании: voice — с голосом, music — без голоса, только музыка и текст")
+    length: Literal["short", "mid", "long"] = Field(default="mid", description="Задано в задании: целевая длина ролика")
     music_mood: MusicMood = Field(default="warm", description="Настроение фоновой музыки: warm — тёплое, upbeat — бодрое, mystery — интригующее")
     cover_title: str = Field(description="Текст обложки Reels, до 40 символов, интрига", max_length=50)
     people: list[PersonRef] = Field(description="Исследователи и организации, названные в источнике (0–3). Только реально упомянутые")

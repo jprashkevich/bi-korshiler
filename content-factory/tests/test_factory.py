@@ -447,7 +447,7 @@ def test_reel_backgrounds_and_word_limit():
     bgs = reels.scene_backgrounds(pkg.scenes)
     assert bgs[0] == "navy" and bgs[-1] == "navy"
     assert all(not (a.startswith("accent") and b.startswith("accent")) for a, b in zip(bgs, bgs[1:]))
-    assert writer.voice_words(pkg) <= writer.MAX_REEL_WORDS
+    assert writer.voice_words(pkg) <= writer.MAX_REEL_WORDS["long"]
 
 
 def test_season_filter_hides_summer_pictures_in_november():
@@ -509,3 +509,24 @@ def test_lead_slide_and_editorial_policy_in_prompt(monkeypatch):
     prompt = writer.system_prompt()
     assert "Лид" in prompt and "до 280 символов" in prompt and "лучше короче" not in prompt
     assert any("общее определение" in v for v in editor.violations(p.model_copy(update={"caption_ru": "Уникальный двор"})))
+
+
+def test_reel_plan_rotates_experiment_and_viz_in_templates():
+    from datetime import date, timedelta
+    from factory import insights, render, writer
+    from factory.models import PostPackage
+    plans = [writer.reel_plan(date(2026, 12, 1) + timedelta(days=i), {"score_data": {"has_number": True}}) for i in range(6)]
+    assert {p["voice_mode"] for p in plans} == {"voice", "music"}
+    assert {p["length"] for p in plans} == {"short", "mid", "long"}
+    assert {p["viz"] for p in plans} == set(writer.VIZ_KINDS)
+    pkg = json.loads((HERE / "fixtures/sample_package.json").read_text())
+    pkg["slides"].insert(2, dict(pkg["slides"][1], type="stat", title="20%", illustration_id="", photo_ref="",
+                                 viz={"kind": "dots", "mode": "build", "total": 3000, "unit": "1 точка = 12 человек",
+                                      "groups": [{"label": "одиноки", "value": 20, "color": "accent"}],
+                                      "callouts": [], "conditional": False}))
+    html = render.render_html(PostPackage.model_validate(pkg), "Наука о соседстве")
+    assert 'class="viz"' in html and "window.drawViz" in html
+    rows = [{"format": "reels", "score": s, "voice_mode": v, "length": "mid", "reel_format": "myth"}
+            for s, v in ((5, "voice"), (3, "music"), (7, "voice"))]
+    out = insights.reel_experiments(rows)
+    assert any("с голосом: 6.0 (2)" in x for x in out)

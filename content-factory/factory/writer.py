@@ -53,6 +53,8 @@ def system_prompt() -> str:
 - Название рубрики уже стоит на обложке отдельной меткой: eyebrow обложки его не повторяет
   (пиши тип материала или интригу: «Исследование», «Эксперимент», «Цифра недели»).
 - Не повторяй одну и ту же мысль на соседних слайдах и в обложке: каждый слайд добавляет новое.
+- Слайд stat — ещё и слайд данных: заполни viz (dots, rings или house) теми же числами, что в title и text.
+  Язык как в Reels: точка = человек. Числа — только из источника; нет точных чисел — viz.kind = none.
 - Второй слайд — lead: лид из 2–3 предложений, расшифровка заголовка (title — короткая подводка, text — сам лид).
 - Дальше основная часть по структуре статьи: анализ, история исследования (person, если назван человек),
   детали, вывод (statement), маленький шаг (steps). Каждый слайд развивает одну мысль до конца.
@@ -167,10 +169,32 @@ Reels публикуются как пробные: сначала их видя
   Имена иностранных учёных — по-русски.
 - music_mood выбери по теме: warm — тёплое и семейное, upbeat — бодрое и практичное, mystery — парадокс и интрига.
 - BIG Life в кадре и в голосе — только в cta, не в начале.
+
+### Инфографика (обязательна: минимум 2–3 сцены с viz)
+Ролик держится на анимации данных: зритель досматривает, потому что ждёт, во что сложится картинка.
+- Язык: точка = человек, линия = связь. dots — облако людей, где цветом выделена доля из исследования;
+  network — люди и связи, одинокие — точки без линий; rings — 1–3 процента кольцами; house — фасад дома,
+  окна загораются по доле (для тем про дом, подъезд, соседей).
+- Одна фигура перестраивается по ходу ролика: в соседних сценах та же kind с новым mode
+  (build → highlight → split). Так зритель следит за одной историей, а не за набором картинок.
+- Числа в groups, total и unit — только из источника или из блока «Цифры BIG Life». Если точных чисел нет,
+  можно условную схему: conditional=true (на экране будет «условная схема»), доли — по смыслу источника,
+  но в голосе и title не называй выдуманных цифр.
+- unit — короткая легенда («1 точка = 10 человек», «1 окно = 1 семья»), callouts — 0–2 выноски до 30 символов.
+- Сцена с viz: title короткий (до 5 слов), text пустой, illustration_id пустой.
+- Иллюстрации из каталога можно смешивать с инфографикой в других сценах.
+- Предпочтительная фигура дня указана в задании: используй её, если она подходит к данным.
+
+### Длина и голос (заданы в задании — это эксперимент, держись их)
+- length short — 15–20 секунд, 6–7 сцен, 35–45 слов; mid — 25–32 секунды, 8–10 сцен, 55–75 слов;
+  long — 40–50 секунд, 10–12 сцен, 90–110 слов, один дополнительный бит с деталями.
+- voice_mode music — голоса не будет: весь смысл должен читаться с экрана. title каждой сцены — законченная
+  короткая фраза, text — вторая строка до 60 символов; поле voice всё равно заполни (для субтитров и подписи).
 """
 
 
-MAX_REEL_WORDS = 78      # речь ускорена до ~2,6 слова в секунду → не больше 35 секунд с паузой
+MAX_REEL_WORDS = {"short": 48, "mid": 78, "long": 115}
+VIZ_KINDS = ["dots", "network", "rings", "house"]      # речь ускорена до ~2,6 слова в секунду → не больше 35 секунд с паузой
 REEL_FORMATS = ["myth", "number", "experiment", "three"]
 
 
@@ -189,23 +213,71 @@ def reel_format_for(day, item: dict | None) -> str:
     return fmt
 
 
+def reel_plan(day, item: dict | None) -> dict:
+    """План ролика на день. Голос и длина — A/B-эксперимент: варианты чередуются по дням,
+    победителя видно в еженедельном отчёте (insights: разбивка Reels по вариантам)."""
+    n = day.toordinal()
+    return {"reel_format": reel_format_for(day, item),
+            "voice_mode": "voice" if n % 2 == 0 else "music",
+            "length": ["mid", "short", "long"][(n // 2) % 3],
+            "viz": VIZ_KINDS[n % len(VIZ_KINDS)]}
+
+
+def biglife_numbers() -> str:
+    """Цифры BIG Life для инфографики: из фотоотчётов за 30 дней + то, что владелец внёс в biglife_numbers.yaml."""
+    lines = []
+    try:
+        from . import drive
+        if drive.enabled():
+            evs = drive.recent_events(days=30, include_used=True)
+            cities = sorted({e.city for e in evs if e.city})
+            people = 0
+            for e in evs:
+                digits = "".join(ch for ch in str((e.report or {}).get("participants", "")) if ch.isdigit())
+                people += int(digits) if digits and len(digits) < 5 else 0
+            if evs:
+                lines.append(f"- За последние 30 дней во дворах BIG Life прошло {len(evs)} соседских активностей "
+                             f"в {len({e.complex for e in evs})} ЖК" + (f", города: {', '.join(cities)}" if cities else ""))
+            if people:
+                lines.append(f"- Участников по отчётам (где указано): {people}")
+    except Exception as exc:     # цифры — дополнение, без Drive ролик всё равно собирается
+        log.info("Цифры BIG Life из Drive не собраны: %s", exc)
+    try:
+        extra = load_yaml("biglife_numbers.yaml") or {}
+        for k, v in (extra.get("numbers") or {}).items():
+            if v not in (None, "", 0):
+                lines.append(f"- {k}: {v}")
+    except FileNotFoundError:
+        pass
+    return "\n".join(lines)
+
+
 def write_reel(rubric_key: str, item: dict | None, feedback: list[str] | None = None,
-               previous: dict | None = None, reel_format: str = "myth"):
+               previous: dict | None = None, reel_format: str = "myth", plan: dict | None = None):
     from .models import ReelPackage
     article = ingest.fetch_article_text(item["url"]) if item else ""
     user = build_user_prompt(rubric_key, item, article, feedback or [], previous)
     user = user.replace("Формат: карусель", "Формат: Reels-ролик, а не карусель (количество слайдов игнорируй)", 1)
-    user += f"\n\nreel_format: {reel_format} — шаблон {FORMAT_TITLES.get(reel_format, reel_format)}."
+    plan = plan or {"reel_format": reel_format, "voice_mode": "voice", "length": "mid", "viz": "dots"}
+    reel_format = plan["reel_format"]
+    user += (f"\n\nreel_format: {reel_format} — шаблон {FORMAT_TITLES.get(reel_format, reel_format)}."
+             f"\nvoice_mode: {plan['voice_mode']}. length: {plan['length']}. "
+             f"Предпочтительная фигура инфографики: {plan['viz']}.")
+    numbers = biglife_numbers()
+    if numbers:
+        user += ("\n\n## Цифры BIG Life (можно использовать в одной сцене, например в payoff или cta, "
+                 "и как данные для инфографики)\n" + numbers)
     pkg = llm.ask(ReelPackage, system=system_prompt() + REEL_RULES, user=user,
                   model=settings.writer_model, effort=settings.writer_effort)
     words = voice_words(pkg)
-    if words > MAX_REEL_WORDS:   # озвучка дороже текста: сокращаем до синтеза, а не после
-        user += (f"\n\n## Сократи\nВ прошлой версии озвучка была {words} слов, это больше 35 секунд. "
-                 f"Сделай не больше {MAX_REEL_WORDS - 15} слов на весь ролик и не больше 10 сцен, смысл и факты сохрани.")
+    limit = MAX_REEL_WORDS[plan["length"]]
+    if words > limit:   # озвучка дороже текста: сокращаем до синтеза, а не после
+        user += (f"\n\n## Сократи\nВ прошлой версии озвучка была {words} слов, это длиннее заданной длины. "
+                 f"Сделай не больше {limit - 10} слов на весь ролик, смысл, факты и инфографику сохрани.")
         pkg = llm.ask(ReelPackage, system=system_prompt() + REEL_RULES, user=user,
                       model=settings.writer_model, effort=settings.writer_effort)
-    pkg.scenes = pkg.scenes[:10]
-    pkg.reel_format = reel_format
+    pkg.scenes = pkg.scenes[:12]
+    pkg.reel_format, pkg.voice_mode, pkg.length = reel_format, plan["voice_mode"], plan["length"]
     if pkg.scenes and pkg.scenes[0].type != "hook":
         pkg.scenes[0].type = "hook"
     pkg.hashtags = [h.lstrip("#").replace(" ", "") for h in pkg.hashtags][:8]

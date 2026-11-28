@@ -100,6 +100,7 @@ def render_html(pkg: PostPackage, rubric_title: str, pictures: dict | None = Non
         source_line=pkg.source_line,
         rubric_title=rubric_title,
         assets=(TEMPLATES_DIR / "assets").resolve().as_uri(),
+        viz_js=(TEMPLATES_DIR / "viz.js").read_text(encoding="utf-8"),
     )
 
 

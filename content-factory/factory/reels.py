@@ -19,7 +19,7 @@ from .settings import OUTPUT_DIR, TEMPLATES_DIR, settings
 log = logging.getLogger(__name__)
 FPS = 30
 TAIL = 1.0          # пауза после последней фразы, сек (короче — ролик зациклен)
-MAX_VOICE_SECONDS = 36
+MAX_VOICE_SECONDS = {"short": 22, "mid": 34, "long": 50}   # A/B длины: короткий, средний, длинный
 SUB_MAX = 34        # максимум символов в строке субтитров
 _env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=select_autoescape(["html", "j2"]))
 
@@ -109,11 +109,31 @@ def render_cover(pkg: ReelPackage, rubric_title: str, out: Path) -> Path:
 
 
 def reel_speech(text: str, out: Path) -> tts.Speech:
-    """Голос для Reels живее и быстрее, чем для длинных текстов: темп 1.12, больше интонации."""
+    """Голос для Reels живее и быстрее, чем для длинных текстов: темп 1.18, больше эмоций
+    (style выше, stability ниже — интонация свободнее). Владелец просил «скорости и эмоций»."""
     from .settings import env
-    return tts.synthesize(text, out, speed=float(env("REELS_VOICE_SPEED", "1.12")),
-                          style=float(env("REELS_VOICE_STYLE", "0.35")),
-                          stability=float(env("REELS_VOICE_STABILITY", "0.4")))
+    return tts.synthesize(text, out, speed=float(env("REELS_VOICE_SPEED", "1.18")),
+                          style=float(env("REELS_VOICE_STYLE", "0.55")),
+                          stability=float(env("REELS_VOICE_STABILITY", "0.3")))
+
+
+def silent_timeline(pkg: ReelPackage, out: Path) -> tuple[list[dict], list[dict], float, Path]:
+    """Ролик без голоса (A/B-вариант «только музыка и текст»): длительность сцены — по объёму текста
+    на экране, сцены с инфографикой дольше, чтобы фигура успела собраться."""
+    import imageio_ffmpeg
+    tl, t = [], 0.0
+    for s in pkg.scenes:
+        words = len((s.title + " " + s.text).split())
+        dur = min(max(1.4 + 0.3 * words, 2.0), 4.2)
+        if s.viz.kind != "none":
+            dur += 1.6
+        tl.append({"start": round(t, 3), "end": round(t + dur, 3)})
+        t += dur
+    total = round(t + TAIL, 2)
+    silence = out / "silence.m4a"
+    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "lavfi",
+                    "-i", "anullsrc=r=44100:cl=mono", "-t", f"{total:.2f}", "-c:a", "aac", str(silence)], check=True)
+    return tl, [], total, silence
 
 
 def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict | None = None,
@@ -122,12 +142,18 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     out_dir = OUTPUT_DIR / name
     out_dir.mkdir(parents=True, exist_ok=True)
     full, _ = voice_text(pkg)
-    speech = (speech_fn or reel_speech)(full, out_dir / "voice.mp3")
-    if speech_fn is None and speech.duration > MAX_VOICE_SECONDS:
+    silent = getattr(pkg, "voice_mode", "voice") == "music"
+    if silent:
+        tl, subs, total, voice_path = silent_timeline(pkg, out_dir)
+    else:
+        speech = (speech_fn or reel_speech)(full, out_dir / "voice.mp3")
+    if not silent and speech_fn is None and speech.duration > MAX_VOICE_SECONDS.get(pkg.length, 36):
         # длинный ролик досматривают хуже: перезаписываем на предельной скорости голоса
         log.info("Озвучка %.1f с длиннее %s с — перезаписываю быстрее", speech.duration, MAX_VOICE_SECONDS)
-        speech = tts.synthesize(full, out_dir / "voice.mp3", speed=1.2, style=0.35, stability=0.4)
-    tl, subs, total = timeline(pkg, speech)
+        speech = tts.synthesize(full, out_dir / "voice.mp3", speed=1.2, style=0.55, stability=0.3)
+    if not silent:
+        tl, subs, total = timeline(pkg, speech)
+        voice_path = speech.audio_path
     scenes = []
     for s in pkg.scenes:
         d = s.model_dump()
@@ -140,6 +166,8 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
         ills=illustrations(), pictures=picture_uris(pictures),
         people={p.name_en: p.model_dump() for p in pkg.people},
         scenes=scenes, accent=pkg.accent, rubric_title=rubric_title, timeline=tl, subtitles=subs,
+        vizs=[s.viz.model_dump() if s.viz.kind != "none" else None for s in pkg.scenes],
+        viz_js=(TEMPLATES_DIR / "viz.js").read_text(encoding="utf-8"),
         total=total, assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
     page_path = out_dir / "reel.html"
     page_path.write_text(html, encoding="utf-8")
@@ -149,12 +177,12 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     if music_fn is None:
         from .music import compose as music_fn
     music = music_fn(getattr(pkg, "music_mood", "warm"), total, out_dir / "music.mp3")
-    audio_in = ["-i", str(speech.audio_path)]
+    audio_in = ["-i", str(voice_path)]
     if music:
         # музыка тихо под голосом, плавно появляется и уходит; голос не трогаем
         audio_in += ["-i", str(music)]
         audio_filter = ["-filter_complex",
-                        f"[1:a]apad[v];[2:a]volume=0.13,afade=t=in:d=0.6,afade=t=out:st={max(total - 1.5, 0):.2f}:d=1.5[m];"
+                        f"[1:a]apad[v];[2:a]volume={0.55 if silent else 0.13},afade=t=in:d=0.6,afade=t=out:st={max(total - 1.5, 0):.2f}:d=1.5[m];"
                         "[v][m]amix=inputs=2:duration=first:normalize=0[a]", "-map", "0:v", "-map", "[a]"]
     else:
         audio_filter = ["-af", "apad"]
