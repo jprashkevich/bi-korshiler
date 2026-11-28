@@ -43,9 +43,13 @@ def choose_item(rubric_key: str, exclude_ids: set[int] = frozenset()) -> dict | 
     r = writer.load_yaml("rubrics.yaml")["rubrics"][rubric_key]
     if r["source"] in ("brand", "drive", "ideas"):
         return None
-    # у скоринга нет отдельной метки для Reels: ближе всего «number» (цифра, вирусность)
-    item = score.pick("number" if rubric_key == "reel" else rubric_key, prefer_kind=r.get("prefer_kind"),
-                      need_number=rubric_key == "number")
+    # Reels держится на инфографике, поэтому берём только материал с настоящей цифрой и из исследований:
+    # колонка психолога без данных (как в ролике #19) даёт лишь «условную схему» и пустой ролик
+    if rubric_key == "reel":
+        item = (score.pick("number", prefer_kind="journal", need_number=True)
+                or score.pick("number", need_number=True) or score.pick("science"))
+    else:
+        item = score.pick(rubric_key, prefer_kind=r.get("prefer_kind"), need_number=rubric_key == "number")
     if item is None and rubric_key == "number":   # нет материала с цифрой — берём лучшую тему для науки
         item = score.pick("science")
     if item and item["id"] in exclude_ids:
@@ -96,11 +100,25 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
         for k in ("reel_format", "voice_mode", "length"):      # при переделке эксперимент не меняем
             if (previous or {}).get(k):
                 plan[k] = previous[k]
-        pkg, issues = proofread(writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous,
-                                                  plan=plan))
+        draft = writer.write_reel(post["rubric"], item, feedback=feedback, previous=previous, plan=plan)
+        review = None
+        if settings.editor_enabled:
+            # редактор сценария: хук, одна история, устная речь — до озвучки, пока переписать дёшево
+            source = f"{item['title']}\n{item.get('summary') or ''}" if item else ""
+            try:
+                review = editor.review_reel(draft, source)
+                if review.verdict == "rewrite":
+                    notes = list(feedback or []) + review.problems + [
+                        f"Хук слабый ({review.hook_score}/10). Сильнее, например: «{review.best_hook}»."]
+                    draft = writer.write_reel(post["rubric"], item, feedback=notes, previous=draft.model_dump(), plan=plan)
+                    review = editor.review_reel(draft, source)
+            except Exception as exc:
+                log.warning("Редактор сценария не отработал: %s", exc)
+        pkg, issues = proofread(draft)
         pictures = find_pictures(pkg, pkg.scenes)
         files = reels.render_video(pkg, rubric["title"], name, pictures=pictures)
-        data = {**pkg.model_dump(), "format": "reels", "pictures": pictures}
+        data = {**pkg.model_dump(), "format": "reels", "pictures": pictures,
+                "review": review.model_dump() if review else None}
     else:
         pkg, issues = proofread(writer.write(post["rubric"], item, feedback=feedback, previous=previous))
         pictures = find_pictures(pkg, pkg.slides)
@@ -199,7 +217,12 @@ def deliver(post_id: int) -> None:
     facts = "\n".join(f"• {e(f)}" for f in pkg.fact_check)
     threads_note = ("опубликуется после «Одобрить»" if threads.enabled()
                     else "Threads не подключён, опубликуйте вручную")
-    variant = (f"<b>Эксперимент Reels:</b> шаблон {e(pkg.reel_format)}, "
+    rv = post["package"].get("review") or {}
+    review_note = ((f"<b>Редактор сценария:</b> хук {rv.get('hook_score')}/10"
+                    + ("" if rv.get("one_story") else ", история расползается")
+                    + ("" if rv.get("data_driven") else ", инфографика без точных чисел") + "\n"
+                    + "".join(f"• {e(p)}\n" for p in (rv.get("problems") or [])[:4]) + "\n") if is_reel and rv else "")
+    variant = review_note + (f"<b>Эксперимент Reels:</b> шаблон {e(pkg.reel_format)}, "
                f"{'с голосом' if pkg.voice_mode == 'voice' else 'без голоса, музыка и текст'}, длина {e(pkg.length)}, "
                f"инфографика: {e(', '.join(sorted({s.viz.kind for s in pkg.scenes if s.viz.kind != 'none'})) or 'нет')}\n\n"
                if is_reel else "")

@@ -530,3 +530,17 @@ def test_reel_plan_rotates_experiment_and_viz_in_templates():
             for s, v in ((5, "voice"), (3, "music"), (7, "voice"))]
     out = insights.reel_experiments(rows)
     assert any("с голосом: 6.0 (2)" in x for x in out)
+
+
+def test_reel_template_phrases_and_full_humanizer_in_editor(monkeypatch):
+    from factory import editor
+    from factory.models import ReelPackage
+    pkg = ReelPackage.model_validate(json.loads((HERE / "fixtures/sample_reel.json").read_text()))
+    pkg.scenes[1].voice = "Ответ в конце, не переключайся."
+    pkg.scenes[-1].voice = "Отправь соседу. Ведь все уверены:"
+    found = " ".join(editor.violations(pkg))
+    assert "дежурная связка Reels" in found and "оборвана на двоеточии" in found
+    seen = {}
+    monkeypatch.setattr(editor.llm, "ask", lambda cls, system, user, **k: seen.setdefault("system", system) and (_ for _ in ()).throw(RuntimeError("stop")))
+    editor.edit(pkg)
+    assert "Humanizer-RU" in seen["system"] and "Поправки BIG Life" in seen["system"]

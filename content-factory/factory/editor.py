@@ -8,6 +8,10 @@ from __future__ import annotations
 import logging
 import re
 
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
 from . import llm
 from .models import PostPackage, ReelPackage
 from .settings import CONFIG_DIR, settings
@@ -37,6 +41,10 @@ BANNED = [
     # общие определения из редакционной политики: ничего не говорят читателю, значит, можно конкретнее
     (r"\b(уникальн|культов|знаменит|креативн|элитн|изысканн|невероятн|потрясающ)\w*", "общее определение"),
     (r"\b(хочется надеяться|как известно|пожалуй)\b", "размытая оговорка"),
+    # дежурные связки Reels: модель копирует их из ролика в ролик, зритель узнаёт шаблон
+    (r"\b(самое странное другое|ответ в конце|в конце (скажу|расскажу)|звучит как правда|сейчас расскажу|"
+     r"учёные удивились|внимание, вопрос|знаешь ли ты|спойлер)", "дежурная связка Reels"),
+    (r":\s*$", "фраза оборвана на двоеточии"),
 ]
 
 
@@ -76,6 +84,9 @@ def _merge(orig, edited):
     if "cover_title" in data and new.get("cover_title"):
         data["cover_title"] = new["cover_title"]
     frames = "slides" if "slides" in data else "scenes"
+    if len(new.get(frames, [])) != len(data[frames]):
+        # раньше правки сцен в этом случае молча терялись
+        log.warning("Вычитка вернула %s %s вместо %s — тексты слайдов не взяты", len(new.get(frames, [])), frames, len(data[frames]))
     if len(new.get(frames, [])) == len(data[frames]):
         for o, n in zip(data[frames], new[frames]):
             for k in ("eyebrow", "title", "text", "items", "voice"):
@@ -107,9 +118,11 @@ def edit(pkg):
     """Вычитать пакет. Возвращает (пакет, список оставшихся замечаний)."""
     import json
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
+    # полный скилл humanizer-ru + поправки бренда (они важнее): раньше здесь была только короткая выжимка
+    skill = (CONFIG_DIR / "humanizer-ru.md").read_text(encoding="utf-8")
     rules = (CONFIG_DIR / "humanizer.md").read_text(encoding="utf-8")
     editorial = (CONFIG_DIR / "editorial.md").read_text(encoding="utf-8")
-    system = f"{rules}\n\n## Голос бренда (tone of voice)\n{brand}\n\n{editorial}"
+    system = (f"{skill}\n\n{rules}\n\n## Голос бренда (tone of voice) — важнее правил скилла\n{brand}\n\n{editorial}")
     current = pkg
     for attempt in range(2):
         issues = violations(current)
@@ -128,3 +141,40 @@ def edit(pkg):
             break
     current = _fix_dashes(current)
     return current, violations(current)
+
+
+# ---------- редактор сценария Reels ----------
+
+class ReelReview(BaseModel):
+    hook_score: int = Field(ge=1, le=10, description="Сила хука для незнакомого с брендом зрителя: 10 — невозможно пролистать")
+    best_hook: str = Field(description="Лучший хук из hook_options или твой вариант, до 8 слов, если все слабые")
+    one_story: bool = Field(description="Ролик рассказывает одну историю одного исследования, без лишних экспертов и тем")
+    data_driven: bool = Field(description="Инфографика опирается на настоящие числа источника")
+    problems: list[str] = Field(description="Конкретные проблемы: номер сцены и что не так (структура, хук, дежурные фразы, устная речь, ToV)")
+    verdict: Literal["ok", "rewrite"] = Field(description="rewrite — если hook_score < 7, нет одной истории или 3+ серьёзных проблемы")
+
+
+REVIEW_RULES = """Ты шеф-редактор коротких видео и редактор humanizer-ru. Тебе дают сценарий Reels для пробного показа
+людям, которые не знают бренд BIG Life. Оцени строго, как редактор, которому за досмотры платят.
+Проверь:
+1. Хук: конкретный, неожиданный, понятен без контекста, до 8 слов. Не общее утверждение, не вопрос-заглушка,
+   не миф без поворота. Поставь hook_score честно: средний хук — 5.
+2. Одна история: одно исследование, одна находка, одна главная цифра; нет лишних экспертов, цитат и побочных тем.
+3. Ход: хук → почему это касается зрителя → как узнали → находка с цифрой → поворот → что делать → финал,
+   который перекликается с хуком и не оборван.
+4. Инфографика на настоящих числах источника (или честно помечена как условная).
+5. Устная речь по humanizer-ru: короткие фразы, глаголы, нет канцелярита, кальки, «является», дежурных связок,
+   псевдо-сократики, цепочек фраз-кивков, длинного тире. Тон BIG Life: тёплый сосед плюс наука, без морали.
+6. Факты только из источника.
+Пиши problems конкретно: «сцена 3: …». Не переписывай сценарий сам."""
+
+
+def review_reel(pkg, source: str = ""):
+    """Оценка сценария до озвучки и рендера: дешевле переписать текст, чем перерендерить ролик."""
+    import json
+    skill = (CONFIG_DIR / "humanizer-ru.md").read_text(encoding="utf-8")
+    brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
+    system = f"{REVIEW_RULES}\n\n## Голос бренда\n{brand}\n\n## Правила humanizer-ru\n{skill}"
+    user = (("Источник:\n" + source[:6000] + "\n\n") if source else "") + \
+        "Сценарий (JSON):\n" + json.dumps(pkg.model_dump(), ensure_ascii=False)
+    return llm.ask(ReelReview, system=system, user=user, model=settings.writer_model, effort=settings.editor_effort)

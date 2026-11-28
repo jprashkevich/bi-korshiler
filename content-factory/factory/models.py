@@ -132,6 +132,7 @@ class ReelPackage(BaseModel):
     voice_mode: Literal["voice", "music"] = Field(default="voice", description="Задано в задании: voice — с голосом, music — без голоса, только музыка и текст")
     length: Literal["short", "mid", "long"] = Field(default="mid", description="Задано в задании: целевая длина ролика")
     music_mood: MusicMood = Field(default="warm", description="Настроение фоновой музыки: warm — тёплое, upbeat — бодрое, mystery — интригующее")
+    hook_options: list[str] = Field(default_factory=list, description="5 разных вариантов хука (до 8 слов каждый); лучший стоит в первой сцене")
     cover_title: str = Field(description="Текст обложки Reels, до 40 символов, интрига", max_length=50)
     people: list[PersonRef] = Field(description="Исследователи и организации, названные в источнике (0–3). Только реально упомянутые")
     scenes: list[Scene]
