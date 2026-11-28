@@ -379,9 +379,11 @@ def test_instagram_media_stored_as_jpeg_with_random_tokens(tmp_path):
     assert items[0]["token"].endswith(".mp4") and items[1]["token"].endswith(".jpg")
     assert len(items[1]["token"]) > 40
     with db.engine.begin() as c:
-        mime, data = c.execute(db.select(db.media.c.mime, db.media.c.data)
-                               .where(db.media.c.token == items[1]["token"])).first()
-    assert mime == "image/jpeg" and data[:2] == b"\xff\xd8"
+        mime = c.execute(db.select(db.media.c.mime).where(db.media.c.token == items[1]["token"])).scalar()
+        data = b"".join(r[0] for r in c.execute(db.select(db.media_parts.c.data)
+                                                .where(db.media_parts.c.token == items[1]["token"])
+                                                .order_by(db.media_parts.c.idx)))
+    assert mime == "image/jpeg" and data[:2] == b"\xff\xd8"      # файл хранится частями в media_parts
     assert instagram.media_for(pid) == items
 
 

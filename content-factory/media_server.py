@@ -17,8 +17,15 @@ TOKEN = re.compile(r"^/m/([A-Za-z0-9_-]{20,80}\.(?:jpg|mp4))$")
 
 
 def fetch(token: str):
+    """(mime, байты). Большие файлы лежат частями в media_parts (иначе база на 256 МБ падала)."""
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-        return conn.execute("SELECT mime, data FROM media WHERE token = %s", (token,)).fetchone()
+        row = conn.execute("SELECT mime, data FROM media WHERE token = %s", (token,)).fetchone()
+        if not row:
+            return None
+        if row[1]:
+            return row
+        parts = conn.execute("SELECT data FROM media_parts WHERE token = %s ORDER BY idx", (token,)).fetchall()
+        return row[0], b"".join(bytes(p[0]) for p in parts)
 
 
 class Handler(BaseHTTPRequestHandler):

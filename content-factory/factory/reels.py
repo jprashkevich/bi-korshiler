@@ -448,7 +448,7 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error",
            "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg", "-i", "-",
            *audio_in, *audio_filter, "-t", f"{total:.2f}",
-           "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p",
            "-r", str(FPS), "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(video)]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     try:

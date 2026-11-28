@@ -56,6 +56,15 @@ media = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
 )
 
+# Части больших файлов: видео одним куском (15–25 МБ) роняло базу на тарифе 256 МБ (28.11, перезапуск
+# посреди отправки ролика). Храним кусками по 2 МБ, media_server отдаёт их потоком.
+media_parts = Table(
+    "media_parts", metadata,
+    Column("token", String(80), primary_key=True),
+    Column("idx", Integer, primary_key=True),
+    Column("data", LargeBinary, nullable=False),
+)
+
 kv = Table(
     "kv", metadata,
     Column("key", String(100), primary_key=True),

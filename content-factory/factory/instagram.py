@@ -147,23 +147,34 @@ def to_jpeg(path: Path) -> bytes:
         return buf.getvalue()
 
 
+PART = 2 * 1024 * 1024
+
+
 def store_media(post_id: int, files: list[str], is_reel: bool) -> list[dict]:
     """Кладёт файлы поста в БД и возвращает [{token, kind}] в порядке публикации.
     Для Reels: видео, затем обложка. Старые файлы (старше 14 дней) удаляются."""
     out = []
     with db.engine.begin() as c:
-        c.execute(delete(db.media).where(db.media.c.created_at < db.now() - timedelta(days=14)))
-        c.execute(delete(db.media).where(db.media.c.post_id == post_id))
-        for f in files:
-            p = Path(f)
-            if p.suffix.lower() == ".mp4":
-                data, mime, ext, kind = p.read_bytes(), "video/mp4", "mp4", "video"
-            else:
-                data, mime, ext, kind = to_jpeg(p), "image/jpeg", "jpg", "cover" if is_reel else "image"
-            tok = f"{secrets.token_urlsafe(32)}.{ext}"
-            c.execute(db.media.insert().values(token=tok, post_id=post_id, mime=mime, data=data,
+        old = [r[0] for r in c.execute(select(db.media.c.token).where(
+            (db.media.c.created_at < db.now() - timedelta(days=14)) | (db.media.c.post_id == post_id)))]
+        if old:
+            c.execute(delete(db.media_parts).where(db.media_parts.c.token.in_(old)))
+            c.execute(delete(db.media).where(db.media.c.token.in_(old)))
+    for f in files:
+        p = Path(f)
+        if p.suffix.lower() == ".mp4":
+            data, mime, ext, kind = p.read_bytes(), "video/mp4", "mp4", "video"
+        else:
+            data, mime, ext, kind = to_jpeg(p), "image/jpeg", "jpg", "cover" if is_reel else "image"
+        tok = f"{secrets.token_urlsafe(32)}.{ext}"
+        # каждая часть — своей транзакцией: в памяти базы никогда не больше 2 МБ
+        for k in range(0, len(data), PART):
+            with db.engine.begin() as c:
+                c.execute(db.media_parts.insert().values(token=tok, idx=k // PART, data=data[k:k + PART]))
+        with db.engine.begin() as c:
+            c.execute(db.media.insert().values(token=tok, post_id=post_id, mime=mime, data=b"",
                                                created_at=db.now()))
-            out.append({"token": tok, "kind": kind})
+        out.append({"token": tok, "kind": kind})
     db.kv_set(f"ig_media:{post_id}", json.dumps(out))
     return out
 

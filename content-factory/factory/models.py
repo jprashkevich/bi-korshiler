@@ -109,6 +109,28 @@ ReelFormat = Literal["myth", "number", "experiment", "three"]
 MusicMood = Literal["warm", "upbeat", "mystery"]
 
 
+VisualKind = Literal["stock", "stock_video", "our_video", "photo", "illustration", "map", "person",
+                     "journal", "number", "quote"]
+
+
+class Visual(BaseModel):
+    """Одна иллюстрация фразы (~1,5 с на экране). Владелец: «каждую фразу иллюстрируют 2–3 картинки»."""
+    kind: VisualKind = Field(description=(
+        "stock — фото из фотостока по запросу; stock_video — короткое видео из стока; our_video — живой план "
+        "со двора BIG Life (только если фраза про жизнь соседей во дворе); photo — фото из каталога «Фото для Reels»; "
+        "illustration — иллюстрация из каталога; map — карта страны, где проходило исследование; person — фото "
+        "исследователя из people; journal — обложка журнала, где вышло исследование; number — крупная цифра; "
+        "quote — цитата исследователя или участника"))
+    query: str = Field(description=(
+        "stock / stock_video — конкретный запрос НА АНГЛИЙСКОМ, что в кадре, с полом и возрастом людей "
+        "(«elderly woman reading with glasses», «eye chart on clinic wall»); map — страна по-английски («Japan»); "
+        "person — name_en из people; photo / illustration — id из каталога; journal — название журнала; "
+        "number — сама цифра («37%»); quote — текст цитаты по-русски; our_video — пусто"), max_length=200)
+    caption: str = Field(default="", description="Короткая подпись на картинке, до 40 символов, или пусто", max_length=60)
+    detail: str = Field(default="", description="map — город по-русски, если назван; journal — год и заголовок статьи; "
+                                                "number — что означает цифра; person — роль; иначе пусто", max_length=160)
+
+
 class Scene(BaseModel):
     type: SceneType = Field(description=(
         "hook — первые 2 секунды: смелое утверждение, миф или цифра-шок; stakes — почему это касается зрителя "
@@ -124,6 +146,9 @@ class Scene(BaseModel):
     voice: str = Field(description="Что говорит голос в этой сцене: одна короткая живая фраза, 4–12 слов, как в разговоре", max_length=200)
     illustration_id: str = Field(description="id иллюстрации из каталога для hook, insight или cta, иначе пустая строка")
     person: str = Field(description="Для person: name_en из people; иначе пустая строка")
+    visuals: list[Visual] = Field(default_factory=list, description=(
+        "2–3 иллюстрации этой фразы, по порядку слов: каждая показывает то, о чём говорится в этот момент. "
+        "Пол, возраст и обстановка — строго как в тексте"))
     shot: Literal["photo", "collage", "dataart"] = Field(default="collage", description=(
         "Кадр: photo — реальное фото во весь кадр с графикой поверх (узлы и связи, выноски, окна); "
         "collage — стол-коллаж: заметка с фактами, фото на скотче, карточка с данными, цифра, камера переходит "
