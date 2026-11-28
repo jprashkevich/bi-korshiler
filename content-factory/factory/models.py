@@ -33,7 +33,7 @@ class ScoreBatch(BaseModel):
 SlideType = Literal["cover", "lead", "insight", "person", "event", "statement", "stat", "list", "steps", "question", "cta"]
 
 
-VizKind = Literal["none", "dots", "network", "rings", "house"]
+VizKind = Literal["none", "dots", "people", "network", "rings", "donut", "peaks", "house"]
 VizColor = Literal["accent", "accent2", "white", "muted"]
 
 
@@ -48,7 +48,10 @@ class VizSpec(BaseModel):
     Рисуется кодом по этим числам, поэтому числа — только из источника (или conditional)."""
     kind: VizKind = Field(default="none", description=(
         "none — без инфографики; dots — облако точек, 1 точка = группа людей, цветом выделены доли; "
+        "people — 50 пиктограмм людей, окрашенных по долям, крупные проценты внизу (для «каждый пятый»); "
         "network — люди и связи между ними, value первой группы = доля одиноких (без линий); "
+        "donut — кольцевая диаграмма: целое на 2–4 части, total — число в центре; "
+        "peaks — пики-треугольники с плашками процентов для сравнения 2–5 значений (до/после, группы); "
         "rings — концентрические кольца-шкалы для сравнения 1–3 процентов; "
         "house — фасад дома, окна загораются по доле (про дом, подъезд, соседей)"))
     mode: Literal["build", "split", "highlight"] = Field(default="build", description=(

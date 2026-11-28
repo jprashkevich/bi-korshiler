@@ -17,12 +17,12 @@
 
   function palette(el) {
     const cs = getComputedStyle(el);
-    const fg = cs.color;
+    const fg = cs.color, bg = cs.backgroundColor;
     const v = n => cs.getPropertyValue(n).trim();
     // на цветном фоне акцент сливается с фоном: главная группа рисуется тёмно-синим, вторая — белым
     if (el.classList && (el.classList.contains('bg-accent') || el.classList.contains('bg-accent2')))
-      return { fg, accent: v('--navy') || '#28348a', accent2: '#ffffff', white: fg, muted: fg };
-    return { fg, accent: v('--accent'), accent2: v('--accent2'), white: fg, muted: fg };
+      return { fg, bg, accent: v('--navy') || '#28348a', accent2: '#ffffff', white: fg, muted: fg };
+    return { fg, bg, accent: v('--accent'), accent2: v('--accent2'), white: fg, muted: fg };
   }
   function colorOf(pal, c) { return pal[c] || pal.fg; }
 
@@ -203,6 +203,95 @@
     return { pos };
   }
 
+  // ---------- пиктограммы людей (isotype): ряды человечков, окрашенных по доле ----------
+  function person(ctx, x, y, h) {
+    const head = h * 0.17;
+    ctx.beginPath(); ctx.arc(x, y + head, head, 0, Math.PI * 2); ctx.fill();
+    const bw = h * 0.42, top = y + head * 2.3;
+    ctx.beginPath();
+    ctx.moveTo(x - bw / 2, top + h * 0.06); ctx.quadraticCurveTo(x - bw / 2, top, x - bw / 2 + h * 0.06, top);
+    ctx.lineTo(x + bw / 2 - h * 0.06, top); ctx.quadraticCurveTo(x + bw / 2, top, x + bw / 2, top + h * 0.06);
+    ctx.lineTo(x + bw / 2, top + h * 0.36); ctx.lineTo(x + bw * 0.22, top + h * 0.36); ctx.lineTo(x + bw * 0.22, y + h);
+    ctx.lineTo(x - bw * 0.22, y + h); ctx.lineTo(x - bw * 0.22, top + h * 0.36); ctx.lineTo(x - bw / 2, top + h * 0.36);
+    ctx.closePath(); ctx.fill();
+  }
+  function drawPeople(ctx, spec, prev, W, H, pal, lt) {
+    const cols = 10, rows = 5, n = cols * rows, cw = W / cols, h = Math.min(cw * 1.6, (H - 120) / rows * 0.82);
+    const owner = new Array(n).fill(-1); let k = 0;
+    (spec.groups || []).forEach((g, gi) => { const m = Math.round(g.value / 100 * n); for (let j = 0; j < m && k < n; j++, k++) owner[k] = gi; });
+    const pos = [];
+    for (let i = 0; i < n; i++) {
+      const x = cw * (i % cols) + cw / 2, y = Math.floor(i / cols) * (H - 120) / rows;
+      const a = ease((lt - i * 0.02) / 0.3), o = owner[i], tint = ease((lt - 1.0 - i * 0.012) / 0.3);
+      ctx.globalAlpha = a * (o >= 0 ? lerp(0.25, 1, tint) : 0.25);
+      ctx.fillStyle = o >= 0 && tint > 0 ? colorOf(pal, spec.groups[o].color === 'muted' ? 'white' : spec.groups[o].color) : pal.fg;
+      person(ctx, x, y + (1 - a) * 20, h);
+      if (o === 0) pos.push([x, y + h / 2]);
+    }
+    ctx.globalAlpha = ease((lt - 1.3) / 0.4); ctx.textAlign = 'left';
+    (spec.groups || []).slice(0, 2).forEach((g, i) => {
+      const y = H - 70 + i * 0;  const x = i * W / 2;
+      ctx.fillStyle = colorOf(pal, g.color === 'muted' ? 'white' : g.color);
+      ctx.font = '800 64px "TT Firs Neue", Montserrat, sans-serif'; ctx.fillText(fmtPct(g.value), x, y + 10);
+      ctx.font = '700 26px Montserrat, sans-serif'; ctx.fillStyle = pal.fg; ctx.fillText(g.label, x, y + 50);
+    });
+    ctx.globalAlpha = 1;
+    return { pos };
+  }
+
+  // ---------- кольцевая диаграмма: целое на части, цифра в центре ----------
+  function drawDonut(ctx, spec, prev, W, H, pal, lt) {
+    const cx = W / 2, cy = H / 2 - 10, R = Math.min(W, H) * 0.4, width = R * 0.42;
+    const groups = spec.groups || [], sum = groups.reduce((s, g) => s + g.value, 0);
+    const parts = sum < 99.5 ? [...groups, { label: 'остальные', value: 100 - sum, color: 'muted' }] : groups;
+    let a0 = -Math.PI / 2; const grow = ease((lt - 0.2) / 1.2);
+    ctx.lineWidth = width; ctx.lineCap = 'butt';
+    parts.forEach((g, i) => {
+      const a1 = a0 + (g.value / 100) * Math.PI * 2 * grow;
+      ctx.globalAlpha = g.color === 'muted' ? 0.18 : 1; ctx.strokeStyle = g.color === 'muted' ? pal.fg : colorOf(pal, g.color);
+      ctx.beginPath(); ctx.arc(cx, cy, R - width / 2, a0, a1); ctx.stroke();
+      const mid = (a0 + a1) / 2, lab = ease((lt - 1.2 - i * 0.15) / 0.4);
+      if (g.color !== 'muted' && lab > 0) {
+        ctx.globalAlpha = lab; ctx.fillStyle = pal.fg; ctx.textAlign = Math.cos(mid) >= 0 ? 'left' : 'right';
+        const tx = cx + Math.cos(mid) * (R + 26), ty = cy + Math.sin(mid) * (R + 26);
+        ctx.font = '800 44px "TT Firs Neue", Montserrat, sans-serif'; ctx.fillText(fmtPct(g.value), tx, ty);
+        ctx.font = '700 24px Montserrat, sans-serif'; ctx.fillText(g.label, tx, ty + 30);
+      }
+      a0 += (g.value / 100) * Math.PI * 2 * grow;
+    });
+    ctx.globalAlpha = 1;
+    if (spec.total) {
+      ctx.fillStyle = pal.fg; ctx.textAlign = 'center';
+      ctx.font = '800 64px "TT Firs Neue", Montserrat, sans-serif';
+      ctx.fillText(Math.round(spec.total * ease((lt - 0.2) / 1.2)).toLocaleString('ru-RU'), cx, cy + 20);
+      ctx.font = '700 22px Montserrat, sans-serif'; ctx.fillText('человек', cx, cy + 52);
+    }
+    return { pos: [] };
+  }
+
+  // ---------- пики: сравнение значений треугольниками с плашками ----------
+  function drawPeaks(ctx, spec, prev, W, H, pal, lt) {
+    const groups = (spec.groups || []).slice(0, 5), base = H - 90, maxV = Math.max(...groups.map(g => g.value), 1);
+    const step = W / (groups.length + 1), half = step * 0.75;
+    groups.forEach((g, i) => {
+      const x = step * (i + 1), grow = ease((lt - 0.2 - i * 0.18) / 0.8), top = base - (base - 90) * (g.value / maxV) * grow;
+      ctx.globalAlpha = 0.85; ctx.fillStyle = colorOf(pal, g.color === 'muted' ? 'white' : g.color);
+      ctx.beginPath(); ctx.moveTo(x - half, base); ctx.lineTo(x, top); ctx.lineTo(x + half, base); ctx.closePath(); ctx.fill();
+      const tag = ease((lt - 0.9 - i * 0.18) / 0.3);
+      if (tag > 0) {
+        ctx.globalAlpha = tag; const t = fmtPct(g.value);
+        ctx.font = '800 34px Montserrat, sans-serif'; const tw = ctx.measureText(t).width + 28;
+        ctx.fillRect(x - tw / 2, top - 70, tw, 50);
+        ctx.beginPath(); ctx.moveTo(x - 10, top - 21); ctx.lineTo(x, top - 8); ctx.lineTo(x + 10, top - 21); ctx.fill();
+        ctx.fillStyle = pal.bg || '#fff'; ctx.textAlign = 'center'; ctx.fillText(t, x, top - 33);
+        ctx.fillStyle = pal.fg; ctx.font = '700 24px Montserrat, sans-serif'; ctx.fillText(g.label, x, base + 40);
+      }
+    });
+    ctx.globalAlpha = 0.4; ctx.strokeStyle = pal.fg; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, base); ctx.lineTo(W, base); ctx.stroke(); ctx.globalAlpha = 1;
+    return { pos: [] };
+  }
+
   function fmtPct(v) { const r = Math.round(v); return (Math.abs(v - r) < 0.05 ? r : v.toFixed(1).replace('.', ',')) + '%'; }
 
   function chrome(ctx, spec, W, H, pal, lt, L) {
@@ -240,6 +329,9 @@
     else if (spec.kind === 'network') L = drawNetwork(ctx, spec, prev, W, innerH, pal, lt);
     else if (spec.kind === 'rings') L = drawRings(ctx, spec, prev, W, innerH, pal, lt);
     else if (spec.kind === 'house') L = drawHouse(ctx, spec, prev, W, innerH, pal, lt);
+    else if (spec.kind === 'people') L = drawPeople(ctx, spec, prev, W, innerH, pal, lt);
+    else if (spec.kind === 'donut') L = drawDonut(ctx, spec, prev, W, innerH, pal, lt);
+    else if (spec.kind === 'peaks') L = drawPeaks(ctx, spec, prev, W, innerH, pal, lt);
     ctx.restore();
     ctx.save(); ctx.translate(0, pad);
     if (L && L.pos) chrome(ctx, spec, W, innerH, pal, lt, L);

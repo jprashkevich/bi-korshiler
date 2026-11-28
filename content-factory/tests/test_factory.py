@@ -515,7 +515,7 @@ def test_reel_plan_rotates_experiment_and_viz_in_templates():
     from datetime import date, timedelta
     from factory import insights, render, writer
     from factory.models import PostPackage
-    plans = [writer.reel_plan(date(2026, 12, 1) + timedelta(days=i), {"score_data": {"has_number": True}}) for i in range(6)]
+    plans = [writer.reel_plan(date(2026, 12, 1) + timedelta(days=i), {"score_data": {"has_number": True}}) for i in range(7)]
     assert {p["voice_mode"] for p in plans} == {"voice", "music"}
     assert {p["length"] for p in plans} == {"short", "mid", "long"}
     assert {p["viz"] for p in plans} == set(writer.VIZ_KINDS)
