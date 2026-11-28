@@ -6,7 +6,7 @@ photos:
   - {id: gal-1,  file: gal-1.jpg, season: summer,  desc: "Пенная вечеринка во дворе, много детей, лето, веселье"}
   - {id: gal-2,  file: gal-2.jpg, season: warm,  reels: true, desc: "Взрослые женщины занимаются растяжкой на ковриках на спортплощадке во дворе"}
   - {id: gal-3,  file: gal-3.jpg, season: any,  desc: "Дети танцуют в светлой студии с зеркалами"}
-  - {id: gal-4,  file: gal-4.jpg, season: any,  reels: true, desc: "Дети за столом в переговорной, занятие или встреча"}
+  - {id: gal-4,  file: gal-4.jpg, season: any,  desc: "Дети за столом в переговорной, занятие или встреча"}
   - {id: gal-5,  file: gal-5.jpg, season: any,  desc: "Дети и взрослые за длинным столом, мастер-класс в помещении"}
   - {id: gal-6,  file: gal-6.jpg, season: warm,  desc: "Дети у стола с угощениями на футбольном поле во дворе, праздник"}
   - {id: gal-7,  file: gal-7.jpg, season: any,  desc: "Дети в поварских колпаках на кухне-студии, кулинарный мастер-класс"}

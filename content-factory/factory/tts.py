@@ -65,8 +65,21 @@ def synthesize(text: str, out_path: Path, *, speed: float | None = None, style: 
         starts = [starts[min(int(i * n / len(text)), n - 1)] for i in range(len(text))]
     duration = max(ends) if ends else 0.0
     if not duration:
-        raise TTSError("ElevenLabs не вернул таймкоды")
+        # модель без посимвольных таймкодов: оцениваем их по длине аудио пропорционально тексту
+        duration = audio_seconds(out_path)
+        if not duration:
+            raise TTSError("ElevenLabs не вернул таймкоды, длину аудио определить не удалось")
+        starts = [duration * i / max(len(text), 1) for i in range(len(text))]
     return Speech(out_path, starts, duration)
+
+
+def audio_seconds(path: Path) -> float:
+    import re
+    import subprocess
+    import imageio_ffmpeg
+    err = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-i", str(path)], capture_output=True, text=True).stderr
+    m = re.search(r"Duration: (\d+):(\d+):([\d.]+)", err)
+    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3)) if m else 0.0
 
 
 # Варианты голоса для выбора владельцем (команда voicetest): темп, мягкость, эмоциональность.

@@ -57,6 +57,12 @@ def _send_album_part(chat_id: str, paths: list[Path], caption: str = "") -> list
     return [m["message_id"] for m in result]
 
 
+def send_photo(chat_id: str, path: Path, caption: str = "") -> int:
+    result = _call("sendPhoto", http_timeout=120, files={"photo": (path.name, path.read_bytes(), "image/jpeg")},
+                   chat_id=chat_id, caption=caption[:CAPTION_LIMIT] or None)
+    return result["message_id"]
+
+
 def send_video(chat_id: str, path: Path, cover: Path | None = None, caption: str = "") -> int:
     files = {"video": (path.name, path.read_bytes(), "video/mp4")}
     if cover:

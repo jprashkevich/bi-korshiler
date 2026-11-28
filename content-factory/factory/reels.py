@@ -156,7 +156,7 @@ def reels_photos() -> dict[str, str]:
     return out
 
 
-def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None) -> list[dict]:
+def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None, subs: list[dict] | None = None) -> list[dict]:
     """Склеивает соседние сцены с одним типом кадра в отрезки и раскладывает карточки на столе.
     Почему так: метафора не должна рваться на каждой сцене (решение владельца), поэтому кадр меняется
     только при смене типа, а внутри отрезка двигается камера и добавляются детали."""
@@ -183,15 +183,23 @@ def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None) -> list[
         idx = r["idx"]
         run = {"shot": r["shot"], "start": tl[idx[0]]["start"], "end": tl[idx[-1]]["end"], "scenes": []}
         if r["shot"] == "photo":
-            pid = next((pkg.scenes[i].photo_id for i in idx if photos.get(pkg.scenes[i].photo_id)), "")
-            run["photo"] = photos.get(pid) or spare_photo
+            # несколько снимков на отрезок: кадр меняется на каждой фразе голоса (владелец: «медленный монтаж»)
+            chosen = [photos[pkg.scenes[i].photo_id] for i in idx if photos.get(pkg.scenes[i].photo_id)]
+            for u in photos.values():
+                if len(chosen) >= 3:
+                    break
+                if u not in chosen:
+                    chosen.append(u)
+            run["photos"] = chosen[:3] or [spare_photo]
         if r["shot"] == "collage":
             cards, decos, y, side, focus = [], [], 300, 0, {"y": 700, "s": 1.0}
             for i in idx:
                 s, at = pkg.scenes[i], tl[i]["start"]
+                # карточки ложатся на стол по фразам голоса, а не все разом в начале сцены
+                beats = [x["start"] for x in (subs or []) if tl[i]["start"] - 0.05 <= x["start"] < tl[i]["end"]] or [at]
                 items = []
                 if s.note:
-                    items.append({"kind": "note", "lines": s.note[:4], "w": 470, "h": 110 + 56 * len(s.note[:4])})
+                    items.append({"kind": "note", "lines": s.note[:4], "w": 620, "h": 130 + 72 * len(s.note[:4])})
                 pic = None
                 if s.type == "person" and pics.get(s.person, {}).get("uri"):
                     ref = people.get(s.person)
@@ -202,9 +210,9 @@ def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None) -> list[
                 elif ills.get(s.illustration_id):
                     pic = {"uri": ills[s.illustration_id], "person": False, "name": "", "role": ""}
                 if pic:
-                    items.append({"kind": "photo", **pic, "w": 430, "h": 500})
+                    items.append({"kind": "photo", **pic, "w": 560, "h": 660})
                 if s.viz.kind != "none":
-                    items.append({"kind": "data", "viz": s.viz.model_dump(), "w": 600, "h": 440})
+                    items.append({"kind": "data", "viz": s.viz.model_dump(), "w": 760, "h": 560})
                 if s.type == "stat" and s.title:
                     items.append({"kind": "number", "text": typograf(s.title), "caption": typograf(s.text),
                                   "size": 170 if len(s.title) < 7 else 120, "w": 400, "h": 260})
@@ -214,18 +222,19 @@ def build_runs(pkg: ReelPackage, tl: list[dict], pictures: dict | None) -> list[
                 row_h = max(it["h"] for it in items[:2]) + (60 if any(it["kind"] == "photo" and it["name"] for it in items) else 0)
                 xs = [80, 600] if side == 0 else [600, 80]
                 for k, it in enumerate(items[:2]):
-                    x = xs[k] if len(items) > 1 else (110 if side == 0 else 420)
+                    # одиночная карточка — почти по центру, с лёгким сдвигом в сторону для живости
+                    x = xs[k] if len(items) > 1 else (1080 - it["w"]) // 2 + (-40 if side == 0 else 40)
                     if it["kind"] == "data" and len(items) > 1:
-                        it["w"] = 560
+                        it["w"], it["h"] = 600, 480
                         x = 50 if k == 0 else 470
                     if it["kind"] == "number" and len(items) > 1:
                         it["size"], it["w"] = min(it["size"], 150), 380
                         x = 650 if k == 1 else 60
-                    it.update(x=min(x, 1080 - it["w"] - 40), y=y, at=round(at + 0.15 + 0.35 * k, 2),
+                    it.update(x=min(x, 1080 - it["w"] - 40), y=y, at=round(beats[min(k, len(beats) - 1)] + 0.1 + (0.35 * k if k >= len(beats) else 0), 2),
                               rot=round((-2.5 if (k + side) % 2 else 2.5), 1))
                     cards.append(it)
                 for it in items[2:]:              # третий предмет — под рядом
-                    it.update(x=200, y=y + row_h + 20, at=round(at + 0.9, 2), rot=-1.5)
+                    it.update(x=200, y=y + row_h + 20, at=round(beats[min(2, len(beats) - 1)] + 0.3, 2), rot=-1.5)
                     cards.append(it)
                     row_h += it["h"] + 40
                 decos.append({"kind": ["half", "dot", "rule"][len(decos) % 3], "x": 140 + 520 * side,
@@ -262,7 +271,9 @@ def _launch(pw):
 def render_cover(pkg: ReelPackage, rubric_title: str, out: Path) -> Path:
     from .render import illustrations
     ills = illustrations()
-    image = next((ills[s.illustration_id] for s in pkg.scenes if ills.get(s.illustration_id)), "")
+    photos = reels_photos()
+    image = (next((photos[s.photo_id] for s in pkg.scenes if photos.get(s.photo_id)), "")
+             or next((ills[s.illustration_id] for s in pkg.scenes if ills.get(s.illustration_id)), ""))
     html = _env.get_template("reels_cover.html.j2").render(
         title=typograf(pkg.cover_title), accent=pkg.accent, rubric_title=rubric_title, image=image,
         assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
@@ -278,14 +289,22 @@ def render_cover(pkg: ReelPackage, rubric_title: str, out: Path) -> Path:
     return out
 
 
-def reel_speech(text: str, out: Path) -> tts.Speech:
-    """Голос для Reels живее и быстрее, чем для длинных текстов: темп 1.18, больше эмоций
-    (style выше, stability ниже — интонация свободнее). Владелец просил «скорости и эмоций»."""
+def reel_speech(text: str, out: Path, fast: bool = False) -> tts.Speech:
+    """Голос Reels: eleven_v3, естественный режим (вариант 4 из voicetest — выбор владельца 28.11).
+    Тег [warmly] задаёт мягкую тёплую подачу; его символы срезаем из таймкодов, чтобы субтитры не съехали.
+    REELS_VOICE_STABILITY=0 — эмоциональный вариант 5; REELS_VOICE_MODEL — вернуть v2."""
     from .settings import env
-    # 1.18 вместе с рублеными фразами звучало как скороговорка; связному рассказу нужен естественный темп
-    return tts.synthesize(text, out, speed=float(env("REELS_VOICE_SPEED", "1.08")),
-                          style=float(env("REELS_VOICE_STYLE", "0.55")),
-                          stability=float(env("REELS_VOICE_STABILITY", "0.3")))
+    model = env("REELS_VOICE_MODEL", "eleven_v3")
+    if model == "eleven_v3":
+        tag = env("REELS_VOICE_TAGS", "[warmly]").strip()
+        prefix = f"{tag} " if tag else ""
+        sp = tts.synthesize(prefix + text, out, model=model, stability=float(env("REELS_VOICE_STABILITY", "0.5")),
+                            speed=1.2 if fast else None)
+        if prefix and len(sp.starts) > len(prefix):
+            sp.starts = sp.starts[len(prefix):]
+        return sp
+    return tts.synthesize(text, out, model=model, speed=1.2 if fast else float(env("REELS_VOICE_SPEED", "1.12")),
+                          style=float(env("REELS_VOICE_STYLE", "0.55")), stability=float(env("REELS_VOICE_STABILITY", "0.3")))
 
 
 def silent_timeline(pkg: ReelPackage, out: Path) -> tuple[list[dict], list[dict], float, Path]:
@@ -321,7 +340,10 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     if not silent and speech_fn is None and speech.duration > MAX_VOICE_SECONDS.get(pkg.length, 36):
         # длинный ролик досматривают хуже: перезаписываем на предельной скорости голоса
         log.info("Озвучка %.1f с длиннее %s с — перезаписываю быстрее", speech.duration, MAX_VOICE_SECONDS)
-        speech = tts.synthesize(full, out_dir / "voice.mp3", speed=1.2, style=0.55, stability=0.3)
+        try:
+            speech = reel_speech(full, out_dir / "voice-fast.mp3", fast=True)
+        except tts.TTSError as exc:       # ускорение не поддержано моделью — оставляем обычный темп
+            log.warning("Ускорить озвучку не вышло: %s", exc)
     if not silent:
         tl, subs, total = timeline(pkg, speech)
         voice_path = speech.audio_path
@@ -334,7 +356,7 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     from .render import SECOND_ACCENT
     if silent:
         subs = silent_subs(pkg, tl)
-    runs = build_runs(pkg, tl, pictures)
+    runs = build_runs(pkg, tl, pictures, subs)
     runs_js = [{k: v for k, v in r.items() if k in ("shot", "start", "end", "scenes", "zoomout", "zoomout_s", "zoomout_y")}
                for r in runs]
     html = _env.get_template("reels.html.j2").render(

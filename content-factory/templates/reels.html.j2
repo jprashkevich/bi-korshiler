@@ -19,8 +19,9 @@
 /* фото во весь кадр */
 .photo{overflow:hidden;background:#222}
 .photo img.bg{position:absolute;top:0;height:100%;width:auto;max-width:none;filter:saturate(.9)}
-.photo .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,24,60,.55) 0,rgba(20,24,60,0) 32%,rgba(20,24,60,0) 60%,rgba(20,24,60,.35) 100%)}
+.photo .shade{position:absolute;inset:0;z-index:3;background:linear-gradient(180deg,rgba(20,24,60,.55) 0,rgba(20,24,60,0) 32%,rgba(20,24,60,0) 60%,rgba(20,24,60,.35) 100%)}
 .photo canvas{position:absolute;left:0;top:860px;width:1080px;height:440px;color:#fff}
+.photo .scene{z-index:4}
 .photo .scene{color:#fff}
 /* стол-коллаж */
 .collage{background:var(--cream)}
@@ -29,8 +30,8 @@
 .card img{display:block;width:100%;height:100%;object-fit:cover}
 .card.person img{object-position:50% 18%;filter:grayscale(1) contrast(1.1)}
 .tape{position:absolute;width:160px;height:44px;background:rgba(255,244,210,.9);top:-20px;left:50%;margin-left:-80px;transform:rotate(-4deg)}
-.note{background:#fffdf7;padding:34px 38px;font-size:38px;line-height:1.38;font-weight:600;color:var(--ink)}
-.note .hand{font-family:Caveat,cursive;color:var(--accent);font-weight:700;font-size:46px}
+.note{background:#fffdf7;padding:40px 46px;font-size:50px;line-height:1.36;font-weight:700;color:var(--ink)}
+.note .hand{font-family:Caveat,cursive;color:var(--accent);font-weight:700;font-size:62px}
 .datacard{padding:22px}
 .datacard canvas{display:block;width:100%;height:100%}
 .datacard .legend{position:absolute;left:24px;bottom:14px;font-size:22px;font-weight:700;opacity:.7}
@@ -60,7 +61,7 @@
   {% for r in runs %}
   {% if r.shot == 'photo' %}
   <div class="shot photo" id="run{{ loop.index0 }}">
-    <img class="bg" src="{{ r.photo }}" alt="">
+    {% for ph in r.photos %}<img class="bg" data-k="{{ loop.index0 }}" src="{{ ph }}" alt="">{% endfor %}
     <div class="shade"></div>
     <div class="scene" style="position:absolute;inset:0;color:#fff"><canvas class="over"></canvas></div>
   </div>
@@ -122,14 +123,21 @@ window.seek = function (t) {
     el.style.opacity = vis;
     if (!vis) return;
     const lt = t - r.start, dur = Math.max(r.end - r.start, 1);
+    // фразы голоса внутри отрезка: на каждой — смена снимка или акцентный толчок камеры
+    const beats = SUBS.filter(s => s.start >= r.start - 0.05 && s.start < r.end).map(s => s.start);
+    let bi = -1; beats.forEach((b, j) => { if (t >= b) bi = j; });
+    const bt = bi >= 0 ? t - beats[bi] : lt, punch = 1 - ease(bt / 0.35);
     if (r.shot === 'photo') {
-      const img = el.querySelector('img.bg');
-      if (img.naturalWidth) {   // медленная панорама по широкому снимку
-        const w = 1920 * img.naturalWidth / img.naturalHeight, span = Math.max(w - 1080, 0), p = inout(lt / (dur + FADE));
-        const z = 1.04 + 0.06 * p;
+      const imgs = [...el.querySelectorAll('img.bg')], cur = Math.max(bi, 0) % imgs.length, prv = Math.max(bi - 1, 0) % imgs.length;
+      imgs.forEach((img, j) => {
+        if (!img.naturalWidth) return;
+        const w = 1920 * img.naturalWidth / img.naturalHeight, span = Math.max(w - 1080, 0);
+        const p = inout(bt / 4), dir = (j % 2 ? -1 : 1);
         img.style.width = w + 'px';
-        img.style.transform = `translateX(${-span * (0.15 + 0.7 * p)}px) scale(${z})`;
-      }
+        img.style.transform = `translateX(${-span * (0.5 + dir * (0.3 - 0.25 * p))}px) scale(${1.08 + 0.05 * p + 0.05 * punch})`;
+        img.style.opacity = j === cur ? ease(bt / 0.22) : (j === prv && bt < 0.22 ? 1 : 0);
+        img.style.zIndex = j === cur ? 2 : 1;
+      });
       el.style.transform = `scale(${1 + 0.04 * (1 - fout)})`;
       const v = vizAt(r, t);
       if (v.cur) window.drawViz(el.querySelector('canvas.over'), {...v.cur, overlay: true}, v.prev, v.lt);
@@ -141,7 +149,8 @@ window.seek = function (t) {
       const fy = a.y + (b.y - a.y) * (fi ? m : 1), fs = a.s + (b.s - a.s) * (fi ? m : 1);
       const outro = r.zoomout ? inout((t - (r.end - 1.4)) / 1.2) : 0;
       const s = fs * (1 - outro) + r.zoomout_s * outro, y = fy * (1 - outro) + r.zoomout_y * outro;
-      desk.style.transform = `translate(0px, ${760 - y * s}px) scale(${s})`;   // transform-origin по центру ширины
+      const sp = s * (1 + 0.035 * punch);
+      desk.style.transform = `translate(0px, ${760 - y * sp}px) scale(${sp})`;   // transform-origin по центру ширины
       desk.querySelectorAll('[data-at]').forEach(c => {
         const p = ease((t - parseFloat(c.dataset.at)) / 0.45);
         c.style.opacity = p;
@@ -158,7 +167,7 @@ window.seek = function (t) {
     } else {
       const v = vizAt(r, t);
       if (v.cur) window.drawViz(el.querySelector('canvas'), v.cur, v.prev, v.lt);
-      el.style.transform = `scale(${1.03 - 0.03 * ease(lt / 1.5)})`;
+      el.style.transform = `scale(${1.03 - 0.03 * ease(lt / 1.5) + 0.03 * punch})`;
     }
   });
   const hk = document.getElementById('hook');

@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import update
 
-from . import db, drive, editor, ingest, instagram, people, reels, render, score, sheets, telegram, threads, tts, writer
+from . import db, drive, editor, feed, ingest, instagram, people, reels, render, score, sheets, telegram, threads, tts, writer
 from .models import PostPackage, ReelPackage
 from .settings import chat_id, settings
 
@@ -112,14 +112,16 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
         used_ids = {sl.photo_ref for sl in pkg.slides if sl.type == "event"}
         cities = list(dict.fromkeys(ev.get("city") for ev in events if ev.get("city")
                                     and any(ph["id"] in used_ids for ph in ev["photos"])))
+        look = feed.cover_look(post, post["rubric"])
         files = render.render(pkg, rubric["title"], name, drive_photos=photos,
-                              photo_city=photo_city, cities=cities)
+                              photo_city=photo_city, cities=cities, look=look)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": {}, "events": [e["label"] for e in events],
                 "no_city": sorted({e["complex"] for e in events if not e.get("city")})}
     elif rubric.get("source") == "ideas":
         pkg, issues = proofread(writer.write_ideas(date.fromisoformat(post["slot_date"]),
                                                    feedback=feedback, previous=previous))
-        files = render.render(pkg, rubric["title"], name)
+        look = feed.cover_look(post, post["rubric"])
+        files = render.render(pkg, rubric["title"], name, look=look)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": {}}
     elif rubric.get("format") == "reels" and tts.enabled():
         plan = writer.reel_plan(date.fromisoformat(post["slot_date"]), item)
@@ -146,8 +148,11 @@ def generate(post_id: int, feedback: list[str] | None = None) -> None:
     else:
         pkg, issues = proofread(writer.write(post["rubric"], item, feedback=feedback, previous=previous))
         pictures = find_pictures(pkg, pkg.slides)
-        files = render.render(pkg, rubric["title"], name, pictures=pictures)
+        look = feed.cover_look(post, post["rubric"], pkg.photo_id)
+        files = render.render(pkg, rubric["title"], name, pictures=pictures, look=look)
         data = {**pkg.model_dump(), "format": "carousel", "pictures": pictures}
+    if data.get("format") == "carousel":
+        data["cover_texture"] = look["cover_texture"]       # для правила соседства следующих обложек
     data["edit_issues"] = issues
     li = Path(files[0]).parent / "layout_issues.json" if files else None
     data["layout_issues"] = json.loads(li.read_text(encoding="utf-8")) if li and li.exists() else []
@@ -229,6 +234,12 @@ def deliver(post_id: int) -> None:
                                caption="Reels (MP4) и обложка в исходном качестве для загрузки в Instagram")
     else:
         telegram.send_album(chat, [Path(f) for f in post["files"]])
+        try:          # как пост встанет в сетку профиля рядом с последними публикациями
+            prev = feed.preview(Path(post["files"][0]), Path(post["files"][0]).parent / "feed-preview.jpg")
+            if prev:
+                telegram.send_photo(chat, prev, caption="Так будет выглядеть лента: новый пост в рамке")
+        except Exception:
+            log.exception("Превью ленты")
         telegram.send_document(chat, _zip(post["files"], f"BIGLife-{post['slot_date']}-{post_id}"),
                                caption="Слайды в исходном качестве для загрузки в Instagram")
 

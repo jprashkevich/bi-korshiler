@@ -3,25 +3,25 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap">
 <style>
 @font-face{font-family:"TT Firs Neue";src:url("{{ assets }}/TT_Firs_Neue_Trial_Var_Roman.ttf") format("truetype-variations");font-weight:100 900}
-:root{--navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;--accent:var(--{{ accent }})}
+/* Обложка Reels в грамматике ленты (фактура «бумага»): метка, крупный заголовок, фото на скотче.
+   В сетке профиля обложка обрезается до 1080×1440 по центру (240–1680) — всё важное внутри этой зоны. */
+:root{--navy:#28348a;--sky:#009fe3;--green:#88c947;--orange:#ff954c;--periwinkle:#556bb8;--cream:#f6efe4;--accent:var(--{{ accent }})}
 *{box-sizing:border-box}body{margin:0}
-/* Обложка по системе каруселей: текст сверху, картинка снизу. В сетке профиля обложка обрезается
-   до 1080×1440 по центру (240–1680 по высоте), поэтому всё важное — в этой зоне. */
-#cover{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--navy);color:#fff;font-family:"Montserrat",sans-serif}
-.glow{position:absolute;width:1100px;height:1100px;border-radius:50%;right:-420px;top:-380px;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 60%,transparent),transparent 62%)}
-.zone{position:absolute;left:90px;right:90px;top:300px;bottom:300px;display:flex;flex-direction:column}
-.zone.mid{justify-content:center}
-.hd{display:flex;justify-content:space-between;align-items:center}
-.logo{height:50px;filter:brightness(0) invert(1)}
-.tag{font-size:28px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:14px 26px;border-radius:999px;background:var(--accent)}
-h1{font-family:"TT Firs Neue","Montserrat",sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.98;margin:56px 0 0;font-size:{{ 120 if title|length < 25 else 100 }}px}
-.media{flex:1 1 0;min-height:420px;margin-top:56px;border-radius:36px;overflow:hidden;background:#fff}
-.media img{width:100%;height:100%;object-fit:cover;display:block}
+#cover{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--cream);color:var(--navy);font-family:Montserrat,sans-serif}
+#cover::after{content:"";position:absolute;inset:0;opacity:.2;mix-blend-mode:multiply;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 .55 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>")}
+.top{position:absolute;left:80px;right:80px;top:320px;display:flex;justify-content:space-between;align-items:center}
+.rub{font-size:26px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;padding:12px 22px;border-radius:999px;background:var(--accent)}
+.logo{height:40px}
+h1{position:absolute;left:80px;right:80px;top:430px;margin:0;font-family:"TT Firs Neue",Montserrat,sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1;font-size:{{ 104 if title|length < 30 else 88 }}px}
+.card{position:absolute;left:190px;right:190px;top:{{ 880 if title|length < 30 else 960 }}px;bottom:300px;background:#fff;padding:16px;box-shadow:0 18px 40px rgba(60,40,20,.22);transform:rotate(2deg)}
+.card img{width:100%;height:100%;object-fit:cover;display:block}
+.tape{position:absolute;width:170px;height:46px;background:rgba(255,244,210,.9);top:-22px;left:50%;margin-left:-85px;transform:rotate(-4deg)}
+svg{position:absolute;inset:0}
 </style></head><body>
-<div id="cover">{% if not image %}<div class="glow"></div>{% endif %}
-  <div class="zone{% if not image %} mid{% endif %}">
-    <div class="hd"><img class="logo" src="{{ assets }}/logo-horizontal.png" alt=""><span class="tag">{{ rubric_title }}</span></div>
-    <h1>{{ title }}</h1>
-    {% if image %}<div class="media"><img src="{{ image }}" alt=""></div>{% endif %}
-  </div>
+<div id="cover">
+  <svg width="1080" height="1920"><path d="M90 1640 a120 120 0 0 1 240 0 z" fill="#c9b8f2"/><circle cx="940" cy="1560" r="46" fill="var(--accent)"/></svg>
+  <div class="top"><span class="rub">{{ rubric_title }}</span><img class="logo" src="{{ assets }}/logo-horizontal.png" alt=""></div>
+  <h1>{{ title }}</h1>
+  {% if image %}<div class="card"><img src="{{ image }}" alt=""><div class="tape"></div></div>{% endif %}
 </div></body></html>
