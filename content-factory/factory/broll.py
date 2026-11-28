@@ -338,7 +338,7 @@ def pick_verdict(cands: list[dict], must_show: str, phrase: str) -> tuple[int, s
     if not shown:
         return -1, ""
     v = llm.ask(PickVerdict, system="Ты фоторедактор научно-популярного издания. Картинка должна буквально совпадать с фразой.",
-                user=content, model=settings.scorer_model, effort="low")
+                user=content, model=settings.vision_model, effort="low")
     log.info("Проверка «по глазам» (%s): %s — %s", must_show[:40], v.best, v.reason[:120])
     return (shown[v.best], "") if 0 <= v.best < len(shown) else (-1, v.better_query)
 

@@ -62,7 +62,7 @@ def check(path: Path) -> tuple[bool, float]:
         content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
                                                     "data": base64.b64encode(jpg).decode()}})
     v = llm.ask(ClipVerdict, system="Ты фоторедактор. Строго соблюдай приватность: при сомнении — не подходит.",
-                user=content, model=settings.scorer_model, effort="low")
+                user=content, model=settings.vision_model, effort="low")
     k = min(max(v.start_frame, 0), len(frames) - 1)
     return v.ok, frames[k][0]
 

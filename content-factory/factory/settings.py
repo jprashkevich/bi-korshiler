@@ -45,6 +45,8 @@ class Settings:
     # Claude
     writer_model: str = os.getenv("WRITER_MODEL", "claude-opus-5-5")
     scorer_model: str = os.getenv("SCORER_MODEL", "claude-opus-5-5")
+    # проверка картинок «по глазам» — десятки запросов с картинками на ролик, поэтому самая дешёвая модель (решение владельца 28.11)
+    vision_model: str = os.getenv("VISION_MODEL", "claude-haiku-5-5")
     writer_effort: str = os.getenv("WRITER_EFFORT", "high")
     scorer_effort: str = os.getenv("SCORER_EFFORT", "low")
     editor_effort: str = os.getenv("EDITOR_EFFORT", "medium")

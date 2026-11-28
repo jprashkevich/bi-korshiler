@@ -65,6 +65,9 @@ def ask(model_cls: type[T], *, system: str, user: str | list, model: str, effort
     for attempt in range(2):
         # потоковый запрос: без него SDK не пускает длинные ответы (вычитка с полным humanizer-ru,
         # max_tokens 32k) — «Streaming is required for operations that may take longer than 10 minutes»
+        # при отказе модели запрос автоматически выполнит резервная модель; у Haiku серверного
+        # переключения нет — для неё параметр не передаём, иначе API отвечает ошибкой
+        extra = {} if model.startswith("claude-haiku") else {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
         with client().beta.messages.stream(
             model=model,
             max_tokens=max_tokens,
@@ -72,8 +75,7 @@ def ask(model_cls: type[T], *, system: str, user: str | list, model: str, effort
             messages=messages,
             thinking={"type": "adaptive"},
             output_config={"effort": effort, "format": {"type": "json_schema", "schema": schema}},
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",   # при отказе модели запрос автоматически выполнит резервная модель
+            **extra,
         ) as stream:
             resp = stream.get_final_message()
         if resp.stop_reason == "refusal":
