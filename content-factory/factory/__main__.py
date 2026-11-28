@@ -92,6 +92,7 @@ def main() -> None:
                                  .where(db.usage.c.at >= db.now() - timedelta(days=args.days))
                                  .group_by(db.usage.c.post_id, db.usage.c.purpose).order_by(db.usage.c.post_id)):
                 print(f"пост {row[0]} {row[1]}: запросов {row[2]}, ${row[3]:.3f}, из кэша {row[4]} / без кэша {row[5]} ток.")
+    elif args.cmd == "voicetest":
         from . import telegram, tts
         from .settings import OUTPUT_DIR, chat_id
         pkg = db.get_post(args.post_id)["package"]
