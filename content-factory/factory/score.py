@@ -42,7 +42,8 @@ def run(limit: int = 200) -> int:
         chunk = rows[i:i + BATCH]
         listing = "\n\n".join(
             f"id={r.id} | {r.feed}\n{r.title}\n{(r.summary or '')[:600]}" for r in chunk)
-        result = llm.ask(ScoreBatch, system=SYSTEM,
+        lessons = db.kv_get("learnings") or ""   # итоги прошлой недели из insights.report
+        result = llm.ask(ScoreBatch, system=SYSTEM + (f"\n\n{lessons}\nУчитывай это в оценке virality." if lessons else ""),
                          user=f"Оцени каждый материал (верни оценку для каждого id):\n\n{listing}",
                          model=settings.scorer_model, effort=settings.scorer_effort)
         ids = {r.id for r in chunk}

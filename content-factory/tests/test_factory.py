@@ -462,3 +462,34 @@ def test_season_filter_hides_summer_pictures_in_november():
     assert set(render.illustrations()) <= {"ill-common-room", "ill-elevator", "ill-kids-workshop", "ill-grandparents",
                                            "ill-cleanup", "ill-loneliness", "ill-chat", "ill-winter", "ill-science",
                                            "ill-newyear", "ill-indoor-cinema"}
+
+
+def test_weekly_report_scores_and_learnings(tmp_path, monkeypatch):
+    from datetime import date
+    from factory import db, insights, instagram
+    monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "EAAtest")
+    monkeypatch.setenv("INSTAGRAM_USER_ID", "42")
+    monkeypatch.setenv("MEDIA_BASE_URL", "https://media.example")
+    db.init()
+    pkg = json.loads((HERE / "fixtures/sample_package.json").read_text())
+    ids = []
+    with db.engine.begin() as c:
+        for i, rub in enumerate(["science", "practice", "science", "question"]):
+            p = dict(pkg, headline=f"Тема {i}", caption_ru=f"Подпись номер {i} про соседей и двор")
+            ids.append(c.execute(db.posts.insert().values(
+                rubric=rub, slot_date=f"2030-01-0{i + 1}", slot=0, status="approved", package=p, files=[],
+                feedback=[], created_at=db.now(), updated_at=db.now())).inserted_primary_key[0])
+    instagram.set_state(ids[0], state="published", media_id="m0")
+    reach = {"m0": 1000, "m1": 1000, "m2": 1000, "m3": 1000}
+    saved = {"m0": 50, "m1": 5, "m2": 20, "m3": 1}
+
+    def fake(method, path, **params):
+        if path == "42/media":    # три поста выложены руками — находим по подписи
+            return {"data": [{"id": f"m{i}", "caption": f"Подпись номер {i} про соседей и двор\n\n#tag"} for i in (1, 2, 3)]}
+        mid = path.split("/")[0]
+        return {"data": [{"name": "reach", "values": [{"value": reach[mid]}]},
+                         {"name": "saved", "values": [{"value": saved[mid]}]}]}
+    monkeypatch.setattr(instagram, "_request", fake)
+    text = insights.report(date(2030, 1, 7))       # понедельник → неделя 31.12–06.01
+    assert "найдено в Instagram: 4" in text and text.index("Тема 0") < text.index("Тема 2")
+    assert "Тема 0" in db.kv_get("learnings") and insights.score({"reach": 100, "saved": 1}) == 3.0

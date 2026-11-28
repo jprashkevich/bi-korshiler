@@ -268,6 +268,11 @@ def on_message(msg: dict) -> None:
     if text.startswith("/status") and allowed(msg["from"]["id"]):
         telegram.send_message(chat, status_report())
         return
+    if text.startswith("/report") and allowed(msg["from"]["id"]):
+        from . import insights
+        telegram.send_message(chat, "Собираю цифры за прошлую неделю…")
+        telegram.send_message(chat, insights.report(datetime.now(ZoneInfo(settings.timezone)).date()))
+        return
     if text.startswith("/instagram") and allowed(msg["from"]["id"]):
         telegram.send_message(chat, instagram_report())
         return
@@ -360,6 +365,21 @@ def maybe_run_daily() -> None:
         telegram.send_message(chat_id(), f"Ежедневный запуск упал: {e(str(exc))[:500]}")
 
 
+def maybe_weekly_report() -> None:
+    """По понедельникам после ежедневного запуска — отчёт за прошлую неделю."""
+    now = datetime.now(ZoneInfo(settings.timezone))
+    key = now.date().isoformat()
+    if now.weekday() != 0 or now.hour < settings.daily_run_hour or not chat_id() or db.kv_get("last_weekly") == key:
+        return
+    db.kv_set("last_weekly", key)
+    from . import insights
+    try:
+        telegram.send_message(chat_id(), insights.report(now.date()))
+    except Exception as exc:
+        log.exception("Еженедельный отчёт")
+        telegram.send_message(chat_id(), f"Еженедельный отчёт не собрался: {e(str(exc))[:400]}")
+
+
 def run_forever() -> None:
     db.init()
     if not settings.approver_ids:
@@ -379,6 +399,7 @@ def run_forever() -> None:
     while True:
         try:
             maybe_run_daily()
+            maybe_weekly_report()
             for upd in telegram.get_updates(offset):
                 offset = upd["update_id"] + 1
                 db.kv_set("tg_offset", str(offset))

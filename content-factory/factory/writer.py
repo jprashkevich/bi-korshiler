@@ -21,6 +21,13 @@ MONTHS_NOM = ["январь", "февраль", "март", "апрель", "м�
               "сентябрь", "октябрь", "ноябрь", "декабрь"]
 
 
+def lessons_block() -> str:
+    """Уроки прошлой недели из еженедельного отчёта (insights.report): что сохраняли и пересылали."""
+    from . import db
+    text = db.kv_get("learnings") or ""
+    return f"## Обратная связь от аудитории\n{text}\n\n" if text else ""
+
+
 def system_prompt() -> str:
     from .season import today as season_today
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
@@ -53,7 +60,7 @@ def system_prompt() -> str:
 Сейчас {MONTHS_NOM[season_today().month - 1]}. Картинки, сюжеты и советы — по сезону: в каталогах ниже оставлены
 только подходящие к нему фото и иллюстрации. Если подходящей нет, оставь поле пустым, а не бери летнюю.
 
-## Каталог реальных фото BIG Life
+{lessons_block()}## Каталог реальных фото BIG Life
 {catalog}
 
 ## Каталог иллюстраций BIG Life (изометрия в фирменных цветах)
