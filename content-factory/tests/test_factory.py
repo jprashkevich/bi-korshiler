@@ -278,9 +278,12 @@ def test_city_resolution_order():
     db.init()
     assert cities.city_for("Nova City 14", "Community 2 Управление") == "Астана"
     assert cities.city_for("4YOU Shymkent", "Community 1 Управление") == "Шымкент"   # слово в названии важнее группы
-    assert cities.city_for("Batysmura Business", "Community Запад") == ""
-    cities.set_city("ЖК Батысмұра Бизнес", "Атырау")
-    assert cities.city_for("Батысмұра Бизнес", "Community Запад") == "Атырау"        # «ЖК» и регистр не важны
+    assert cities.city_for("ЖК Батысмұра Бизнес", "Community Запад") == "Атырау"     # справочник ЖК, казахские буквы
+    assert cities.city_for("Клубный дом 39") == "Шымкент"                            # номер различает ЖК
+    assert cities.city_for("Клубный дом 56") == "Астана"
+    assert cities.city_for("ЖК Санат") == ""                                         # нет в справочнике
+    cities.set_city("ЖК Санат", "Алматы")
+    assert cities.city_for("Санат") == "Алматы"                                      # «ЖК» и регистр не важны
 
 
 def test_album_is_split_by_ten(monkeypatch, tmp_path):
