@@ -18,7 +18,8 @@ from .settings import OUTPUT_DIR, TEMPLATES_DIR, settings
 
 log = logging.getLogger(__name__)
 FPS = 30
-TAIL = 1.5          # пауза после последней фразы, сек
+TAIL = 1.0          # пауза после последней фразы, сек (короче — ролик зациклен)
+MAX_VOICE_SECONDS = 36
 SUB_MAX = 34        # максимум символов в строке субтитров
 _env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=select_autoescape(["html", "j2"]))
 
@@ -122,6 +123,10 @@ def render_video(pkg: ReelPackage, rubric_title: str, name: str, pictures: dict 
     out_dir.mkdir(parents=True, exist_ok=True)
     full, _ = voice_text(pkg)
     speech = (speech_fn or reel_speech)(full, out_dir / "voice.mp3")
+    if speech_fn is None and speech.duration > MAX_VOICE_SECONDS:
+        # длинный ролик досматривают хуже: перезаписываем на предельной скорости голоса
+        log.info("Озвучка %.1f с длиннее %s с — перезаписываю быстрее", speech.duration, MAX_VOICE_SECONDS)
+        speech = tts.synthesize(full, out_dir / "voice.mp3", speed=1.2, style=0.35, stability=0.4)
     tl, subs, total = timeline(pkg, speech)
     scenes = []
     for s in pkg.scenes:
