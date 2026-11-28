@@ -23,6 +23,9 @@ def main() -> None:
     one = sub.add_parser("post", help="Собрать и отправить в Telegram один пост рубрики на сегодня")
     one.add_argument("rubric")
     one.add_argument("--slot", type=int, default=0)
+    redo = sub.add_parser("redo", help="Пересобрать пост по id с комментарием и отправить в Telegram")
+    redo.add_argument("post_id", type=int)
+    redo.add_argument("comment", nargs="*")
     top = sub.add_parser("top", help="Показать лучшие темы после скоринга")
     top.add_argument("-n", type=int, default=15)
     r = sub.add_parser("render", help="Отрендерить карусель из JSON-пакета (без вызова Claude)")
@@ -50,6 +53,13 @@ def main() -> None:
         pid = pipeline.create_post(args.rubric, pipeline.today(), args.slot, item)
         pipeline.generate(pid)
         print("post", pid)
+    elif args.cmd == "redo":
+        from . import pipeline
+        post = db.get_post(args.post_id)
+        feedback = list(post["feedback"] or []) + ([" ".join(args.comment)] if args.comment else [])
+        db.update_post(args.post_id, feedback=feedback, status="generating")
+        pipeline.generate(args.post_id, feedback=feedback)
+        print("redone", args.post_id)
     elif args.cmd == "top":
         from sqlalchemy import select
         with db.engine.begin() as c:
