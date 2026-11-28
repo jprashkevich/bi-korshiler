@@ -23,6 +23,7 @@ def main() -> None:
     one = sub.add_parser("post", help="Собрать и отправить в Telegram один пост рубрики на сегодня")
     one.add_argument("rubric")
     one.add_argument("--slot", type=int, default=0)
+    one.add_argument("--format", choices=["5", "6"], help="Формат монтажа Reels для этого поста (сравнение вариантов)")
     redo = sub.add_parser("redo", help="Пересобрать пост по id с комментарием и отправить в Telegram")
     redo.add_argument("post_id", type=int)
     redo.add_argument("comment", nargs="*")
@@ -54,7 +55,10 @@ def main() -> None:
         from .pipeline import run_daily
         print(run_daily())
     elif args.cmd == "post":
+        import os
         from . import pipeline
+        if getattr(args, "format", None):
+            os.environ["REELS_FORMAT"] = args.format
         item = pipeline.choose_item(args.rubric)
         pipeline.mark_used(item)
         pid = pipeline.create_post(args.rubric, pipeline.today(), args.slot, item)
