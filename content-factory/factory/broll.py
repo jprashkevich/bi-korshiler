@@ -333,7 +333,10 @@ def pick_verdict(cands: list[dict], must_show: str, phrase: str) -> tuple[int, s
             continue
         shown.append(k)
         content.append({"type": "text", "text": f"Кандидат {len(shown) - 1}"})
-        content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+        # фотобанк отдаёт превью и в PNG, и в WebP: тип берём по сигнатуре файла, иначе API отвечает 400
+        mt = ("image/png" if jpg[:8] == b"\x89PNG\r\n\x1a\n" else "image/webp" if jpg[8:12] == b"WEBP"
+              else "image/gif" if jpg[:4] == b"GIF8" else "image/jpeg")
+        content.append({"type": "image", "source": {"type": "base64", "media_type": mt,
                                                     "data": base64.b64encode(jpg).decode()}})
     if not shown:
         return -1, ""

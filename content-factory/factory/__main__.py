@@ -32,6 +32,8 @@ def main() -> None:
     rv.add_argument("--format", choices=["5", "6"], help="Формат монтажа Reels для этой пересборки (сравнение вариантов)")
     vt = sub.add_parser("voicetest", help="5 вариантов озвучки фрагмента поста в Telegram")
     vt.add_argument("post_id", type=int)
+    sp = sub.add_parser("spend", help="Расход API за последние N дней (по умолчанию сегодня), по постам")
+    sp.add_argument("days", type=int, nargs="?", default=1)
     show = sub.add_parser("show", help="Напечатать пакет поста (тексты) в лог")
     show.add_argument("post_id", type=int)
     top = sub.add_parser("top", help="Показать лучшие темы после скоринга")
@@ -78,7 +80,18 @@ def main() -> None:
             os.environ["REELS_FORMAT"] = args.format
         pipeline.revisualize(args.post_id)
         print("revisual", args.post_id)
-    elif args.cmd == "voicetest":
+    elif args.cmd == "spend":
+        from datetime import date, timedelta
+        from sqlalchemy import func, select
+        from . import insights
+        end = date.today()
+        print(insights.spend(end - timedelta(days=args.days - 1), end))
+        with db.engine.begin() as c:
+            for row in c.execute(select(db.usage.c.post_id, db.usage.c.purpose, func.count(), func.sum(db.usage.c.usd),
+                                        func.sum(db.usage.c.cache_read), func.sum(db.usage.c.input_tokens))
+                                 .where(db.usage.c.at >= db.now() - timedelta(days=args.days))
+                                 .group_by(db.usage.c.post_id, db.usage.c.purpose).order_by(db.usage.c.post_id)):
+                print(f"пост {row[0]} {row[1]}: запросов {row[2]}, ${row[3]:.3f}, из кэша {row[4]} / без кэша {row[5]} ток.")
         from . import telegram, tts
         from .settings import OUTPUT_DIR, chat_id
         pkg = db.get_post(args.post_id)["package"]
