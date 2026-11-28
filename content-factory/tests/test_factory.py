@@ -9,6 +9,14 @@ HERE = Path(__file__).parent
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 
+@pytest.fixture(autouse=True)
+def _summer(monkeypatch):
+    """Тесты не должны зависеть от месяца запуска: по умолчанию «сейчас» — июль, все тестовые картинки видны."""
+    from datetime import date
+    from factory import season
+    monkeypatch.setattr(season, "today", lambda: date(2026, 7, 15))
+
+
 def sample():
     from factory.models import PostPackage
     return PostPackage.model_validate(json.loads((HERE / "fixtures/sample_package.json").read_text()))
@@ -128,7 +136,7 @@ def test_reel_timeline_and_subtitles():
 def test_illustrations_catalog_matches_files():
     from factory.render import illustrations
     from factory.writer import load_yaml
-    ills = illustrations()
+    ills = illustrations(all_seasons=True)
     assert len(ills) >= 6
     ids = {i["id"] for i in load_yaml("illustrations.yaml")["illustrations"]}
     assert set(ills) <= ids
@@ -439,3 +447,18 @@ def test_reel_backgrounds_and_word_limit():
     assert bgs[0] == "navy" and bgs[-1] == "navy"
     assert all(not (a.startswith("accent") and b.startswith("accent")) for a, b in zip(bgs, bgs[1:]))
     assert writer.voice_words(pkg) <= writer.MAX_REEL_WORDS
+
+
+def test_season_filter_hides_summer_pictures_in_november():
+    from datetime import date
+    from factory.season import fits, tags_for
+    nov, jul = date(2026, 11, 28), date(2026, 7, 1)
+    assert tags_for(nov) == {"any", "cold"}
+    assert not fits({"season": "summer"}, nov) and not fits({}, nov) and fits({"season": "any"}, nov)
+    assert fits({"season": ["cold", "winter"]}, nov) and fits({"season": "summer"}, jul)
+    assert not fits({"season": "winter"}, date(2026, 3, 10)) and fits({"season": "cold"}, date(2026, 3, 10))
+    from factory import render, season
+    season.today = lambda: nov    # фикстура вернёт июль после теста
+    assert set(render.illustrations()) <= {"ill-common-room", "ill-elevator", "ill-kids-workshop", "ill-grandparents",
+                                           "ill-cleanup", "ill-loneliness", "ill-chat", "ill-winter", "ill-science",
+                                           "ill-newyear", "ill-indoor-cinema"}

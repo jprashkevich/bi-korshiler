@@ -17,10 +17,16 @@ def load_yaml(name: str) -> dict:
     return yaml.safe_load((CONFIG_DIR / name).read_text(encoding="utf-8"))
 
 
+MONTHS_NOM = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август",
+              "сентябрь", "октябрь", "ноябрь", "декабрь"]
+
+
 def system_prompt() -> str:
+    from .season import today as season_today
     brand = (CONFIG_DIR / "brand.md").read_text(encoding="utf-8")
-    photos = load_yaml("photos.yaml")["photos"]
-    catalog = "\n".join(f"- {p['id']}: {p['desc']}" for p in photos)
+    from .season import fits
+    photos = [p for p in load_yaml("photos.yaml")["photos"] if fits(p)]
+    catalog = "\n".join(f"- {p['id']}: {p['desc']}" for p in photos) or "- (по сезону подходящих фото нет)"
     from .render import illustrations
     available = illustrations()
     ills = "\n".join(f"- {i['id']}: {i['desc']}" for i in load_yaml("illustrations.yaml").get("illustrations", [])
@@ -42,6 +48,10 @@ def system_prompt() -> str:
 - Заголовки слайдов до 50 символов (обложка до 70), текст слайда до 160 символов, пункты списков до 50.
   Слайд читают с телефона за 2–3 секунды: лучше короче. Подробности, цифры и источник — в подпись к посту.
 - Никаких эмодзи. Кавычки «ёлочки». Без длинного тире «—»: вместо него двоеточие, запятая или новая фраза.
+
+## Сезон
+Сейчас {MONTHS_NOM[season_today().month - 1]}. Картинки, сюжеты и советы — по сезону: в каталогах ниже оставлены
+только подходящие к нему фото и иллюстрации. Если подходящей нет, оставь поле пустым, а не бери летнюю.
 
 ## Каталог реальных фото BIG Life
 {catalog}
@@ -97,7 +107,8 @@ def normalize(pkg: PostPackage) -> PostPackage:
         pkg.slides[0].type = "cover"
     if pkg.slides and pkg.slides[-1].type != "cta":
         pkg.slides[-1].type = "cta"
-    photo_ids = {p["id"] for p in load_yaml("photos.yaml")["photos"]}
+    from .season import fits
+    photo_ids = {p["id"] for p in load_yaml("photos.yaml")["photos"] if fits(p)}
     if pkg.photo_id not in photo_ids:
         pkg.photo_id = ""
     pkg.hashtags = [h.lstrip("#").replace(" ", "") for h in pkg.hashtags][:8]

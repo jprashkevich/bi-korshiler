@@ -20,7 +20,7 @@ def photo_path(photo_id: str) -> str:
     if not photo_id:
         return ""
     for p in yaml.safe_load((CONFIG_DIR / "photos.yaml").read_text(encoding="utf-8"))["photos"]:
-        if p["id"] == photo_id and (PHOTOS_DIR / p["file"]).exists():
+        if p["id"] == photo_id and (PHOTOS_DIR / p["file"]).exists() and __import__("factory.season", fromlist=["fits"]).fits(p):
             return (PHOTOS_DIR / p["file"]).resolve().as_uri()
     return ""
 
@@ -42,15 +42,18 @@ def _prepare(slide: dict) -> dict:
     return out
 
 
-def illustrations() -> dict[str, str]:
-    """id → file:// URI для иллюстраций из config/illustrations.yaml."""
+def illustrations(all_seasons: bool = False) -> dict[str, str]:
+    """id → file:// URI для иллюстраций из config/illustrations.yaml — только подходящие по сезону.
+    Фильтр здесь, а не только в промпте: так несезонная картинка не попадёт ни в карусель, ни в Reels,
+    даже если модель всё же назовёт её id."""
+    from .season import fits
     path = CONFIG_DIR / "illustrations.yaml"
     if not path.exists():
         return {}
     out = {}
     for it in yaml.safe_load(path.read_text(encoding="utf-8")).get("illustrations", []):
         f = TEMPLATES_DIR / "assets" / "illustrations" / it["file"]
-        if f.exists():
+        if f.exists() and (all_seasons or fits(it)):
             out[it["id"]] = f.resolve().as_uri()
     return out
 
