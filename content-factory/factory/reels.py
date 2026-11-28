@@ -402,11 +402,11 @@ def build_shots(cuts: list[dict], sb, words: list[dict], subs: list[dict], hook_
     from . import director
     wt = lambda i: director.word_time(words, i)
     vizs, chapters = [], []
-    for a in sb.anchor:
+    for a in sb.chapters:
         st = max(wt(a.word) - 0.15, hook_end + 0.3)
         en = wt(a.until_word) if a.until_word > a.word else st + 4.5
         chapters.append([st, min(max(en, st + 3.0), st + 6.0), len(vizs)])
-        vizs.append(a.viz.model_dump())
+        vizs.append(a.model_dump())
     exp = min(max(wt(sb.expand_word) - 0.2, total - 6.0), total - 2.5)
     chapters = [c for c in chapters if c[0] < exp - 1.5]
     for k in range(len(chapters) - 1):
@@ -459,6 +459,7 @@ def directed_html6(pkg: ReelPackage, subs: list[dict], tl: list[dict], total: fl
     from .render import SECOND_ACCENT
     hook_end = tl[0]["end"]
     sb = director.direct(pkg, subs, hook_end, total, item, fmt=6)
+    sb.chapters = director.valid_chapters(sb.chapters, director.source_text(pkg, item))
     words = director.words_of(subs)
     cuts = resolve_storyboard(sb, words, subs, pkg, item, pictures, clips, lead=director.LEAD, world=True)
     shots, vizs = build_shots(cuts, sb, words, subs, hook_end, total)
@@ -473,7 +474,7 @@ def directed_html6(pkg: ReelPackage, subs: list[dict], tl: list[dict], total: fl
     html = _env.get_template("reels6.html.j2").render(
         accent=pkg.accent, accent2=SECOND_ACCENT.get(pkg.accent, "periwinkle"), hook=hook, shots=shots,
         shots_js=[{k: x[k] for k in ("type", "start", "end", "text", "chapter") if k in x} for x in shots],
-        chapters_js=[{"viz": v} for v in vizs], accents_js=accents_js, hook_end=hook_end, total=total,
+        chapters_js=vizs, accents_js=accents_js, hook_end=hook_end, total=total,
         subtitles=subs, source=sb.source or pkg.source_line[:60], seed=zlib.crc32(pkg.headline.encode()) % 100000,
         art_js=(TEMPLATES_DIR / "dataart.js").read_text(encoding="utf-8"), assets=(TEMPLATES_DIR / "assets").resolve().as_uri())
     events = [("whoosh", max(hook_end - 0.2, 0))] + [("whoosh", max(a["t"] - 0.2, 0)) for a in accents_js if a["motion"] == "flash"]

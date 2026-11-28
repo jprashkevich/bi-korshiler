@@ -214,9 +214,40 @@ class AnchorState(BaseModel):
     viz: VizSpec
 
 
+Icon = Literal["person", "elder", "eye", "glasses", "house", "window", "door", "heart", "cup", "phone", "book",
+               "hand", "tree", "bench", "pill", "dog"]
+Silhouette = Literal["circle", "eye", "house", "heart", "head"]
+
+
+class ChartGroup(BaseModel):
+    label: str = Field(description="Кто это, 1–4 слова: «теряют зрение», «видят хорошо»", max_length=40)
+    value: float = Field(description="compare/scale — доля в группе с признаком, 0–100; timeline — значение в конце периода")
+    start: float = Field(default=0, description="timeline — значение в начале периода; иначе 0")
+
+
+class DataChapter(BaseModel):
+    """Глава данных формата 6 (решения владельца 28.11): элементы — предметы темы, обязательно сравнение
+    двух групп, время и одна крупная цифра. Только с цифрами из источника: нет цифр — нет глав."""
+    word: int = Field(description="Номер слова, с которого начинается глава (слово про данные)")
+    until_word: int = Field(description="Номер слова, на котором глава заканчивается (через 3–6 с)")
+    chart: Literal["compare", "timeline", "scale"] = Field(description=(
+        "compare — две группы рядом, у каждой доля с признаком; timeline — две линии во времени по годам; "
+        "scale — масштаб исследования: силуэт из сотен значков-участников"))
+    icon: Icon = Field(description="Значок-элемент: предмет темы (зрение — eye или glasses, дом — window, люди — person/elder)")
+    silhouette: Silhouette = Field(default="circle", description="Во что складываются значки: форма темы")
+    big: str = Field(description="Одна крупная цифра главы, как в источнике: «в 2 раза», «37%», «8 000», «10 лет»", max_length=24)
+    big_caption: str = Field(description="Что значит крупная цифра, до 50 символов", max_length=70)
+    groups: list[ChartGroup] = Field(description="Две группы для сравнения (для scale — одна)")
+    years: list[int] = Field(default_factory=list, description="timeline — [год начала, год конца] из источника; иначе пусто")
+    unit: str = Field(default="", description="Легенда: «1 значок = 100 человек» или пусто", max_length=50)
+    evidence: str = Field(description="Дословная фраза из источника, где стоят эти цифры (для проверки)", max_length=400)
+
+
 class Storyboard(BaseModel):
     metaphor: str = Field(description="Одной фразой: почему эта фигура — образ главной находки ролика", max_length=200)
-    anchor: list[AnchorState] = Field(description="1–4 состояния одной метафоры: первое — на первом слове после хука, "
+    chapters: list[DataChapter] = Field(default_factory=list, description=(
+        "Формат 6: главы данных, 0–3. Только если в источнике есть цифры; нет цифр — пустой список"))
+    anchor: list[AnchorState] = Field(default_factory=list, description="1–4 состояния одной метафоры: первое — на первом слове после хука, "
                                                   "дальше только на словах про данные; kind во всех одинаковый")
     cuts: list[Cut] = Field(description="Перебивки в окне по порядку слов: на каждом названном существительном, "
                                         "в среднем раз в 1,5–2,5 с, не чаще раза в 0,8 с, ни одна не дольше 4,5 с")

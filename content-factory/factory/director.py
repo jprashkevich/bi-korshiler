@@ -60,8 +60,16 @@ def direct(pkg: ReelPackage, subs: list[dict], hook_end: float, total: float, it
             + (f"{item['title']}\n{item.get('summary') or ''}\n" if item else "")
             + "\n" + _catalogs())
     if fmt == 6:
-        user += ("\n\n## Формат 6\nanchor — это главы данных на весь экран: 2–3 главы, у каждой word (начало) и "
-                 "until_word (конец, через 3–6 с). Внутри глав перебивок нет. expand_word — начало финальной главы.")
+        user += ("\n\n## Формат 6: главы данных (поле chapters, anchor оставь пустым)\n"
+                 "Главы — только если в тексте источника ниже есть цифры: доли, «во сколько раз», число участников, годы. "
+                 "Нет цифр — chapters пустой, ролик держится на перебивках. Ничего не придумывай и не округляй сверх источника.\n"
+                 "В главе: сравнение двух групп (compare) или их изменение во времени (timeline), либо масштаб "
+                 "исследования (scale); одна крупная цифра (big) и её смысл. icon — предмет ТЕМЫ ролика "
+                 "(зрение — eye или glasses; дом и подъезд — window, house, door; одиночество — elder; чай — cup), "
+                 "silhouette — форма темы. evidence — дословная фраза источника с этими цифрами. "
+                 "1–3 главы по 3–6 с (word — начало, until_word — конец), внутри глав перебивок нет. "
+                 "expand_word — начало финальной главы (повтор последней в полном виде).\n\n"
+                 f"## Текст источника для цифр\n{source_text(pkg, item)[:6000]}")
     sb = llm.ask(Storyboard, system=system(fmt), user=user, model=settings.writer_model, effort=settings.writer_effort)
     return normalize(sb, words, hook_end)
 
@@ -99,3 +107,38 @@ def normalize(sb: Storyboard, words: list[dict], hook_end: float) -> Storyboard:
 
 def word_time(words: list[dict], i: int) -> float:
     return words[min(max(i, 0), len(words) - 1)]["t"]
+
+
+def source_text(pkg: ReelPackage, item: dict | None) -> str:
+    """Всё, откуда главы данных могут брать цифры: заметка, статья, проверка фактов сценария."""
+    parts = [pkg.source_line, *pkg.fact_check]
+    if item:
+        parts += [item.get("title") or "", item.get("summary") or ""]
+        try:
+            from .ingest import fetch_article_text
+            parts.append(fetch_article_text(item["url"]) or "")
+        except Exception as exc:          # без статьи — только заметка; цифр меньше, но выдумывать нельзя
+            log.info("Статья для цифр не загружена: %s", exc)
+    return "\n".join(p for p in parts if p)
+
+
+def _nums(text: str) -> set[str]:
+    import re
+    text = re.sub(r"(\d)[, ](\d{3})\b", r"\1\2", text or "")        # 8,175 и 8 175 — одно число
+    return {re.sub(r"[\s ]", "", m).replace(",", ".") for m in re.findall(r"\d[\d\s ]*(?:[.,]\d+)?", text)}
+
+
+def valid_chapters(chapters: list, source: str) -> list:
+    """Глава остаётся, только если все её цифры есть в источнике (решение владельца: нет цифр — нет главы).
+    Почему проверка в коде: на #24 режиссёр нарисовал главу с процентом, которого в источнике не было."""
+    have = _nums(source)
+    fmt = lambda v: str(int(v)) if float(v).is_integer() else str(v)
+    out = []
+    for ch in chapters:
+        need = _nums(ch.big) | {fmt(g.value) for g in ch.groups if g.value} | {fmt(g.start) for g in ch.groups if g.start}
+        need |= {str(y) for y in ch.years}
+        if not _nums(ch.big) or not need <= have:
+            log.info("Глава данных снята: цифр %s нет в источнике", sorted(need - have) or ch.big)
+            continue
+        out.append(ch)
+    return out

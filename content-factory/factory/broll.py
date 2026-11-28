@@ -452,13 +452,29 @@ def resolve_storyboard(sb, words: list[dict], subs: list[dict], pkg, item: dict 
     return clean
 
 
+_COUNTRIES50 = None
+
+
+def _countries50() -> list[dict]:
+    """Natural Earth 1:50m (общественное достояние): контуры с заливами и островами, русские названия.
+    1:110m, на котором были первые ролики, при влёте в страну давал угловатые «кляксы» — владелец 28.11:
+    «карта достаточно абстрактная»."""
+    global _COUNTRIES50
+    if _COUNTRIES50 is None:
+        _COUNTRIES50 = json.loads((TEMPLATES_DIR / "assets" / "countries50.json").read_text(encoding="utf-8"))
+    return _COUNTRIES50
+
+
 def world_svg(country: str, accent: str = "#ff954c") -> tuple[str, list[float]] | None:
-    """Карта мира для «влёта в страну» (формат 6): весь мир одной SVG, страна выделена; рамка страны
-    возвращается отдельно — по ней камера в шаблоне летит с глобуса в страну."""
+    """Карта мира для «влёта в страну» (формат 6). Узнаваемость: подробные контуры 1:50m, море другим
+    цветом, страна — акцентом с её названием, соседи подписаны. Рамка страны возвращается отдельно —
+    по ней камера в шаблоне летит с карты мира в страну."""
+    import html as _html
+    data = _countries50()
     q = country.strip().lower()
-    target = next((c for c in _countries() if q in (c["name"].lower(), c["ru"].lower(), (c["iso"] or "").lower())), None)
+    target = next((c for c in data if q in ((c["name"] or "").lower(), (c["ru"] or "").lower(), (c["iso"] or "").lower())), None)
     if not target:
-        target = next((c for c in _countries() if q and (q in c["name"].lower() or q in c["ru"].lower())), None)
+        target = next((c for c in data if q and (q in (c["name"] or "").lower() or q in (c["ru"] or "").lower())), None)
     if not target:
         return None
     W, H = 2000, 1000
@@ -472,16 +488,34 @@ def world_svg(country: str, accent: str = "#ff954c") -> tuple[str, list[float]] 
     def path(c):
         out = []
         for r in rings(c):
-            pts = [xy(x, y) for x, y in r[::2] or r]
-            if len(pts) > 2:
-                out.append("M" + "L".join(f"{x:.0f},{y:.0f}" for x, y in pts) + "Z")
+            if len(r) > 2:
+                out.append("M" + "L".join(f"{x:.1f},{y:.1f}" for x, y in (xy(*p) for p in r)) + "Z")
         return "".join(out)
-    others = "".join(f'<path d="{path(c)}"/>' for c in _countries() if c is not target)
-    # рамка по самому большому кольцу: у Франции, США и других — далёкие острова, камере нужен материк
+    # рамка — по самому большому кольцу: у Франции, США и других далёкие острова, камере нужен материк
     main = max(rings(target), key=len)
     xs, ys = zip(*(xy(x, y) for x, y in main))
     box = [min(xs), min(ys), max(xs), max(ys)]
+    bw, bh = max(box[2] - box[0], 20), max(box[3] - box[1], 20)
+    s1 = min(520 / bw, 380 / bh, 8)                     # тот же масштаб, что у камеры в reels6.html.j2
+    vx0, vx1 = (box[0] + box[2]) / 2 - 520 / s1, (box[0] + box[2]) / 2 + 520 / s1
+    vy0, vy1 = (box[1] + box[3]) / 2 - 400 / s1, (box[1] + box[3]) / 2 + 400 / s1
+    others = "".join(f'<path d="{path(c)}"/>' for c in data if c is not target)
+    labels = []
+    for c in data:                                      # подписи соседей, попавших в финальный кадр
+        if c is target or not c.get("ru") or not c.get("label"):
+            continue
+        lx, ly = xy(*c["label"])
+        if vx0 + 40 / s1 < lx < vx1 - 40 / s1 and vy0 + 30 / s1 < ly < vy1 - 30 / s1:
+            labels.append((sum(len(r) for r in rings(c)), f'<text x="{lx:.1f}" y="{ly:.1f}" font-size="{26 / s1:.2f}" fill="#6b6457" text-anchor="middle" '
+                          f'font-family="Montserrat" font-weight="700">{_html.escape(c["ru"])}</text>'))
+    labels = [t for _, t in sorted(labels, reverse=True)[:7]]        # только крупные соседи, без мелочи
+    tx, ty = xy(*target["label"]) if target.get("label") else ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
+    tname = _html.escape(target.get("ru") or target["name"])
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" overflow="visible">'
-           f'<g class="others" fill="#e4dccd" stroke="#f6efe4" stroke-width="1.5">{others}</g>'
-           f'<path class="hit" d="{path(target)}" fill="{accent}" stroke="#28348a" stroke-width="2"/></svg>')
+           f'<rect x="-2000" y="-1000" width="6000" height="3000" fill="#dde6ea"/>'
+           f'<g class="others" fill="#efe6d6" stroke="#ffffff" stroke-width="{1.6 / s1:.3f}" stroke-linejoin="round">{others}</g>'
+           f'<path class="hit" d="{path(target)}" fill="{accent}" stroke="#28348a" stroke-width="{3 / s1:.3f}" stroke-linejoin="round"/>'
+           f'<g class="lbl">{"".join(labels)}'
+           f'<text x="{tx:.1f}" y="{ty:.1f}" font-size="{40 / s1:.2f}" fill="#28348a" text-anchor="middle" '
+           f'font-family="Montserrat" font-weight="900" paint-order="stroke" stroke="#ffffff" stroke-width="{6 / s1:.2f}">{tname}</text></g></svg>')
     return svg, [round(v, 1) for v in box]

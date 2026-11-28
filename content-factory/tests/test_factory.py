@@ -627,7 +627,8 @@ def test_format6_shots_fill_gaps_and_keep_chapters():
     words = [{"i": i, "t": i * 0.4, "w": f"w{i}"} for i in range(60)]
     subs = [{"start": k * 2.0, "end": k * 2.0 + 2.0, "text": f"фраза номер {k}", "hl": ""} for k in range(13)]
     sb = Storyboard.model_validate({"metaphor": "m", "expand_word": 55,
-        "anchor": [{"word": 20, "until_word": 30, "viz": {"kind": "dots"}}],
+        "chapters": [{"word": 20, "until_word": 30, "chart": "compare", "icon": "eye", "big": "37%", "big_caption": "c",
+                      "groups": [{"label": "a", "value": 37}, {"label": "b", "value": 23}], "evidence": "37% 23%"}],
         "cuts": [{"word": 0, "kind": "number", "query": "1"}, {"word": 22, "kind": "number", "query": "2"}]})
     cuts = [{"type": "full", "start": 0.0, "uri": "a"}, {"type": "number", "start": 8.4, "text": "2"}]
     shots, vizs = reels.build_shots(cuts, sb, words, subs, hook_end=2.0, total=24.0)
@@ -637,3 +638,16 @@ def test_format6_shots_fill_gaps_and_keep_chapters():
     assert "kinetic" in kinds                                     # пустота после первого кадра заполнена
     gaps = [b["start"] - a["start"] for a, b in zip(shots, shots[1:]) if a["type"] != "chapter"]
     assert max(gaps) <= 2.6
+
+
+def test_chapters_need_numbers_from_source():
+    """Решение владельца 28.11: нет цифр в источнике — нет главы данных; 8,175 и 8 175 — одно число."""
+    from factory import director
+    from factory.models import DataChapter
+    mk = lambda big, vals, years=(): DataChapter(word=1, until_word=5, chart="compare", icon="eye", big=big, big_caption="c",
+                                                 groups=[{"label": "a", "value": v} for v in vals], years=list(years), evidence="e")
+    src = "Among 8,175 adults, 37% of those with vision loss reported depression vs 23%, 2010 to 2018."
+    kept = director.valid_chapters([mk("37%", [37, 23]), mk("в 2 раза", [50, 25]), mk("8 175", [37]),
+                                    mk("37%", [37], [2010, 2018]), mk("41%", [41])], src)
+    assert [c.big for c in kept] == ["37%", "8 175", "37%"]
+    assert director.valid_chapters([mk("37%", [37])], "Зрение и настроение связаны.") == []
